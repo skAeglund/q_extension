@@ -1,0 +1,185 @@
+[Event "Practical repertoire"]
+[Site "repgen"]
+[Date "2026.09.26"]
+[White "Repertoire"]
+[Black "Lichess"]
+[Result "*"]
+
+1. Nf3 d5 2. c4 dxc4 3. e4 Nc6 {22% of 97,950 games} (3... b5 {18% of 97,950
+games} 4. a4 {Prac 65.1 d5, engine 59.5; b3 58.7, Nc3 55.9} 4... c6 {84% of
+14,109 games} 5. axb5 {Prac 70.0 d5, engine 62.2; b3 65.6} 5... cxb5 {100% of
+5,871 games} 6. Nc3 {Prac 75.2 d5, engine 62.2; b3 68.9, Na3 63.2} 6... Bd7
+{60% of 2,841 games} 7. d3 {Prac 74.7 d3, engine 62.2; Be2 63.7, b3 58.8, g3
+57.2} 7... cxd3 {66% of 383 games} 8. Bxd3 {Prac 79.2 d3, engine 69.1} 8... Qb6
+{31% of 286 games} 9. Be3?! {Prac 76.7 d3, engine 75.7 (best Nd5 85.7)}
+9... Qb7 {97% of 77 games} 10. e5 {engine move 75.7, no practical value · end:
+few games (2)}) (3... Nf6 {15% of 97,950 games} 4. Bxc4 {Prac 64.3 d5, engine
+50.0; Nc3 63.9, e5 61.6, Qc2 52.4} 4... Nxe4 {52% of 4,348 games} (4... e6 {21%
+of 4,348 games} 5. Nc3 {Prac 66.3 d5, engine 50.8; e5 61.4, d4 59.3, d3 57.4}
+5... Be7 {35% of 14,020 games} (5... Bb4 {20% of 14,020 games} 6. Qc2 {Prac
+70.4 d5, engine 59.7; e5 69.7, Qa4+ 66.1, O-O 62.5} 6... Bxc3 {37% of 243
+games} 7. bxc3 {Prac 77.2 d3, engine 64.7} 7... O-O {63% of 112 games} 8. d4
+{Prac 80.1 d3, engine 73.5 · end: no reply likely enough}) (5... Bc5 {12% of
+14,020 games} 6. d4 {Prac 72.5 d5, engine 64.9; O-O 70.1, e5 69.4, a3 65.3}
+6... Bb6 {48% of 1,031 games} 7. Bg5 {Prac 72.2 d3, engine 64.4; O-O 71.0, e5
+66.4} 7... h6 {58% of 132 games} 8. Bh4 {Prac 67.8 d3, engine 64.4} 8... g5
+{81% of 64 games} 9. Bg3 {engine move 65.8, no practical value · end: no reply
+likely enough}) (5... Nc6 {10% of 14,020 games} 6. d4 {Prac 78.5 d5, engine
+65.8; O-O 68.5, Bb5 66.6 · transposes to 3... Nc6 4. Bxc4 e6 5. d4 Nf6 6. Nc3})
+6. d4 {Prac 67.3 d5, engine 54.8; O-O 67.3, e5 65.9, a3 63.1} 6... O-O {71% of
+189,633 games} 7. O-O {Prac 67.5 d3, engine 60.6; Qe2 65.6, Bd3 64.8, e5 64.2}
+7... a6 {25% of 108,661 games} 8. Qc2 {Prac 71.2 d3, engine 63.6; Bd3 69.0, e5
+68.7, a3 68.1} 8... b5 {76% of 627 games} 9. Bd3 {Prac 72.6 d3, engine 67.6;
+Bb3 54.7} 9... Bb7 {33% of 543 games} 10. e5 {Prac 77.0 d3, engine 76.3; a3
+66.5, Re1 64.0 · end: no reply likely enough}) (4... Nc6 {9% of 4,348 games}
+5. Nc3 {Prac 71.0 d5, engine 52.3; e5 69.5, d4 68.7, O-O 64.9} 5... e5 {48% of
+8,739 games} 6. Qb3 {Prac 68.9 d5, engine 51.3; Ng5 63.8, d3 59.7, O-O 59.0}
+6... Qe7 {50% of 1,259 games · transposes to 3... Nc6 4. Bxc4 e5 5. Qb3 Qe7
+6. Nc3 Nf6}) 5. Qa4+ {Prac 65.8 d5, engine 50.0; d4 56.0, O-O 55.7, Ne5 47.5}
+5... Bd7 {57% of 971 games} (5... Nc6 {22% of 971 games} 6. Bxf7+ {Prac 56.1
+d5, engine 50.0} 6... Kxf7 {100% of 203 games} 7. Qxe4 {Prac 56.1 d3, engine
+50.0} 7... e5 {25% of 203 games} 8. O-O {engine move 50.0, no practical value}
+8... Bd6 {78% of 18 games} 9. d3 {engine move 48.8, no practical value · end:
+few games (2)}) 6. Bxf7+ {Prac 68.5 d5, engine 63.6} 6... Kxf7 {100% of 544
+games} 7. Qxe4 {Prac 68.5 d3, engine 63.6} 7... Nc6 {40% of 511 games}
+(7... Bc6 {29% of 511 games} 8. Ne5+!? {Prac 67.7 d3, engine 61.7 (best Ng5+
+65.9)} 8... Ke8 {82% of 74 games} 9. Qg4 {engine move 65.6, no practical value
+· end: few games (3)}) 8. Ng5+?! {Prac 61.1 d3, engine 52.6 (best d4 67.2)}
+8... Ke8 {60% of 92 games} 9. O-O {engine move 63.6, no practical value · end:
+few games (6)}) (3... Bg4 {11% of 97,950 games} 4. Bxc4 {Prac 68.0 d5, engine
+50.1; Nc3 65.1, h3 51.9, Qa4+ 50.3} 4... e6 {43% of 10,675 games} (4... Nc6
+{17% of 10,675 games · transposes to 3... Nc6 4. Bxc4 Bg4}) (4... Bxf3 {15% of
+10,675 games} 5. Qxf3 {Prac 68.4 d5, engine 51.6} 5... e6 {80% of 1,484 games}
+6. Qb3 {Prac 62.8 d5, engine 51.7; Nc3 61.5, O-O 61.4} 6... b6 {65% of 92
+games} 7. d4 {engine move 64.1, no practical value · end: few games (5)})
+(4... e5 {11% of 10,675 games} 5. Qb3?! {Prac 87.7 d5, engine 70.7 (best Bxf7+
+82.4); Bxf7+ 85.0, Nc3 77.7} 5... Bxf3 {23% of 272 games} 6. Bxf7+ {Prac 100.0
+d3, engine 100.0} 6... Ke7 {76% of 55 games} 7. Qe6# {engine move 100.0, no
+practical value · end: few games (0)}) 5. Qb3!? {Prac 72.8 d5, engine 48.8
+(best Qa4+ 50.1); Nc3 61.5, d4 60.8, O-O 55.9} 5... b6 {46% of 1,549 games}
+(5... Qc8 {24% of 1,549 games} 6. Ne5 {Prac 70.6 d5, engine 68.3} 6... Bh5 {91%
+of 328 games} 7. d4!? {Prac 70.6 d3, engine 66.2 (best Qh3 70.7); g4 63.0}
+7... Bd6 {41% of 105 games} 8. Qh3 {engine move 77.2, no practical value · end:
+few games (0)}) 6. Ne5 {Prac 82.0 d5, engine 77.9} 6... Bh5 {80% of 597 games}
+7. Bb5+ {Prac 82.3 d3, engine 78.3} 7... Ke7 {61% of 339 games} 8. Bc6!? {Prac
+81.2 d3, engine 73.3 (best Qh3 78.3)} 8... Qd6 {34% of 99 games} 9. Bxa8
+{engine move 80.7, no practical value} 9... Qxe5 {97% of 32 games} 10. d4
+{engine move 88.3, no practical value · end: few games (1)}) (3... e6 {9% of
+97,950 games} 4. Bxc4 {Prac 64.0 d5, engine 51.3; Nc3 63.3} 4... Nf6 {38% of
+8,743 games · transposes to 3... Nf6 4. Bxc4 e6} (4... Nc6 {15% of 8,743 games
+· transposes to 3... Nc6 4. Bxc4 e6}) (4... a6 {8% of 8,743 games} 5. d4 {Prac
+66.2 d5, engine 60.7; O-O 65.4, Nc3 63.9, a4 61.0} 5... b5 {69% of 23,441
+games} 6. Bb3 {Prac 70.2 d5, engine 61.6; Bd3 62.5, Be2 54.5} 6... Bb7 {87% of
+8,933 games} 7. O-O {Prac 71.0 d3, engine 62.9; Nc3 66.3, d5 62.4, Qe2 60.1}
+7... Bxe4 {50% of 438 games} 8. Nc3 {Prac 84.7 d3, engine 66.2; Re1 75.3}
+8... Bb7 {90% of 106 games} 9. d5 {Prac 85.7 d3, engine 76.3} 9... exd5 {70% of
+57 games} 10. Nxd5 {engine move 87.4, no practical value · end: no reply with
+enough games}) (4... Bc5 {8% of 8,743 games} 5. d4 {Prac 68.4 d5, engine 65.1;
+Nc3 66.8, O-O 65.4} 5... Bb6 {56% of 376 games} 6. Nc3 {Prac 67.3 d5, engine
+64.9; O-O 66.6} 6... Ne7 {38% of 96 games} 7. O-O!? {Prac 64.0 d3, engine 62.5
+(best h4 65.6)} 7... O-O {73% of 105 games} 8. e5!? {Prac 63.7 d3, engine 56.5
+(best Na4 62.5) · end: no reply likely enough}) (4... c5 {7% of 8,743 games}
+5. d4 {Prac 62.4 d5, engine 51.4; Nc3 55.6, O-O 53.9} 5... cxd4 {76% of 18,393
+games} 6. Nxd4 {Prac 61.1 d5, engine 51.0; Qxd4 58.5, O-O 57.7, Bf4 52.6}
+6... Nf6 {22% of 6,259 games} 7. Nc3 {Prac 61.5 d3, engine 51.0; e5 58.3, O-O
+55.3, f3 52.8 · end: no reply likely enough}) (4... Be7 {7% of 8,743 games}
+5. O-O {Prac 66.4 d5, engine 55.0; Nc3 65.8, d4 65.6, e5 63.1} 5... Nf6 {73% of
+215 games} 6. Nc3 {Prac 67.3 d5, engine 55.1; d4 63.4, e5 63.0, d3 57.9}
+6... O-O {75% of 2,291 games} 7. d4 {Prac 67.5 d3, engine 60.6; Re1 65.7, e5
+64.1, d3 57.7 · transposes to 3... Nf6 4. Bxc4 e6 5. Nc3 Be7 6. d4 O-O
+7. O-O})) (3... e5 {5% of 97,950 games} 4. Bxc4 {Prac 66.1 d5, engine 52.3; Nc3
+63.3, Nxe5 59.2} 4... Nc6 {62% of 3,905 games · transposes to 3... Nc6 4. Bxc4
+e5} (4... Nf6 {12% of 3,905 games} 5. Nxe5 {Prac 76.9 d5, engine 61.8; Qb3
+74.5, O-O 64.8, d3 58.6} 5... Be6 {60% of 421 games} 6. Bxe6 {Prac 75.8 d5,
+engine 69.4} 6... fxe6 {100% of 183 games} 7. Qb3 {Prac 75.8 d3, engine 69.4;
+Nc3 70.7} 7... Qc8 {31% of 52 games} 8. O-O {engine move 69.4, no practical
+value · end: few games (3)}) (4... Bd6 {10% of 3,905 games} 5. d4 {Prac 68.2
+d1, engine 63.3; O-O 65.3, Qb3 61.4, Nc3 59.7} 5... exd4 {55% of 184 games}
+6. O-O {Prac 74.5 d5, engine 66.2; Qxd4 66.6, e5 58.0 · end: no reply likely
+enough})) (3... c5 {5% of 97,950 games} 4. Bxc4 {Prac 59.5 d5, engine 50.1; Nc3
+59.4, Na3 51.5} 4... Nc6 {76% of 4,554 games} (4... e6 {18% of 4,554 games ·
+transposes to 3... e6 4. Bxc4 c5}) 5. Nc3 {Prac 62.4 d5, engine 50.1; O-O 59.9,
+d3 59.0, b4 53.3} 5... e6 {40% of 4,577 games} (5... e5 {21% of 4,577 games}
+6. d3 {Prac 65.2 d5, engine 57.9; O-O 64.8, Qb3 64.2} 6... Nf6 {30% of 332
+games} 7. Ng5 {Prac 72.2 d3, engine 67.8; O-O 54.7} 7... Be6 {74% of 53 games}
+8. Nxe6 {engine move 67.8, no practical value} 8... fxe6 {100% of 19 games}
+9. Bxe6 {engine move 67.8, no practical value · end: no reply with enough
+games}) (5... Bg4 {18% of 4,577 games} 6. Qb3 {Prac 84.1 d5, engine 71.9; Bxf7+
+80.0, d3 61.3} 6... e6 {69% of 104 games} 7. Qxb7 {Prac 81.4 d3, engine 71.9}
+7... Rc8 {52% of 64 games} 8. Bb5 {engine move 83.1, no practical value}
+8... Qc7 {56% of 32 games} 9. Qxc6+ {engine move 92.0, no practical value ·
+end: few games (1)}) 6. Bb5 {Prac 55.7 d5, engine 50.1; O-O 54.6, d3 52.5, a3
+51.7} 6... Bd7 {79% of 5,098 games} 7. d4 {Prac 54.8 d3, engine 50.0; d3 52.4,
+O-O 51.9, Bxc6 51.3} 7... cxd4 {58% of 582 games} 8. Bxc6!? {Prac 53.5 d3,
+engine 48.8 (best Nxd4 50.0); Nxd4 52.4} 8... Bxc6 {80% of 55 games} 9. Nxd4
+{Prac 56.0 d3, engine 51.7; Qxd4 51.1} 9... Bb4 {25% of 291 games} 10. Nxc6
+{engine move 53.8, no practical value · end: no reply likely enough}) (3... Be6
+{5% of 97,950 games} 4. Ng5 {Prac 61.8 d5, engine 50.0; Qc2 61.3, Na3 60.9, Nc3
+60.3} 4... Qd7 {36% of 1,361 games} (4... Qd6 {24% of 1,361 games} 5. Nc3 {Prac
+63.2 d5, engine 55.2; Nxe6 54.5} 5... h6 {37% of 98 games} 6. Nb5 {engine move
+69.8, no practical value · end: few games (6)}) (4... Qd4 {14% of 1,361 games}
+5. Nc3 {Prac 62.6 d5, engine 55.5; Nxe6 51.9} 5... Nf6 {29% of 80 games}
+6. Nxe6 {Prac 55.4 d5, engine 55.3} 6... fxe6 {100% of 104 games} 7. Qa4+!?
+{Prac 53.0 d3, engine 49.3 (best d3 55.4)} 7... Nc6 {64% of 66 games} 8. Qxc4
+{Prac 54.2 d3, engine 48.9 · end: no reply likely enough}) (4... b5 {12% of
+1,361 games} 5. Nxe6 {Prac 77.6 d5, engine 73.3} 5... fxe6 {100% of 137 games}
+6. a4 {Prac 77.6 d5, engine 72.6; Qh5+ 76.0} 6... c6 {84% of 58 games} 7. Nc3?!
+{Prac 77.1 d3, engine 67.9 (best axb5 77.4)} 7... Qb6 {47% of 57 games} 8. axb5
+{engine move 79.5, no practical value} 8... cxb5 {100% of 21 games} 9. d3
+{engine move 80.4, no practical value · end: few games (2)}) 5. Nc3 {Prac 56.7
+d5, engine 50.0; Na3 56.6, Nxe6 54.8} 5... h6 {36% of 111 games} 6. Nxe6
+{engine move 54.5, no practical value} 6... Qxe6 {100% of 38 games} 7. Qa4+
+{Prac 60.9 d3, engine 53.9} 7... c6 {33% of 60 games} 8. Bxc4 {engine move
+64.8, no practical value · end: no reply with enough games}) 4. Bxc4 {Prac 67.4
+d5, engine 52.2; Nc3 63.9, Qa4 59.5, Na3 50.3} 4... e5 {52% of 21,444 games}
+(4... Bg4 {18% of 21,444 games} 5. Qb3 {Prac 86.9 d5, engine 68.3; Bxf7+ 70.3}
+5... e6 {66% of 1,045 games} (5... Bxf3 {15% of 1,045 games} 6. Bxf7+ {Prac
+100.0 d5, engine 100.0} 6... Kd7 {100% of 133 games} 7. Qe6# {engine move
+100.0, no practical value · end: few games (0)}) 6. Qxb7 {Prac 85.2 d5, engine
+70.9; Bb5 59.0} 6... Na5 {36% of 548 games} (6... Nge7 {35% of 548 games}
+7. Bb5 {Prac 90.9 d3, engine 83.6} 7... Rb8 {46% of 155 games} 8. Bxc6+ {Prac
+92.3 d3, engine 91.6} 8... Nxc6 {100% of 65 games} 9. Qxc6+ {Prac 92.3 d3,
+engine 91.6} 9... Qd7 {53% of 60 games} 10. Qxd7+ {engine move 92.9, no
+practical value} 10... Kxd7 {100% of 31 games} 11. Ne5+ {engine move 92.9, no
+practical value · end: few games (8)}) 7. Bb5+ {Prac 79.8 d3, engine 71.6}
+7... c6 {54% of 149 games} 8. Bxc6+ {Prac 84.4 d3, engine 84.2} 8... Nxc6 {100%
+of 81 games} 9. Qxc6+ {Prac 84.4 d3, engine 84.2} 9... Ke7 {99% of 115 games}
+10. Ne5!? {Prac 88.0 d3, engine 80.8 (best Qc5+ 84.2)} 10... Rc8 {49% of 59
+games} 11. b3 {engine move 92.3, no practical value · end: few games (0)})
+(4... e6 {17% of 21,444 games} 5. d4 {Prac 68.4 d5, engine 65.7; Nc3 67.4, O-O
+66.9, a3 63.7} 5... Nf6 {43% of 49,924 games} (5... Bb4+ {33% of 49,924 games}
+6. Nc3 {Prac 75.9 d5, engine 65.8; Bd2 63.8, Nbd2 58.6} 6... Nf6 {49% of 62,481
+games · transposes to 3... Nc6 4. Bxc4 e6 5. d4 Nf6 6. Nc3 Bb4}) 6. Nc3 {Prac
+78.5 d5, engine 65.8; Bd3 74.6} 6... Bb4 {73% of 97,828 games} 7. Bd3 {Prac
+81.5 d3, engine 65.5; Qd3 68.6, O-O 67.9, d5 67.7} 7... O-O {47% of 10,109
+games} (7... Nxd4 {32% of 10,109 games} 8. Nxd4 {Prac 89.4 d3, engine 83.6; O-O
+52.1} 8... Qxd4 {66% of 3,346 games} 9. Bb5+ {Prac 91.5 d3, engine 88.9; O-O
+50.1} 9... c6 {39% of 1,616 games} 10. Qxd4 {Prac 93.5 d3, engine 93.0; Bxc6+
+91.5} 10... Bxc3+ {79% of 443 games} 11. bxc3 {Prac 93.1 d3, engine 93.0; Qxc3
+92.8} 11... cxb5 {97% of 211 games} 12. Ba3!? {Prac 95.7 d3, engine 92.0 (best
+Qc5 95.9)} 12... Bd7 {87% of 120 games} 13. c4 {engine move 97.0, no practical
+value · end: few games (1)}) 8. e5 {Prac 81.3 d3, engine 73.4; Bc2 68.1, h4
+56.6} 8... Nd5 {94% of 3,317 games} 9. Bxh7+ {Prac 83.5 d3, engine 80.6; O-O
+79.5, Bd2 74.3} 9... Kxh7 {72% of 1,966 games} 10. Ng5+ {Prac 88.9 d3, engine
+80.6} 10... Kg6 {59% of 1,412 games} 11. h4 {Prac 90.7 d3, engine 83.6; Qg4
+78.6, Qd3+ 78.4} 11... Nxc3 {57% of 499 games} 12. bxc3!? {Prac 91.7 d3, engine
+83.2 (best h5+ 87.0); h5+ 90.1} 12... Bxc3+ {100% of 98 games} 13. Kf1 {Prac
+91.9 d3, engine 83.2} 13... Qxd4 {63% of 99 games} 14. h5+ {Prac 90.9 d3,
+engine 90.6} 14... Kf5 {95% of 60 games} 15. Qc2+ {engine move 90.6, no
+practical value} 15... Kxe5 {76% of 34 games} 16. Nf3+ {engine move 90.6, no
+practical value · end: no reply with enough games}) 5. Qb3 {Prac 68.7 d5,
+engine 51.7; O-O 67.7, Nc3 66.1, d3 60.6} 5... Qe7 {41% of 2,105 games}
+(5... Qf6 {21% of 2,105 games} 6. Nc3 {Prac 71.5 d5, engine 51.8; d3 61.6, d4
+58.1} 6... Nge7 {25% of 197 games} 7. Nb5 {engine move 79.2, no practical value
+· end: no reply with enough games}) (5... Nh6 {18% of 2,105 games} 6. d4!?
+{Prac 72.4 d5, engine 55.7 (best O-O 59.5); d3 63.7} 6... Na5 {42% of 141
+games} 7. Qb5+ {engine move 75.0, no practical value} 7... c6 {73% of 15 games}
+8. Qxe5+ {engine move 80.2, no practical value · end: no reply with enough
+games}) 6. Nc3 {Prac 74.2 d5, engine 63.0; O-O 73.3, d3 68.4} 6... Nf6 {43% of
+437 games} (6... Na5 {25% of 437 games} 7. Qa4+!? {Prac 75.3 d3, engine 67.1
+(best Qb5+ 72.1)} 7... Nc6 {95% of 79 games} 8. Nd5 {Prac 74.4 d3, engine 67.1;
+Qb3 74.2} 8... Qd6 {42% of 69 games} 9. d4 {engine move 75.5, no practical
+value · end: no reply with enough games}) 7. O-O {Prac 74.4 d3, engine 63.4; d3
+68.6, Nd5 66.3} 7... Na5 {25% of 204 games} 8. Qa4+ {engine move 72.3, no
+practical value} 8... Nc6 {97% of 34 games} 9. Nb5 {engine move 72.3, no
+practical value · end: few games (0)} *

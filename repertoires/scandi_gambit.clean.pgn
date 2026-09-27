@@ -1,0 +1,34 @@
+[Event "Practical repertoire"]
+[Site "repgen"]
+[Date "2026.09.27"]
+[White "Lichess"]
+[Black "Repertoire"]
+[Result "*"]
+
+1. e4 d5 2. exd5 c6 3. dxc6 Nxc6 4. Nf3 {49%} (4. Nc3 {19%} 4... Nf6 5. Nf3
+{52%} (5. Bb5 {23%} 5... e5 {Nf3 transposes into 5. Nf3 e5 6. Bb5} 6. Bxc6+
+{28%} (6. d3 {28%} 6... Bb4 7. Bd2 O-O 8. Nf3 Bg4) 6... bxc6 7. d3 Bc5!? 8. Nf3
+O-O) (5. d3 {7%} 5... e5 {Nf3 transposes into 4. Nf3 e5 5. d3 Nf6 6. Nc3})
+5... e5 {d3 transposes into 4. Nf3 e5 5. d3 Nf6 6. Nc3} 6. Bb5 Bd6 7. O-O {44%}
+(7. d3 {25%} 7... O-O!? 8. Bg5 Nd4 9. Nxd4 exd4 10. Ne4 Qa5+ 11. Qd2 Qxb5)
+7... O-O 8. d3 {33%} (8. Re1 {31%} 8... Nd4 9. Nxd4 exd4 10. Ne4 Nxe4 11. Rxe4
+Bf5 12. Re1 Qa5) 8... Nd4 9. Nxd4 exd4 10. Ne4 a6 11. Bc4 Nxe4 12. dxe4 Bxh2+
+13. Kxh2 Qc7+ 14. Kg1 Qxc4) (4. Bb5 {17%} 4... Qd5 5. Bxc6+ Qxc6 6. Nf3 Bg4
+7. O-O {27%} (7. d3 {23%} 7... e6 8. Nbd2 {41%} (8. Be3 {25%} 8... Bd6 9. Nbd2
+Ne7) 8... Bd6 9. O-O Nf6 10. h3 Bh5) (7. Nc3 {22%} 7... e6 8. d3 Nf6 9. Be3 Bb4
+10. Bd2 Rc8) 7... e6 8. d3 {29%} (8. d4 {26%} 8... Bd6 9. Nbd2 Nf6) 8... Bd6
+9. Be3 Bh5) (4. d4 {3%} 4... e5!? 5. d5 {62%} (5. dxe5 {28%} 5... Qxd1+ 6. Kxd1
+Bg4+ 7. f3 O-O-O+ 8. Bd3 Bf5) 5... Nb4?! 6. c4 Bf5 7. Na3 Nf6 8. Nf3 Bc5 9. Be2
+Qb6 10. O-O Ng4) (4. c3 {3%} 4... e5 5. Bb5 {36%} (5. d3 {24%} 5... Nf6 6. Nf3
+Bf5 7. Be2 Qc7) 5... Qd5 6. Bxc6+ bxc6 7. Qf3 e4 8. Qe2 Nf6) (4. d3 {3%}
+4... e5 {Nf3 transposes into 4. Nf3 e5 5. d3} 5. Nc3 f5 6. Nf3 Nf6 7. Bg5 h6!?
+8. Bxf6 Qxf6) 4... e5 5. Bb5 {36%} (5. d3 {34%} 5... Nf6 6. Be2 {54%} (6. Nc3
+{25%} 6... Bf5 7. Be2 {52%} (7. Bg5 {31%} 7... h6 8. Bh4 g5 9. Bg3 Nd5)
+7... Qc7 8. O-O a6 9. Bg5 O-O-O 10. a3 h6) 6... Be7 7. O-O O-O 8. Nc3 h6 9. h3
+Qc7 10. Be3 a6 11. Ne4 Nd5) (5. Nc3 {13%} 5... Nf6 {Transposes into 4. Nc3 Nf6
+5. Nf3 e5}) 5... Bd6 6. O-O {42%} (6. d4 {15%} 6... e4 7. Ne5 Ne7 8. O-O O-O
+9. Nxc6 Nxc6!?) (6. Bxc6+ {14%} 6... bxc6 7. O-O Ne7 8. Re1 O-O 9. Nxe5 Ng6
+10. Nxg6 fxg6) 6... Ne7 7. d4 {38%} (7. Re1 {37%} 7... O-O 8. Nc3 {29%} (8. d3
+{28%} 8... Bg4 9. h3 Bxf3 10. Qxf3 Nd4 11. Qxb7 Rb8 12. Qxa7 Rxb5) 8... Bg4!?
+9. h3 Bxf3 10. Qxf3 Nd4 11. Qd1 Rc8 12. Ba4 Ng6) 7... exd4 8. Nxd4 O-O 9. Nxc6
+Nxc6 10. Nc3 Bf5 11. Bd3 Bxd3 12. Qxd3 Nb4 13. Qd1 Be5 *

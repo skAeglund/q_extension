@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Qchess Transpositions</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <span class="glyph">&#8644;</span>
+    <h1>Transpositions</h1>
+  </header>
+
+  <p id="status" class="status">Checking page&hellip;</p>
+
+  <ul id="stats" class="stats" hidden>
+    <li><b id="stat-groups">0</b><span>positions</span></li>
+    <li><b id="stat-marked">0</b><span>moves marked</span></li>
+    <li><b id="stat-you">&mdash;</b><span>you play</span></li>
+  </ul>
+
+  <div class="options">
+    <label>
+      <input type="checkbox" id="opt-enabled">
+      <span><b>Show transposition markers</b></span>
+    </label>
+    <label>
+      <input type="checkbox" id="opt-outline">
+      <span><b>Outline transposing moves</b><small>Dashed border, colour-matched per position.</small></span>
+    </label>
+    <label>
+      <input type="checkbox" id="opt-minBadge">
+      <span><b>Compact badges</b><small>Hide the count, show only the arrow glyph.</small></span>
+    </label>
+    <label>
+      <input type="checkbox" id="opt-sides">
+      <span><b>Mark your own branches</b><small id="side-note">Bright left bar on variations
+      that start with your move, faint on the opponent&rsquo;s.</small></span>
+    </label>
+  </div>
+
+  <section class="pe">
+    <h2>Practical eval</h2>
+    <div class="options">
+      <label>
+        <input type="checkbox" id="opt-peEnabled">
+        <span><b>Show the Practical column</b><small>In the explorer table: your expected
+        score when each reply is weighted by how often Lichess players play it.</small></span>
+      </label>
+    </div>
+
+    <div class="field">
+      <span class="field-label">Lichess token</span>
+      <div class="row">
+        <input type="password" id="pe-token" autocomplete="off" spellcheck="false"
+               placeholder="lip_…">
+        <button type="button" id="pe-save">Save</button>
+        <button type="button" id="pe-test">Test</button>
+      </div>
+      <small id="pe-token-note" class="note">Only the extension's background worker reads it;
+      it never reaches the page.</small>
+    </div>
+
+    <div class="options">
+      <label>
+        <input type="checkbox" id="opt-peUseSiteToken">
+        <span><b>Use Qchess's Lichess connection</b><small>When no token is saved here,
+        use the one Qchess keeps after "Connect Lichess".</small></span>
+      </label>
+      <label>
+        <input type="checkbox" id="opt-peFollowPanel">
+        <span><b>Follow the panel's Lichess filter</b><small>Otherwise use the speeds and
+        ratings below.</small></span>
+      </label>
+      <label>
+        <input type="checkbox" id="opt-peMaia">
+        <span><b>Maia where games are few</b><small>Under 100 games, Maia's predictions fill
+        in (shown purple). Needs Qchess's Maia model, downloaded once by turning Maia
+        on.</small></span>
+      </label>
+    </div>
+
+    <h3>Prepared score</h3>
+    <div class="options">
+      <label>
+        <input type="checkbox" id="opt-prepEnabled">
+        <span><b>Compute prepared scores</b><small>The same search, measured by game results:
+        as if you play the Practical choice at each of your moves.</small></span>
+      </label>
+      <label>
+        <input type="checkbox" id="opt-prepBar">
+        <span><b>Score column shows prepared results</b><small>Instead of the panel's own.
+        Also switched by clicking the Score header.</small></span>
+      </label>
+    </div>
+
+    <div class="grid2">
+      <label class="field"><span class="field-label">Speeds</span>
+        <input type="text" id="num-peSpeeds" data-kind="text"></label>
+      <label class="field"><span class="field-label">Ratings</span>
+        <input type="text" id="num-peRatings" data-kind="text"></label>
+    </div>
+
+    <details>
+      <summary>Advanced</summary>
+      <div class="grid2">
+        <label class="field"><span class="field-label">Rows computed from (%)</span>
+          <input type="number" id="num-rowThreshold" min="0" max="100" step="0.5"></label>
+        <label class="field"><span class="field-label">Replies expanded from (%)</span>
+          <input type="number" id="num-replyThreshold" min="0" max="100" step="0.5"></label>
+        <label class="field"><span class="field-label">Min. games (without Maia)</span>
+          <input type="number" id="num-minGames" min="0" step="10"></label>
+        <label class="field"><span class="field-label">Lichess requests / min</span>
+          <input type="number" id="num-peRatePerMin" min="1" max="18" step="1"></label>
+        <label class="field"><span class="field-label">Lines followed to (% reach)</span>
+          <input type="number" id="num-reachFloor" min="0" max="100" step="0.5"></label>
+        <label class="field"><span class="field-label">Max. depth (plies)</span>
+          <input type="number" id="num-maxPly" min="2" max="12" step="2"></label>
+        <label class="field"><span class="field-label">Your moves within (points)</span>
+          <input type="number" id="num-ownMargin" min="0" max="50" step="1"></label>
+        <label class="field"><span class="field-label">Your moves compared (max.)</span>
+          <input type="number" id="num-ownMaxCandidates" min="1" max="5" step="1"></label>
+        <label class="field"><span class="field-label">Requests per position</span>
+          <input type="number" id="num-peRequestBudget" min="0" max="500" step="10"></label>
+        <label class="field"><span class="field-label">Maia under (games)</span>
+          <input type="number" id="num-maiaUntil" min="0" max="10000" step="10"></label>
+        <label class="field"><span class="field-label">Maia alone under (games)</span>
+          <input type="number" id="num-maiaOnlyBelow" min="0" max="1000" step="1"></label>
+        <label class="field"><span class="field-label">Maia weight (games)</span>
+          <input type="number" id="num-maiaWeight" min="0" max="200" step="5"></label>
+        <label class="field"><span class="field-label">Prepared: trust in Practical (games)</span>
+          <input type="number" id="num-prepPriorGames" min="0" max="10000" step="10"></label>
+      </div>
+    </details>
+
+    <p id="pe-stats" class="note">&nbsp;</p>
+  </section>
+
+  <footer>Click a <span class="glyph small">&#8644;</span> badge in the move list to jump between
+  move orders. Only the chapter you have open is searched.</footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+07:43:43 repgen: Black from r1bqkbnr/pp2pppp/2n5/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 4 (e4 d5 exd5 c6 dxc6 Nxc6); Lichess blitz,rapid,classical / 1800,2000,2200.
+07:43:43 Opp  [100.00%] (start): Nf3 49%, Nc3 19%, Bb5 17%, d4 3%, c3 3%, d3 3% of 1160201 games
+07:44:26 Me   [48.72%] 4.Nf3: e5 (Prac 49.0 d1; Qc7 41.5, g5 40.4, Nf6 44.5; 0m42s, 14 requests)
+07:44:26 Opp  [48.72%] 4.Nf3 e5: Bb5 36%, d3 34%, Nc3 13% of 314651 games
+07:44:37 Retry [18.57%] 4.Nc3: fetch failed
+07:44:59 Retry [17.71%] 4.Nf3 e5 5.Bb5: fetch failed
+07:49:12 Me   [16.63%] 4.Bb5: Qd5 (Prac 51.3 d3; e5 48.8, Qc7 47.1, g5 41.1, Nf6 46.4, Bd7 45.6; 4m04s, 68 requests)
+07:49:33 Retry [18.57%] 4.Nc3: fetch failed
+07:49:55 Me   [17.71%] 4.Nf3 e5 5.Bb5: Bd6 (Prac 48.6 d1; 0m22s, 2 requests)
+07:49:55 Opp  [17.71%] 4.Nf3 e5 5.Bb5 Bd6: O-O 42%, d4 15%, Bxc6+ 14% of 69317 games
+07:49:55 Opp  [16.63%] 4.Bb5 Qd5: Bxc6+ 84% of 16585 games
+07:54:55 Me   [16.32%] 4.Nf3 e5 5.d3: Nf6 (Prac 50.5 d5; Bf5 48.7, h6 47.7, h5 42.0, Be7 48.3, Nge7 46.8; 5m00s, 82 requests)
+08:00:42 Me   [18.57%] 4.Nc3: Nf6 (Prac 48.3 d3; a6 46.2, e5 48.2, Qc7 43.8, Bf5 45.5; 5m46s, 86 requests)
+08:00:42 Opp  [18.57%] 4.Nc3 Nf6: Nf3 52%, Bb5 23%, d3 7% of 417277 games
+08:00:42 Opp  [16.32%] 4.Nf3 e5 5.d3 Nf6: Be2 54%, Nc3 25% of 26406 games
+08:01:11 Me   [14.03%] 4.Bb5 Qd5 5.Bxc6+: Qxc6 (Prac 50.1 d3; 0m28s, 9 requests)
+08:01:11 Opp  [14.03%] 4.Bb5 Qd5 5.Bxc6+ Qxc6: Nf3 73% of 24882 games
+08:07:27 Me   [10.18%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3: Bg4 (Prac 48.1 d5; e6 46.1, f6 43.0, Nf6 46.8; 6m11s, 93 requests)
+08:07:27 Opp  [10.18%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4: O-O 27%, d3 23%, Nc3 22% of 16076 games
+08:09:19 Me   [9.62%] 4.Nc3 Nf6 5.Nf3: e5 (Prac 48.1 d1; a6 45.4, Qc7 43.6, Ng4 35.1, Bg4 44.1; 1m47s, 23 requests)
+08:09:19 Opp  [9.62%] 4.Nc3 Nf6 5.Nf3 e5: Bb5 41%, d3 36% of 156526 games
+08:11:43 Me   [8.77%] 4.Nf3 e5 5.d3 Nf6 6.Be2: Be7 (Prac 48.3 d3; Bf5 48.0, Qc7 48.3, Nd5 40.0, Bc5 49.1, Bd6 48.5; 2m23s, 39 requests)
+08:11:43 Opp  [8.77%] 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7: O-O 73% of 1725 games
+08:13:26 Me   [7.55%] 4.Nf3 e5 5.d3 Nf6 6.Nc3: Bf5 (Prac 49.5 d3; h6 48.9, Be7 48.7, Qb6 49.2, Qc7 48.8, Nd4 43.7; 1m39s, 24 requests)
+08:13:26 Opp  [7.55%] 4.Nf3 e5 5.d3 Nf6 6.Nc3 Bf5: Be2 52%, Bg5 31% of 4914 games
+08:13:58 Me   [7.52%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O: Ne7 (Prac 48.7 d1; 0m31s, 3 requests)
+08:13:58 Opp  [7.52%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7: d4 38%, Re1 37% of 17841 games
+08:15:59 Me   [6.44%] 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O: O-O (Prac 48.5 d3; Bf5 48.0, Qc7 48.1, Be6 46.4, h6 47.7; 2m00s, 34 requests)
+08:15:59 Opp  [6.44%] 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O: Nc3 54% of 1085 games
+08:19:03 Me   [6.32%] 4.Nf3 e5 5.Nc3: Nf6 (Prac 48.7 d3; Bc5 48.0, Qe7 31.1, g6 43.8, Bd6 47.0; 2m59s, 44 requests)
+08:19:36 Me   [4.25%] 4.Nc3 Nf6 5.Bb5: e5 (Prac 47.9 d1; Qc7 45.4, Bd7 45.6; 0m32s, 3 requests)
+08:19:36 Opp  [4.25%] 4.Nc3 Nf6 5.Bb5 e5: Bxc6+ 28%, d3 28%, Nf3 24% of 56224 games
+08:23:51 Me   [4.99%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5: Bd6 (Prac 50.7 d5; h6 41.3, Qc7 44.8, Bc5 48.2; 4m15s, 68 requests)
+08:23:51 Opp  [4.99%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6: O-O 44%, d3 25% of 34752 games
+08:25:23 Me   [3.96%] 4.Nf3 e5 5.d3 Nf6 6.Nc3 Bf5 7.Be2: Qc7 (Prac 48.1 d3; Bb4 47.5, Be7 48.0, h6 47.9, Bc5 46.9, Bd6 48.0; 1m27s, 22 requests)
+08:25:23 Opp  [3.96%] 4.Nf3 e5 5.d3 Nf6 6.Nc3 Bf5 7.Be2 Qc7: O-O 59% of 289 games
+08:26:35 Me   [3.46%] 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O 8.Nc3: h6 (Prac 48.3 d1; Qc7 48.1, Bf5 48.1, Qb6 49.0, a6 47.1, Bg4 46.2; 1m08s, 16 requests)
+08:26:35 Opp  [3.46%] 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O 8.Nc3 h6: h3 34% of 639 games
+08:28:21 Me   [2.92%] 4.d4: e5!? (Prac 48.3 d1; Nxd4 48.7, h6 37.6, Bg4 41.3, Nf6 45.7; 1m42s, 24 requests)
+08:28:21 Opp  [2.92%] 4.d4 e5: d5 62%, dxe5 28% of 10814 games
+08:28:43 Me   [2.83%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.d4: exd4 (Prac 48.8 d1; e4 44.0, O-O 43.2; 0m21s, 3 requests)
+08:28:43 Opp  [2.83%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.d4 exd4: Nxd4 91% of 5041 games
+08:28:54 Retry [2.82%] 4.c3: fetch failed
+08:29:05 Retry [2.77%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1: fetch failed
+08:29:29 Me   [2.76%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.O-O: e6 (Prac 47.4 d1; Bxf3 45.7, g5 44.9, Rc8 46.1, Nf6 45.9; 0m24s, 3 requests)
+08:29:29 Opp  [2.76%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.O-O e6: d3 29%, d4 26% of 595 games
+08:30:13 Me   [2.68%] 4.d3: e5 (Prac 48.8 d1; Nf6 48.7, h6 47.8, h5 39.8, a6 45.4, Bf5 47.9; 0m43s, 20 requests)
+08:34:57 Me   [2.82%] 4.c3: e5 (Prac 56.8 d5; Nf6 50.7, h6 38.4, Qc7 43.5, Bf5 46.5; 4m43s, 72 requests)
+08:34:57 Opp  [2.82%] 4.c3 e5: Bb5 36%, d3 24% of 20900 games
+08:36:01 Me   [2.77%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1: O-O (Prac 56.9 d3; Bg4 51.8, Ng6 40.6; 1m03s, 16 requests)
+08:36:01 Opp  [2.77%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O: Nc3 29%, d3 28% of 5652 games
+08:36:01 Opp  [2.68%] 4.d3 e5: Nf3 34%, Nc3 31% of 29811 games
+08:36:27 Me   [2.68%] 4.Nf3 e5 5.Bb5 Bd6 6.d4: e4 (Prac 49.2 d1; 0m22s, 2 requests)
+08:36:27 Opp  [2.68%] 4.Nf3 e5 5.Bb5 Bd6 6.d4 e4: Ne5 37% of 4601 games
+08:36:38 Retry [2.56%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.d4 exd4 8.Nxd4: fetch failed
+08:36:49 Me   [2.51%] 4.Nf3 e5 5.Bb5 Bd6 6.Bxc6+: bxc6 (Prac 48.8 d1; 0m10s, 0 requests)
+08:36:49 Opp  [2.51%] 4.Nf3 e5 5.Bb5 Bd6 6.Bxc6+ bxc6: O-O 54% of 13029 games
+08:38:13 Me   [2.36%] 4.Nf3 e5 5.d3 Nf6 6.Nc3 Bf5 7.Bg5: h6 (Prac 52.8 d3; Bb4 50.7, Qc7 51.1, Be7 49.0, Bc5 49.9; 1m24s, 27 requests)
+08:39:45 Me   [2.56%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.d4 exd4 8.Nxd4: O-O (Prac 53.5 d3; Qc7 46.7, Bd7 46.0; 1m31s, 23 requests)
+08:39:45 Opp  [2.56%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.d4 exd4 8.Nxd4 O-O: Nxc6 72% of 6477 games
+08:39:45 Opp  [2.36%] 4.Nf3 e5 5.d3 Nf6 6.Nc3 Bf5 7.Bg5 h6: Bh4 59% of 178 games
+08:41:13 Me   [2.35%] 4.Nf3 e5 5.d3 Nf6 6.Nc3 Bf5 7.Be2 Qc7 8.O-O: a6 (Prac 49.4 d3; Rd8 48.1, Be7 43.5, O-O-O 48.1; 1m24s, 21 requests)
+08:41:13 Opp  [2.35%] 4.Nf3 e5 5.d3 Nf6 6.Nc3 Bf5 7.Be2 Qc7 8.O-O a6: Bg5 49% of 111 games
+08:41:42 Me   [2.34%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.d3: e6 (Prac 47.0 d1; Bh5 44.4, Nf6 45.0, f6 44.3, e5 44.0; 0m25s, 5 requests)
+08:41:43 Opp  [2.34%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.d3 e6: Nbd2 41%, Be3 25% of 372 games
+08:43:43 Me   [2.22%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.Nc3: e6 (Prac 47.7 d1; Nf6 47.2, Qe6+ 42.8, Nh6 42.2; 2m00s, 6 requests)
+08:43:43 Opp  [2.22%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.Nc3 e6: d3 39% of 601 games
+08:44:00 Me   [2.17%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O: O-O (Prac 50.8 d3; e4 47.5, h6 46.8; 0m18s, 9 requests)
+08:44:00 Opp  [2.17%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O: d3 33%, Re1 31% of 12376 games
+08:44:35 Me   [1.85%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.d4 exd4 8.Nxd4 O-O 9.Nxc6: Nxc6 (Prac 49.2 d1; bxc6 47.1; 0m34s, 8 requests)
+08:44:35 Opp  [1.85%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.d4 exd4 8.Nxd4 O-O 9.Nxc6 Nxc6: Nc3 49% of 1944 games
+08:47:41 Me   [1.82%] 4.d4 e5 5.d5: Nb4?! (Prac 59.4 d5; Bc5 51.8, Nb8 37.3; 3m04s, 46 requests)
+08:47:41 Opp  [1.82%] 4.d4 e5 5.d5 Nb4: c4 52% of 1476 games
+08:47:57 Me   [1.39%] 4.Nf3 e5 5.d3 Nf6 6.Nc3 Bf5 7.Bg5 h6 8.Bh4: g5 (Prac 52.2 few games; Bb4 51.6, Qb6 51.4, Be7 48.0; 0m12s, 3 requests)
+08:47:57 Opp  [1.39%] 4.Nf3 e5 5.d3 Nf6 6.Nc3 Bf5 7.Bg5 h6 8.Bh4 g5: Bg3 100% of 46 games
+08:48:17 Me   [1.39%] 4.Nf3 e5 5.d3 Nf6 6.Nc3 Bf5 7.Bg5 h6 8.Bh4 g5 9.Bg3: Nd5 (Prac 52.5 few games; Bb4 51.7, Qe7 51.4, Bd6 48.8; 0m16s, 4 requests)
+08:49:52 Me   [1.35%] 4.Nf3 e5 5.Bb5 Bd6 6.Bxc6+ bxc6 7.O-O: Ne7 (Prac 49.2 d1; Bg4 45.9, Nf6 48.7, e4 48.9, Be6 34.4, f5 40.0; 1m31s, 21 requests)
+08:49:52 Opp  [1.35%] 4.Nf3 e5 5.Bb5 Bd6 6.Bxc6+ bxc6 7.O-O Ne7: Re1 46% of 3382 games
+08:50:19 Me   [1.27%] 4.Nc3 Nf6 5.d3: e5 (Prac 50.2 d1; h6 48.7, Bf5 48.9, Qc7 47.6; 0m27s, 5 requests)
+08:50:19 Opp  [1.27%] 4.Nc3 Nf6 5.d3 e5: Nf3 32% of 31320 games
+08:50:57 Me   [1.26%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.d3: O-O!? (Prac 53.7 d3; h6 48.5, Bg4 47.6; 0m38s, 11 requests)
+08:50:57 Opp  [1.26%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.d3 O-O: Bg5 40% of 5731 games
+08:51:31 Me   [1.18%] 4.Nc3 Nf6 5.Bb5 e5 6.Bxc6+: bxc6 (Prac 49.5 d3; 0m31s, 15 requests)
+08:51:31 Opp  [1.18%] 4.Nc3 Nf6 5.Bb5 e5 6.Bxc6+ bxc6: d3 42% of 17899 games
+08:52:57 Me   [1.18%] 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O 8.Nc3 h6 9.h3: Qc7 (Prac 48.2 few games; Qb6 47.5, Bf5 48.3, Re8 45.8, a6 48.8, Be6 47.8; 1m24s, 21 requests)
+08:52:57 Opp  [1.18%] 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O 8.Nc3 h6 9.h3 Qc7: Be3 54% of 28 games
+08:53:34 Me   [1.18%] 4.Nc3 Nf6 5.Bb5 e5 6.d3: Bb4 (Prac 47.7 d1; Qc7 44.8; 0m33s, 4 requests)
+08:53:34 Opp  [1.18%] 4.Nc3 Nf6 5.Bb5 e5 6.d3 Bb4: Bd2 52% of 1962 games
+08:54:47 Me   [1.14%] 4.Nf3 e5 5.d3 Nf6 6.Nc3 Bf5 7.Be2 Qc7 8.O-O a6 9.Bg5: O-O-O (Prac 51.4 d1; Rd8 43.9, Be7 41.4, Bd6 41.6; 1m12s, 21 requests)
+08:54:47 Opp  [1.14%] 4.Nf3 e5 5.d3 Nf6 6.Nc3 Bf5 7.Be2 Qc7 8.O-O a6 9.Bg5 O-O-O: a3 16% of 86 games
+08:55:23 Me   [1.01%] 4.c3 e5 5.Bb5: Qd5 (Prac 54.7 d1; Nf6 50.4, Bd6 49.4, Qc7 46.7, Bc5 49.5, Bd7 46.8; 0m35s, 7 requests)
+08:55:23 Opp  [1.01%] 4.c3 e5 5.Bb5 Qd5: Bxc6+ 87% of 548 games
+08:57:10 Me   [0.98%] 4.Nf3 e5 5.Bb5 Bd6 6.d4 e4 7.Ne5: Ne7 (Prac 49.6 d3; Qa5+ 33.5; 1m46s, 9 requests)
+08:57:10 Opp  [0.98%] 4.Nf3 e5 5.Bb5 Bd6 6.d4 e4 7.Ne5 Ne7: O-O 38% of 782 games
+08:57:32 Me   [0.96%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.d3 e6 8.Nbd2: Bd6 (Prac 46.0 few games; Bh5 44.3, Nf6 46.9, Bb4 40.0, Rc8 42.1, Bc5 42.5; 0m22s, 9 requests)
+08:57:32 Opp  [0.96%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.d3 e6 8.Nbd2 Bd6: O-O 42% of 36 games
+08:58:36 Me   [0.94%] 4.d4 e5 5.d5 Nb4 6.c4: Bf5 (Prac 71.0 d5; Bc5 54.0, b5 27.4; 1m00s, 15 requests)
+08:58:36 Opp  [0.94%] 4.d4 e5 5.d5 Nb4 6.c4 Bf5: Na3 73% of 388 games
+08:59:11 Me   [0.90%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.d4 exd4 8.Nxd4 O-O 9.Nxc6 Nxc6 10.Nc3: Bf5 (Prac 49.1 d1; Be5 47.7, Re8 46.0, Be6 48.1, Nd4 43.0, Qc7 45.1; 0m32s, 5 requests)
+08:59:11 Opp  [0.90%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.d4 exd4 8.Nxd4 O-O 9.Nxc6 Nxc6 10.Nc3 Bf5: Bd3 35% of 257 games
+08:59:33 Me   [0.88%] 4.c3 e5 5.Bb5 Qd5 6.Bxc6+: bxc6 (Prac 57.7 d1; 0m21s, 1 requests)
+08:59:33 Opp  [0.88%] 4.c3 e5 5.Bb5 Qd5 6.Bxc6+ bxc6: Qf3 56% of 189 games
+09:00:06 Me   [0.87%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.Nc3 e6 8.d3: Nf6 (Prac 48.1 d1; 0m32s, 3 requests)
+09:00:06 Opp  [0.87%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.Nc3 e6 8.d3 Nf6: Be3 27% of 868 games
+09:00:48 Me   [0.84%] 4.d3 e5 5.Nc3: f5 (Prac 50.5 d1; Nf6 50.2, h6 48.6; 0m41s, 3 requests)
+09:00:48 Opp  [0.84%] 4.d3 e5 5.Nc3 f5: Nf3 37% of 4034 games
+09:02:32 Me   [0.81%] 4.d4 e5 5.dxe5: Qxd1+ (Prac 49.9 d5; Qc7 38.5, Qb6 42.8; 1m43s, 33 requests)
+09:02:32 Opp  [0.81%] 4.d4 e5 5.dxe5 Qxd1+: Kxd1 100% of 2586 games
+09:05:13 Me   [0.81%] 4.d4 e5 5.dxe5 Qxd1+ 6.Kxd1: Bg4+ (Prac 49.9 d3; Nge7 43.0, Bc5 44.8, Bf5 48.3, Nxe5 46.2; 2m37s, 39 requests)
+09:05:13 Opp  [0.81%] 4.d4 e5 5.dxe5 Qxd1+ 6.Kxd1 Bg4+: f3 60% of 117 games
+09:06:48 Me   [0.81%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.Nc3: Bg4!? (Prac 53.1 d3; a6 51.8, Ng6 47.0, f5 46.1; 1m32s, 23 requests)
+09:06:48 Opp  [0.81%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.Nc3 Bg4: h3 63% of 1489 games
+09:07:56 Me   [0.79%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.O-O e6 8.d3: Bd6 (Prac 46.7 d3; Bxf3 46.6, Rc8 44.3, Nf6 46.3, Bc5 42.5; 1m04s, 16 requests)
+09:07:56 Opp  [0.79%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.O-O e6 8.d3 Bd6: Be3 32% of 56 games
+09:09:56 Me   [0.78%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.d3: Bg4 (Prac 66.8 d3; a6 49.5, h6 51.4, f6 46.9, Ng6 46.3; 1m55s, 29 requests)
+09:09:56 Opp  [0.78%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.d3 Bg4: h3 45% of 1199 games
+09:11:28 Me   [0.72%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.O-O e6 8.d4: Bd6 (Prac 47.2 d3; Bxf3 44.5, a6 44.5, Nf6 47.5, O-O-O 38.6; 1m28s, 22 requests)
+09:11:28 Opp  [0.72%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.O-O e6 8.d4 Bd6: Nbd2 26% of 54 games
+09:12:28 Me   [0.72%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.d3: Nd4 (Prac 52.1 d3; h6 49.1, Bg4 52.8, Be6 38.3; 0m56s, 14 requests)
+09:12:28 Opp  [0.72%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.d3 Nd4: Nxd4 80% of 1185 games
+09:12:56 Me   [0.69%] 4.d4 e5 5.d5 Nb4 6.c4 Bf5 7.Na3: Nf6 (Prac 71.0 d3; Bc5 68.0, Qa5 43.9; 0m24s, 6 requests)
+09:12:56 Opp  [0.69%] 4.d4 e5 5.d5 Nb4 6.c4 Bf5 7.Na3 Nf6: Nf3 42% of 59 games
+09:18:56 Me   [0.68%] 4.c3 e5 5.d3: Nf6 (Prac 52.8 d5; Qc7 48.5, Bf5 51.5, Be7 47.1, Be6 50.2, Bc5 53.4; 5m56s, 89 requests)
+09:18:56 Opp  [0.68%] 4.c3 e5 5.d3 Nf6: Nf3 28% of 1905 games
+09:21:04 Me   [0.66%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.Re1: Nd4 (Prac 61.4 d3; Bg4 54.4, h6 51.2, Qb6 45.7, Re8 47.1, Qc7 47.5; 2m04s, 31 requests)
+09:21:04 Opp  [0.66%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.Re1 Nd4: Nxd4 54% of 462 games
+09:21:48 Me   [0.63%] 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O 8.Nc3 h6 9.h3 Qc7 10.Be3: a6 (Prac 49.8 d3; Bf5 48.3, Rd8 48.3, Be6 47.6; 0m40s, 10 requests)
+09:21:48 Opp  [0.63%] 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O 8.Nc3 h6 9.h3 Qc7 10.Be3 a6: Ne4 29% of 52 games
+09:22:56 Me   [0.62%] 4.Nf3 e5 5.Bb5 Bd6 6.Bxc6+ bxc6 7.O-O Ne7 8.Re1: O-O (Prac 53.1 d3; Bg4 48.3, Qc7 46.9, Ng6 42.5; 1m04s, 16 requests)
+09:22:56 Opp  [0.62%] 4.Nf3 e5 5.Bb5 Bd6 6.Bxc6+ bxc6 7.O-O Ne7 8.Re1 O-O: Nxe5 80% of 460 games
+09:24:12 Me   [0.62%] 4.Nc3 Nf6 5.Bb5 e5 6.d3 Bb4 7.Bd2: O-O (Prac 53.7 d3; Qb6 46.1, Bg4 45.3, Bd7 46.5; 1m12s, 18 requests)
+09:24:12 Opp  [0.62%] 4.Nc3 Nf6 5.Bb5 e5 6.d3 Bb4 7.Bd2 O-O: Nf3 29% of 805 games
+09:24:40 Me   [0.58%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.d3 e6 8.Be3: Bd6 (Prac 46.8 few games; Bh5 45.2, Nf6 45.3, Rc8 43.7; 0m24s, 6 requests)
+09:24:40 Opp  [0.58%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.d3 e6 8.Be3 Bd6: Nbd2 82% of 22 games
+09:24:52 Me   [0.57%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.d3 Nd4 9.Nxd4: exd4 (Prac 49.6 d3; 0m08s, 2 requests)
+09:24:52 Opp  [0.57%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.d3 Nd4 9.Nxd4 exd4: Ne4 67% of 1013 games
+09:25:24 Me   [0.51%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.Nc3 Bg4 9.h3: Bxf3 (Prac 57.0 d3; Bh5 54.0; 0m28s, 7 requests)
+09:25:24 Opp  [0.51%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.Nc3 Bg4 9.h3 Bxf3: Qxf3 100% of 184 games
+09:26:00 Me   [0.51%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.Nc3 Bg4 9.h3 Bxf3 10.Qxf3: Nd4 (Prac 57.0 d3; Rc8 49.7, f5 48.7; 0m32s, 8 requests)
+09:26:00 Opp  [0.51%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.Nc3 Bg4 9.h3 Bxf3 10.Qxf3 Nd4: Qd1 55% of 208 games
+09:27:32 Me   [0.50%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.d3 O-O 8.Bg5: Nd4 (Prac 60.9 d3; Bd7 45.8, Bg4 53.9, h6 56.2; 1m28s, 22 requests)
+09:27:32 Opp  [0.50%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.d3 O-O 8.Bg5 Nd4: Nxd4 64% of 486 games
+09:28:12 Me   [0.49%] 4.Nf3 e5 5.Bb5 Bd6 6.Bxc6+ bxc6 7.O-O Ne7 8.Re1 O-O 9.Nxe5: Ng6 (Prac 53.9 d3; Qc7 43.2, Bxe5 36.4; 0m36s, 9 requests)
+09:28:12 Opp  [0.49%] 4.Nf3 e5 5.Bb5 Bd6 6.Bxc6+ bxc6 7.O-O Ne7 8.Re1 O-O 9.Nxe5 Ng6: Nxg6 50% of 70 games
+09:30:20 Me   [0.49%] 4.Nc3 Nf6 5.Bb5 e5 6.Bxc6+ bxc6 7.d3: Bc5!? (Prac 50.8 d3; Nd5 49.2, Bb4 48.7, Qc7 47.0, Rb8 42.6, h6 49.0; 2m04s, 31 requests)
+09:30:20 Opp  [0.49%] 4.Nc3 Nf6 5.Bb5 e5 6.Bxc6+ bxc6 7.d3 Bc5: Nf3 31% of 4778 games
+09:30:40 Me   [0.49%] 4.c3 e5 5.Bb5 Qd5 6.Bxc6+ bxc6 7.Qf3: e4 (Prac 60.1 d3; 0m16s, 4 requests)
+09:30:40 Opp  [0.49%] 4.c3 e5 5.Bb5 Qd5 6.Bxc6+ bxc6 7.Qf3 e4: Qe2 41% of 98 games
+09:31:04 Me   [0.49%] 4.d4 e5 5.dxe5 Qxd1+ 6.Kxd1 Bg4+ 7.f3: O-O-O+ (Prac 50.9 d3; Bf5 47.0; 0m20s, 5 requests)
+09:31:04 Opp  [0.49%] 4.d4 e5 5.dxe5 Qxd1+ 6.Kxd1 Bg4+ 7.f3 O-O-O+: Bd3 33% of 67 games
+09:31:32 Me   [0.47%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.d3 e6 8.Be3 Bd6 9.Nbd2: Ne7 (Prac 46.9 few games; Nf6 45.0, Bh5 44.7, Rc8 42.1; 0m24s, 6 requests)
+09:32:12 Me   [0.40%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.d3 e6 8.Nbd2 Bd6 9.O-O: Nf6 (Prac 48.6 d3; Ne7 45.9, Bh5 44.3, Qc7 41.8; 0m36s, 9 requests)
+09:32:12 Opp  [0.40%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.d3 e6 8.Nbd2 Bd6 9.O-O Nf6: h3 47% of 245 games
+09:32:56 Me   [0.39%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.d3 Nd4 9.Nxd4 exd4 10.Ne4: a6 (Prac 48.8 d3; h6 47.6, Bxh2+ 26.2, Nxe4 39.5; 0m40s, 10 requests)
+09:32:56 Opp  [0.39%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.d3 Nd4 9.Nxd4 exd4 10.Ne4 a6: Bc4 46% of 137 games
+09:33:32 Me   [0.38%] 4.Nf3 e5 5.Bb5 Bd6 6.d4 e4 7.Ne5 Ne7 8.O-O: O-O (Prac 50.2 d3; Bxe5 40.1; 0m32s, 8 requests)
+09:33:32 Opp  [0.38%] 4.Nf3 e5 5.Bb5 Bd6 6.d4 e4 7.Ne5 Ne7 8.O-O O-O: Nxc6 63% of 961 games
+09:33:44 Me   [0.36%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.Re1 Nd4 9.Nxd4: exd4 (Prac 58.4 d3; 0m08s, 2 requests)
+09:33:44 Opp  [0.36%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.Re1 Nd4 9.Nxd4 exd4: Ne4 78% of 250 games
+09:34:24 Me   [0.35%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.d3 Bg4 9.h3: Bxf3 (Prac 80.8 d3; Bh5 58.8; 0m36s, 9 requests)
+09:34:24 Opp  [0.35%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.d3 Bg4 9.h3 Bxf3: Qxf3 70% of 209 games
+09:34:44 Me   [0.32%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.d3 O-O 8.Bg5 Nd4 9.Nxd4: exd4 (Prac 71.4 d3; 0m16s, 4 requests)
+09:34:44 Opp  [0.32%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.d3 O-O 8.Bg5 Nd4 9.Nxd4 exd4: Ne4 71% of 348 games
+09:35:04 Me   [0.32%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.d4 exd4 8.Nxd4 O-O 9.Nxc6 Nxc6 10.Nc3 Bf5 11.Bd3: Bxd3 (Prac 48.6 d3; Bg6 44.5; 0m16s, 4 requests)
+09:35:04 Opp  [0.32%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.d4 exd4 8.Nxd4 O-O 9.Nxc6 Nxc6 10.Nc3 Bf5 11.Bd3 Bxd3: Qxd3 94% of 64 games
+09:38:40 Me   [0.31%] 4.d3 e5 5.Nc3 f5 6.Nf3: Nf6 (Prac 53.5 d5; Be6 49.8, Bb4 51.9; 3m32s, 53 requests)
+09:38:40 Opp  [0.31%] 4.d3 e5 5.Nc3 f5 6.Nf3 Nf6: Bg5 56% of 5855 games
+09:38:56 Me   [0.30%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.d4 exd4 8.Nxd4 O-O 9.Nxc6 Nxc6 10.Nc3 Bf5 11.Bd3 Bxd3 12.Qxd3: Nb4 (Prac 48.5 few games; Be5 46.1, Ne5 39.7, Qc7 42.5; 0m12s, 3 requests)
+09:38:56 Opp  [0.30%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.d4 exd4 8.Nxd4 O-O 9.Nxc6 Nxc6 10.Nc3 Bf5 11.Bd3 Bxd3 12.Qxd3 Nb4: Qd1 36% of 39 games
+09:39:44 Me   [0.29%] 4.d4 e5 5.d5 Nb4 6.c4 Bf5 7.Na3 Nf6 8.Nf3: Bc5 (Prac 71.4 d3; Qa5 44.4, e4 59.0; 0m44s, 11 requests)
+09:39:44 Opp  [0.29%] 4.d4 e5 5.d5 Nb4 6.c4 Bf5 7.Na3 Nf6 8.Nf3 Bc5: Be2 42% of 505 games
+09:40:04 Me   [0.28%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.Nc3 Bg4 9.h3 Bxf3 10.Qxf3 Nd4 11.Qd1: Rc8 (Prac 50.4 few games; a6 50.1, Kh8 47.3, Nxb5 43.3, Ng6 46.7; 0m16s, 4 requests)
+09:40:04 Opp  [0.28%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.Nc3 Bg4 9.h3 Bxf3 10.Qxf3 Nd4 11.Qd1 Rc8: Ba4 39% of 36 games
+09:40:20 Me   [0.28%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.Re1 Nd4 9.Nxd4 exd4 10.Ne4: Nxe4 (Prac 57.4 d3; Ng4 51.6, Bxh2+ 40.1; 0m12s, 3 requests)
+09:40:20 Opp  [0.28%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.Re1 Nd4 9.Nxd4 exd4 10.Ne4 Nxe4: Rxe4 100% of 144 games
+09:40:40 Me   [0.28%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.Re1 Nd4 9.Nxd4 exd4 10.Ne4 Nxe4 11.Rxe4: Bf5 (Prac 57.5 d3; a6 52.5, Qc7 50.7; 0m16s, 4 requests)
+09:40:40 Opp  [0.28%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.Re1 Nd4 9.Nxd4 exd4 10.Ne4 Nxe4 11.Rxe4 Bf5: Re1 83% of 105 games
+09:40:56 Me   [0.26%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.O-O e6 8.d3 Bd6 9.Be3: Bh5 (Prac 46.9 few games; Ne7 46.3, Nf6 45.3, Qc7 40.3, O-O-O 37.5; 0m12s, 3 requests)
+09:41:00 Me   [0.25%] 4.Nf3 e5 5.Bb5 Bd6 6.Bxc6+ bxc6 7.O-O Ne7 8.Re1 O-O 9.Nxe5 Ng6 10.Nxg6: fxg6 (Prac 50.0 few games; 0m00s, 0 requests)
+09:41:24 Me   [0.24%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.d3 Bg4 9.h3 Bxf3 10.Qxf3: Nd4 (Prac 84.7 d3; 0m20s, 5 requests)
+09:41:24 Opp  [0.24%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.d3 Bg4 9.h3 Bxf3 10.Qxf3 Nd4: Qxb7 79% of 155 games
+09:42:12 Me   [0.24%] 4.Nf3 e5 5.Bb5 Bd6 6.d4 e4 7.Ne5 Ne7 8.O-O O-O 9.Nxc6: Nxc6!? (Prac 53.7 d3; bxc6 49.3; 0m44s, 11 requests)
+09:43:16 Me   [0.23%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.Nc3 e6 8.d3 Nf6 9.Be3: Bb4 (Prac 53.6 d3; Ba3 48.6, Bh5 47.3, Bd6 49.1, Be7 44.3, Rc8 45.6; 1m00s, 15 requests)
+09:43:16 Opp  [0.23%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.Nc3 e6 8.d3 Nf6 9.Be3 Bb4: Bd2 54% of 141 games
+09:43:36 Me   [0.23%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.Re1 Nd4 9.Nxd4 exd4 10.Ne4 Nxe4 11.Rxe4 Bf5 12.Re1: Qa5 (Prac 54.0 few games; Qc7 52.5, a6 51.8, Qh4 46.2, Rc8 50.8; 0m16s, 4 requests)
+09:44:00 Me   [0.23%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.d3 O-O 8.Bg5 Nd4 9.Nxd4 exd4 10.Ne4: Qa5+ (Prac 73.3 d3; Be7 43.0; 0m20s, 5 requests)
+09:44:00 Opp  [0.23%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.d3 O-O 8.Bg5 Nd4 9.Nxd4 exd4 10.Ne4 Qa5+: Qd2 62% of 164 games
+09:44:24 Me   [0.20%] 4.c3 e5 5.Bb5 Qd5 6.Bxc6+ bxc6 7.Qf3 e4 8.Qe2: Nf6 (Prac 58.9 few games; Be6 54.7, f5 54.6, Bd6 50.3, Be7 50.0, a5 50.5; 0m20s, 5 requests)
+09:44:48 Me   [0.19%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.d3 Bg4 9.h3 Bxf3 10.Qxf3 Nd4 11.Qxb7: Rb8 (Prac 88.4 d3; Nxc2 78.1; 0m20s, 5 requests)
+09:44:48 Opp  [0.19%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.d3 Bg4 9.h3 Bxf3 10.Qxf3 Nd4 11.Qxb7 Rb8: Qxa7 82% of 98 games
+09:46:11 Me   [0.19%] 4.c3 e5 5.d3 Nf6 6.Nf3: Bf5 (Prac 49.6 d3; Qc7 48.6, h6 47.7, Bc5 49.3, e4 47.6, Bd6 48.2; 1m19s, 19 requests)
+09:46:11 Opp  [0.19%] 4.c3 e5 5.d3 Nf6 6.Nf3 Bf5: Be2 63% of 178 games
+09:46:48 Me   [0.19%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.d3 e6 8.Nbd2 Bd6 9.O-O Nf6 10.h3: Bh5 (Prac 48.4 d3; h5 35.9; 0m36s, 9 requests)
+09:47:28 Me   [0.19%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.O-O e6 8.d4 Bd6 9.Nbd2: Nf6 (Prac 47.5 d3; a6 44.5, Ne7 44.4, O-O-O 39.0; 0m36s, 9 requests)
+09:47:52 Me   [0.19%] 4.Nf3 e5 5.d3 Nf6 6.Nc3 Bf5 7.Be2 Qc7 8.O-O a6 9.Bg5 O-O-O 10.a3: h6 (Prac 48.1 few games; Kb8 44.8, e4 40.5, Bc5 39.6, Be7 43.1, h5 43.1; 0m20s, 5 requests)
+09:48:04 Me   [0.18%] 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O 8.Nc3 h6 9.h3 Qc7 10.Be3 a6 11.Ne4: Nd5 (Prac 49.7 few games; Rd8 47.3, Bf5 47.0; 0m08s, 2 requests)
+09:48:56 Me   [0.18%] 4.Nc3 Nf6 5.Bb5 e5 6.d3 Bb4 7.Bd2 O-O 8.Nf3: Bg4 (Prac 64.1 d3; Nd4 55.1, Re8 47.1, Bxc3 45.6; 0m48s, 12 requests)
+09:49:12 Me   [0.18%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.d3 Nd4 9.Nxd4 exd4 10.Ne4 a6 11.Bc4: Nxe4 (Prac 48.8 d3; Bxh2+ 48.6, b5 45.9; 0m12s, 3 requests)
+09:49:12 Opp  [0.18%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.d3 Nd4 9.Nxd4 exd4 10.Ne4 a6 11.Bc4 Nxe4: dxe4 100% of 57 games
+09:49:20 Me   [0.18%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.d3 Nd4 9.Nxd4 exd4 10.Ne4 a6 11.Bc4 Nxe4 12.dxe4: Bxh2+ (Prac 48.8 few games; Qc7 47.0; 0m04s, 1 requests)
+09:49:20 Opp  [0.18%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.d3 Nd4 9.Nxd4 exd4 10.Ne4 a6 11.Bc4 Nxe4 12.dxe4 Bxh2+: Kxh2 97% of 36 games
+09:50:52 Me   [0.18%] 4.d3 e5 5.Nc3 f5 6.Nf3 Nf6 7.Bg5: h6!? (Prac 58.4 d3; Be7 54.4, Qb6 49.5, Bb4 52.7, Bd6 55.8, a6 51.5; 1m28s, 22 requests)
+09:50:52 Opp  [0.18%] 4.d3 e5 5.Nc3 f5 6.Nf3 Nf6 7.Bg5 h6: Bxf6 90% of 746 games
+09:51:00 Me   [0.17%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.d3 Nd4 9.Nxd4 exd4 10.Ne4 a6 11.Bc4 Nxe4 12.dxe4 Bxh2+ 13.Kxh2: Qc7+ (Prac 48.7 few games; 0m04s, 1 requests)
+09:51:00 Opp  [0.17%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.d3 Nd4 9.Nxd4 exd4 10.Ne4 a6 11.Bc4 Nxe4 12.dxe4 Bxh2+ 13.Kxh2 Qc7+: Kg1 62% of 34 games
+09:51:12 Me   [0.16%] 4.d4 e5 5.dxe5 Qxd1+ 6.Kxd1 Bg4+ 7.f3 O-O-O+ 8.Bd3: Bf5 (Prac 50.0 few games; Bd7 45.0, Bh5 42.4; 0m08s, 2 requests)
+09:51:40 Me   [0.16%] 4.d3 e5 5.Nc3 f5 6.Nf3 Nf6 7.Bg5 h6 8.Bxf6: Qxf6 (Prac 60.4 d3; 0m24s, 6 requests)
+09:52:20 Me   [0.16%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.d3 Bg4 9.h3 Bxf3 10.Qxf3 Nd4 11.Qxb7 Rb8 12.Qxa7: Rxb5 (Prac 89.0 d3; Nxc2 82.3, Ra8 80.8; 0m36s, 9 requests)
+09:54:08 Me   [0.15%] 4.Nc3 Nf6 5.Bb5 e5 6.Bxc6+ bxc6 7.d3 Bc5 8.Nf3: O-O (Prac 47.0 d3; Qc7 44.2, Qd6 41.7, h6 43.3, e4 44.3, Bxf2+ 20.8; 1m44s, 26 requests)
+09:54:28 Me   [0.14%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.d3 O-O 8.Bg5 Nd4 9.Nxd4 exd4 10.Ne4 Qa5+ 11.Qd2: Qxb5 (Prac 67.6 d3; Bb4 52.4; 0m16s, 4 requests)
+09:55:04 Me   [0.12%] 4.Bb5 Qd5 5.Bxc6+ Qxc6 6.Nf3 Bg4 7.Nc3 e6 8.d3 Nf6 9.Be3 Bb4 10.Bd2: Rc8 (Prac 48.4 few games; O-O 48.9, Bh5 46.9, O-O-O 42.1, Nd5 45.1; 0m32s, 8 requests)
+09:55:32 Me   [0.12%] 4.d4 e5 5.d5 Nb4 6.c4 Bf5 7.Na3 Nf6 8.Nf3 Bc5 9.Be2: Qb6 (Prac 65.9 few games; Ng4 65.9, e4 48.3; 0m24s, 6 requests)
+09:55:32 Opp  [0.12%] 4.d4 e5 5.d5 Nb4 6.c4 Bf5 7.Na3 Nf6 8.Nf3 Bc5 9.Be2 Qb6: O-O 89% of 28 games
+09:56:36 Me   [0.12%] 4.c3 e5 5.d3 Nf6 6.Nf3 Bf5 7.Be2: Qc7 (Prac 48.5 few games; Be7 48.3, h6 46.6, Bd6 47.9, Bc5 47.6, e4 39.2; 1m00s, 15 requests)
+09:57:04 Me   [0.11%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.Re1 O-O 8.Nc3 Bg4 9.h3 Bxf3 10.Qxf3 Nd4 11.Qd1 Rc8 12.Ba4: Ng6 (Prac 50.5 few games; Qa5 48.8, Bb8 48.0, f5 47.9, a6 42.2, Nef5 45.1; 0m24s, 6 requests)
+09:57:12 Me   [0.11%] 4.d4 e5 5.d5 Nb4 6.c4 Bf5 7.Na3 Nf6 8.Nf3 Bc5 9.Be2 Qb6 10.O-O: Ng4 (Prac 65.9 few games; 0m04s, 1 requests)
+09:57:28 Me   [0.11%] 4.Nf3 e5 5.Bb5 Bd6 6.O-O Ne7 7.d4 exd4 8.Nxd4 O-O 9.Nxc6 Nxc6 10.Nc3 Bf5 11.Bd3 Bxd3 12.Qxd3 Nb4 13.Qd1: Be5 (Prac 49.4 few games; Qc7 49.1, Re8 45.4; 0m12s, 3 requests)
+09:57:36 Me   [0.11%] 4.Nc3 Nf6 5.Nf3 e5 6.Bb5 Bd6 7.O-O O-O 8.d3 Nd4 9.Nxd4 exd4 10.Ne4 a6 11.Bc4 Nxe4 12.dxe4 Bxh2+ 13.Kxh2 Qc7+ 14.Kg1: Qxc4 (Prac 48.7 few games; 0m04s, 1 requests)
+09:57:36 Done: 117 searches this run (117 in all), 211 positions done, 23 ended, 0 left; 1972 Lichess and 3417 ChessDB requests in 133m53s.

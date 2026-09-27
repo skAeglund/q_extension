@@ -1,0 +1,240 @@
+:root {
+  --bg: #14161f;
+  --fg: #dfe3ee;
+  --muted: #8b93a7;
+  --line: #262c3d;
+  --accent: #7aa2f7;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  width: 290px;
+  margin: 0;
+  padding: 14px;
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px/1.45 system-ui, -apple-system, Segoe UI, sans-serif;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: .2px;
+}
+
+.glyph {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: var(--accent);
+  color: #10121a;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.glyph.small {
+  width: 15px;
+  height: 15px;
+  font-size: 10px;
+  vertical-align: -3px;
+}
+
+.status {
+  margin: 0 0 10px;
+  padding: 7px 9px;
+  border-radius: 5px;
+  background: #1b1f2c;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.status.ok { color: var(--fg); }
+.status.warn { color: #e0af68; }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+/* `display: grid` would otherwise beat the UA rule for [hidden]. */
+.stats[hidden] { display: none; }
+
+.stats li {
+  padding: 7px 4px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  text-align: center;
+}
+
+.stats b {
+  display: block;
+  font-size: 16px;
+  color: var(--accent);
+}
+
+.stats span {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.options {
+  display: grid;
+  gap: 2px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.options label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 9px;
+  align-items: start;
+  padding: 6px 4px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.options label:hover { background: #1b1f2c; }
+
+.options input {
+  margin: 1px 0 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.options b {
+  display: block;
+  font-weight: 500;
+  font-size: 12.5px;
+}
+
+.options small {
+  display: block;
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+footer {
+  margin-top: 11px;
+  border-top: 1px solid var(--line);
+  padding-top: 9px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* ------------------------------------------------------ practical eval */
+
+.pe {
+  margin-top: 11px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+h2 {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.pe .options { border-top: 0; padding-top: 0; }
+
+/* A group inside the Practical section (Prepared score). */
+h3 {
+  margin: 8px 0 2px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.field {
+  display: grid;
+  gap: 3px;
+  padding: 5px 4px;
+}
+
+.field-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.row {
+  display: flex;
+  gap: 5px;
+}
+
+.pe input[type="text"],
+.pe input[type="password"],
+.pe input[type="number"] {
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #1b1f2c;
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+}
+
+.pe button {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #1b1f2c;
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.pe button:hover { border-color: var(--accent); }
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 6px;
+}
+
+details { margin-top: 2px; }
+
+summary {
+  padding: 5px 4px;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.note {
+  display: block;
+  margin: 2px 4px 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.note.ok { color: #9ece6a; }
+.note.warn { color: #e0af68; }

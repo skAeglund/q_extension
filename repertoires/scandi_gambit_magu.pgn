@@ -1,0 +1,43 @@
+[Event "Practical repertoire"]
+[Site "repgen"]
+[Date "2026.09.27"]
+[White "Lichess"]
+[Black "Repertoire"]
+[Result "*"]
+
+1. e4 d5 2. exd5 c6 3. dxc6 Nxc6 4. Bc4 Nf6 5. d3 a6 {Prac 47.5 d3, engine 46.9
+(over e5 48.1: ChessDB -0.34 vs -0.76); Qc7 47.2, Bg4 46.7, Bf5 46.4} 6. a3
+{22% of 291 games} (6. Nc3 {18% of 291 games} 6... b5 {Prac 49.0 d5, engine
+47.2; e6 48.5, Bg4 48.4, Qc7 48.1} 7. Bb3 {99% of 137 games} 7... Bb7 {Prac
+49.0 d5, engine 47.3} 8. Nf3 {46% of 81 games} (8. Nge2 {14% of 81 games}
+8... Na5 {Prac at least 48.5, few games (2), engine 48.6 · end: few games (2)})
+8... e6 {Prac 48.2 d3, engine 47.4; Qc7 47.9} 9. O-O {39% of 188 games} (9. Bg5
+{35% of 188 games} 9... h6 {Prac at least 48.5, few games (2), engine 48.7; Bd6
+48.1 d3 · end: few games (2)}) 9... Qc7 {Prac 48.8 d3, engine 47.3 (over Bd6
+49.0: ChessDB -0.29 vs -0.35)} 10. Bg5 {41% of 153 games} (10. Re1 {24% of 153
+games} 10... Bd6 {Prac at least 47.4, few games (24), engine 47.5} 11. Bg5 {50%
+of 24 games} 11... Ne5 {Prac at least 50.0, few games (0), engine 50.0 · end:
+few games (0)}) 10... Bd6 {Prac 50.3 d3, engine 47.3; Be7 48.5} 11. h3 {29% of
+63 games} 11... h6 {Prac at least 50.3, few games (19), engine 50.3} 12. Bxf6
+{63% of 19 games} 12... gxf6 {Prac at least 52.1, few games (12), engine 52.6 ·
+end: no reply with enough games}) (6. Ne2 {14% of 291 games} 6... b5 {Prac at
+least 47.6, few games (13), engine 47.8} 7. Bb3 {100% of 13 games} 7... Bb7
+{Prac at least 47.5, few games (10), engine 47.6 · end: no reply with enough
+games}) (6. Nf3 {11% of 291 games} 6... Bg4 {Prac 47.8 d5, engine 46.9; e6
+45.6} 7. h3 {28% of 195 games} (7. O-O {22% of 195 games} 7... e6 {Prac 47.6
+d1, engine 46.8} 8. Bg5 {41% of 117 games} 8... h6 {Prac at least 47.4, few
+games (1), engine 47.6 · end: few games (1)}) (7. Bg5 {12% of 195 games}
+7... e6 {Prac at least 47.2, few games (19), engine 47.3 · end: no reply with
+enough games}) (7. Be3 {12% of 195 games} 7... e6 {Prac at least 46.8, few
+games (28), engine 46.9} 8. Nbd2 {54% of 28 games} 8... b5 {Prac at least 46.6,
+few games (3), engine 46.8 · end: few games (3)}) (7. Nbd2 {9% of 195 games}
+7... Bh5 {Prac at least 47.1, few games (0), engine 47.2 · end: few games (0)})
+7... Bh5 {Prac 47.1 d3, engine 47.0} 8. g4 {18% of 55 games} 8... Bg6 {Prac at
+least 47.1, few games (21), engine 47.2 · end: no reply with enough games})
+(6. Bg5 {9% of 291 games} 6... Qa5+ {Prac at least 49.0, few games (1), engine
+49.1 · end: few games (1)}) (6. a4 {9% of 291 games} 6... Bf5 {Prac at least
+46.8, few games (9), engine 46.9 · end: few games (9)}) (6. h3 {8% of 291
+games} 6... b5 {Prac at least 46.7, few games (6), engine 46.9 · end: few games
+(6)}) 6... b5 {Prac at least 47.2, few games (26), engine 47.3} 7. Ba2 {88% of
+26 games} 7... Bb7 {Prac at least 46.2, few games (18), engine 47.3 (over e6
+46.4: ChessDB -0.29 vs -0.38) · end: no reply with enough games} *

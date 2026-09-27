@@ -1,0 +1,17 @@
+[Event "Practical repertoire"]
+[Site "repgen"]
+[Date "2026.09.27"]
+[White "Repertoire"]
+[Black "Lichess"]
+[Result "*"]
+
+1. Nf3 d5 2. c4 d4 3. g3 c5 4. b4 cxb4 5. a3 bxa3 6. Bg2 Nc6 {80%} (6... e6
+{8%} 7. O-O Nc6 {70%} (7... Nf6 {25%} 8. d3 {Nc6 transposes into 7... Nc6 8. d3
+Nf6}) 8. d3 Nf6 9. Qa4 Bd7 10. Nbd2 Be7 11. Bxa3 O-O 12. Rfb1 b6 13. Bxe7 Qxe7
+14. Qa3 Qxa3 15. Rxa3) (6... g6 {4%} 7. O-O Bg7 8. d3 Nc6 {51%} (8... Nf6 {35%}
+9. Nxa3 O-O 10. Bf4 Nc6 11. Ne5) 9. Qa4 Bd7 {49%} (9... Nf6 {41%} 10. Ne5 O-O
+11. Nxc6 bxc6 12. Nd2) 10. Bxa3 {Nf6 transposes into 6... Nc6 7. Qa4 Bd7
+8. Bxa3 Nf6 9. d3 g6 10. O-O Bg7}) 7. Qa4 Bd7 {68%} (7... Nf6 {8%} 8. Bxa3 {Bd7
+transposes into 7... Bd7 8. Bxa3 Nf6}) 8. Bxa3 e5 {45%} (8... Nf6 {32%} 9. d3
+e5 {51%} (9... g6 {34%} 10. O-O Bg7 11. Qb3) 10. O-O Bxa3 11. Qxa3 Qe7 12. Nfd2
+Qxa3 13. Nxa3 O-O 14. Rfb1 Rab8 15. Rb2) 9. Bxf8 Kxf8 10. O-O *

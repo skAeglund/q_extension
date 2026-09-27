@@ -1,0 +1,10 @@
+2026-09-27 04:06:17 START --moves 1. d4 c5 2. d5 Nf6 3. Nc3 g6 4. e4 d6 --out anti_benko_black --side black
+2026-09-27 09:43:42 END (exit 0) --moves 1. d4 c5 2. d5 Nf6 3. Nc3 g6 4. e4 d6 --out anti_benko_black --side black
+2026-09-27 09:43:42 START --moves 1. e4 d5 2. exd5 c6 3. dxc6 Nxc6 --out scandi_gambit --side black
+2026-09-27 11:57:36 END (exit 0) --moves 1. e4 d5 2. exd5 c6 3. dxc6 Nxc6 --out scandi_gambit --side black
+2026-09-27 11:57:36 START --moves 1. e4 d5 2. exd5 c6 3. dxc6 Nxc6 4. Bc4 Nf6 5. d3 --out scandi_gambit_magu --side black
+2026-09-27 12:25:40 END (exit 0) --moves 1. e4 d5 2. exd5 c6 3. dxc6 Nxc6 4. Bc4 Nf6 5. d3 --out scandi_gambit_magu --side black
+2026-09-27 12:25:40 START --moves 1. Nf3 d5 2. c4 d4 3. g3 c5 4. b4 cxb4 5. a3 bxa3 --out benko_gambit_fully_accepted_reversed --side white
+2026-09-27 18:41:06 RESUME --out benko_gambit_fully_accepted_reversed
+2026-09-27 18:41:11 END (exit 0) --out benko_gambit_fully_accepted_reversed
+2026-09-27 18:57:38 START cdbexplore scandi_gambit.pgn

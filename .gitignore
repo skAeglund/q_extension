@@ -1,0 +1,17 @@
+# Local Claude Code settings (per machine)
+.claude/settings.local.json
+
+# repgen's shared answer cache: ~19 MB and growing, regenerable from Lichess/ChessDB
+repertoires/repgen-cache.jsonl
+
+# Scratch copies of the site fetched while investigating (see CLAUDE.md)
+ShowGame.css
+study.html
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+node_modules/
+__pycache__/
+*.pyc

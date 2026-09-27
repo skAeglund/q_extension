@@ -1,0 +1,44 @@
+01:27:50 repgen: White from r1bqkbnr/ppp1pppp/2n5/8/1PPp4/5NP1/P2PPP1P/RNBQKB1R b KQkq - 0 4 (Nf3 d5 c4 d4 g3 Nc6 b4); Lichess blitz,rapid,classical / 1800,2000,2200.
+01:27:50 Opp  [100.00%] (start): Nxb4 57%, e5 17%, a6 9%, Bg4 8% of 651 games
+01:28:38 Me   [56.99%] 4...Nxb4: Qa4+ (Prac 49.0 d5; Bg2 49.0; 0m48s, 19 requests)
+01:28:38 Opp  [56.99%] 4...Nxb4 5.Qa4+: Nc6 100% of 284 games
+01:28:50 Me   [56.99%] 4...Nxb4 5.Qa4+ Nc6: Ne5 (Prac 50.3 d5; Bg2 40.8; 0m08s, 2 requests)
+01:28:50 Opp  [56.99%] 4...Nxb4 5.Qa4+ Nc6 6.Ne5: Bd7 88% of 257 games
+01:29:22 Me   [50.34%] 4...Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7: Nxd7 (Prac 55.4 d5; 0m28s, 7 requests)
+01:29:22 Opp  [50.34%] 4...Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7: Qxd7 100% of 225 games
+01:29:38 Me   [50.11%] 4...Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7: Na3 (Prac 55.2 d3; Bg2 49.2, d3 47.5; 0m12s, 3 requests)
+01:29:38 Opp  [50.11%] 4...Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3: e5 76% of 98 games
+01:30:06 Me   [37.84%] 4...Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e5: Rb1 (Prac 57.5 d3; Bg2 48.5; 0m24s, 6 requests)
+01:30:06 Opp  [37.84%] 4...Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e5 9.Rb1: Nd8 36% of 64 games
+01:30:38 Me   [17.20%] 4...e5: b5 (Prac 55.3 d5; 0m28s, 7 requests)
+01:30:38 Opp  [17.20%] 4...e5 5.b5: e4 74% of 94 games
+01:30:46 Me   [13.60%] 4...Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e5 9.Rb1 Nd8: Qxd7+ (Prac 52.2 few games; Qb5 47.1; 0m04s, 1 requests)
+01:30:46 Opp  [13.60%] 4...Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e5 9.Rb1 Nd8 10.Qxd7+: Kxd7 100% of 20 games
+01:31:02 Me   [13.60%] 4...Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e5 9.Rb1 Nd8 10.Qxd7+ Kxd7: Bh3+ (Prac 52.4 few games; f4 49.6, Bg2 46.1; 0m12s, 3 requests)
+01:31:02 Opp  [13.60%] 4...Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e5 9.Rb1 Nd8 10.Qxd7+ Kxd7 11.Bh3+: Ke8 58% of 19 games
+01:31:15 Me   [12.81%] 4...e5 5.b5 e4: bxc6 (Prac 52.3 d5; 0m08s, 2 requests)
+01:31:15 Opp  [12.81%] 4...e5 5.b5 e4 6.bxc6: exf3 100% of 64 games
+01:31:22 Me   [12.81%] 4...e5 5.b5 e4 6.bxc6 exf3: cxb7 (Prac 52.3 few games; Qb3 48.4, exf3 47.4, Qa4 45.8; 0m04s, 1 requests)
+01:31:22 Opp  [12.81%] 4...e5 5.b5 e4 6.bxc6 exf3 7.cxb7: Bxb7 94% of 17 games
+01:31:34 Me   [12.06%] 4...e5 5.b5 e4 6.bxc6 exf3 7.cxb7 Bxb7: Bh3 (Prac 52.2 few games; Qa4+ 51.1; 0m08s, 2 requests)
+01:33:58 Me   [8.60%] 4...a6: Bb2 (Prac 53.9 d5; Bg2 52.3, a3 54.5, b5 50.3; 2m20s, 35 requests)
+01:33:58 Opp  [8.60%] 4...a6 5.Bb2: e5 59% of 54 games
+01:35:02 Me   [7.99%] 4...Bg4: Bg2!? (Prac 64.0 d5; b5 62.6, a3 53.4; 1m00s, 15 requests)
+01:35:02 Opp  [7.99%] 4...Bg4 5.Bg2: Nxb4 30%, e5 14%, Bxf3 13%, d3 10%, f6 8%, Qd7 7% of 167 games
+01:35:10 Me   [7.87%] 4...Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e5 9.Rb1 Nd8 10.Qxd7+ Kxd7 11.Bh3+ Ke8: Nb5 (Prac 74.0 few games; 0m04s, 1 requests)
+01:35:22 Me   [5.10%] 4...a6 5.Bb2 e5: b5 (Prac 50.9 few games; Bg2 42.5, a3 42.3; 0m08s, 2 requests)
+01:35:22 Opp  [5.10%] 4...a6 5.Bb2 e5 6.b5: axb5 76% of 17 games
+01:35:30 Me   [3.90%] 4...a6 5.Bb2 e5 6.b5 axb5: cxb5 (Prac 51.7 few games; 0m04s, 1 requests)
+01:35:39 Me   [2.39%] 4...Bg4 5.Bg2 Nxb4: Ne5 (Prac 65.2 few games; Qa4+ 53.2; 0m04s, 1 requests)
+01:35:42 Me   [1.10%] 4...Bg4 5.Bg2 e5: b5 (Prac 69.3 few games; 0m00s, 0 requests)
+01:35:42 Opp  [1.10%] 4...Bg4 5.Bg2 e5 6.b5: Bxf3 40% of 25 games
+01:35:46 Me   [1.00%] 4...Bg4 5.Bg2 Bxf3: Bxf3 (Prac 58.3 few games; 0m00s, 0 requests)
+01:35:46 Opp  [1.00%] 4...Bg4 5.Bg2 Bxf3 6.Bxf3: e5 59% of 39 games
+01:36:02 Me   [0.77%] 4...Bg4 5.Bg2 d3: Qa4 (Prac 63.1 few games; Bb2 58.4, O-O 54.0, Nc3 56.8, a3 53.4; 0m12s, 3 requests)
+01:36:10 Me   [0.62%] 4...Bg4 5.Bg2 f6: b5 (Prac 63.2 few games; h3 60.3, a3 54.7; 0m04s, 1 requests)
+01:36:18 Me   [0.59%] 4...Bg4 5.Bg2 Bxf3 6.Bxf3 e5: b5 (Prac 70.5 few games; 0m04s, 1 requests)
+01:36:18 Opp  [0.59%] 4...Bg4 5.Bg2 Bxf3 6.Bxf3 e5 7.b5: Na5 67% of 30 games
+01:36:26 Me   [0.53%] 4...Bg4 5.Bg2 Qd7: b5 (Prac 57.9 few games; Qb3 56.1, Qa4 56.0, a3 51.1; 0m04s, 1 requests)
+01:36:34 Me   [0.44%] 4...Bg4 5.Bg2 e5 6.b5 Bxf3: Bxf3 (Prac 70.5 few games; exf3 66.0; 0m04s, 1 requests)
+01:36:50 Me   [0.39%] 4...Bg4 5.Bg2 Bxf3 6.Bxf3 e5 7.b5 Na5: d3 (Prac 70.5 few games; Qa4 66.2, O-O 66.0; 0m12s, 3 requests)
+01:36:50 Done: 25 searches this run (25 in all), 42 positions done, 8 ended, 0 left; 143 Lichess and 180 ChessDB requests in 9m00s.

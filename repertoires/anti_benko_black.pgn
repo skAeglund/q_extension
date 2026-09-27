@@ -1,0 +1,244 @@
+[Event "Practical repertoire"]
+[Site "repgen"]
+[Date "2026.09.27"]
+[White "Lichess"]
+[Black "Repertoire"]
+[Result "*"]
+
+1. d4 c5 2. d5 Nf6 3. Nc3 g6 4. e4 d6 5. Nf3 {26% of 298,389 games} (5. f4 {23%
+of 298,389 games} 5... Bg7 {Prac 54.6 d5, engine 47.8; e6 52.4, Na6 43.5, Bd7
+37.0} 6. Nf3 {58% of 87,664 games} (6. Bb5+ {20% of 87,664 games} 6... Bd7
+{Prac 54.1 d5, engine 47.6; Nfd7 44.2, Kf8 43.0} 7. e5 {74% of 10,782 games}
+7... Ng8 {Prac 56.0 d5, engine 47.4; dxe5 45.5, Nh5 37.6} 8. Nf3 {54% of 3,085
+games} (8. e6 {19% of 3,085 games} 8... Bxc3+ {Prac at least 80.7, few games
+(35), engine 80.7; fxe6 79.0 d3, Bxb5 63.1 d3} 9. bxc3 {100% of 35 games}
+9... Bxb5 {Prac at least 80.7, few games (35), engine 80.7} 10. exf7+ {89% of
+35 games} 10... Kxf7 {Prac at least 82.1, few games (29), engine 82.1} 11. Nf3
+{76% of 29 games} 11... Bc4 {Prac at least 82.5, few games (0), engine 82.5 ·
+end: few games (0)}) 8... Nh6!? {Prac 56.3 d3, engine 42.1 (best Bxb5 47.3);
+Bxb5 48.5, a6 44.2, Qa5 42.9} 9. O-O {29% of 868 games} 9... Bxb5 {Prac at
+least 47.1, few games (26), engine 47.1; O-O 46.1 d3} 10. Nxb5 {100% of 26
+games} 10... O-O {Prac at least 47.0, few games (40), engine 47.1} 11. c4 {65%
+of 40 games} 11... a6 {Prac at least 47.5, few games (23), engine 47.6} 12. Nc3
+{100% of 23 games} 12... Qc8 {Prac at least 47.4, few games (0), engine 47.5 ·
+end: few games (0)}) (6. e5 {15% of 87,664 games} 6... Nfd7 {Prac 57.4 d5,
+engine 50.1; dxe5 50.1, Ng8 48.0, Nh5 37.3} 7. e6 {49% of 3,796 games} (7. exd6
+{36% of 3,796 games} 7... O-O {Prac 55.0 d5, engine 51.5; exd6 54.7} 8. dxe7
+{82% of 111 games} 8... Qxe7+ {Prac 53.6 d3, engine 51.7} 9. Be2 {81% of 89
+games} 9... Nb6 {Prac at least 51.7, few games (16), engine 51.7} 10. Nf3 {75%
+of 16 games} 10... Rd8 {Prac at least 51.7, few games (6), engine 51.7 · end:
+few games (6)}) 7... fxe6 {Prac 61.2 d5, engine 56.1; Nf6 45.3} 8. dxe6 {95% of
+1,621 games} 8... Nf6 {Prac 61.2 d3, engine 56.2; Nf8 58.2, Nb6 55.0} 9. Bb5+
+{40% of 1,278 games} (9. Bc4 {34% of 1,278 games} 9... Nc6 {Prac 59.5 d3,
+engine 56.1; O-O 58.8, a6 55.7} 10. Nf3 {78% of 83 games} 10... O-O {Prac 60.6
+d3, engine 56.2} 11. O-O {63% of 227 games} 11... Na5 {Prac 60.4 d3, engine
+56.2; a6 56.9} 12. Bd5 {64% of 61 games} 12... Nxd5 {Prac at least 58.0, few
+games (35), engine 58.0} 13. Qxd5 {89% of 35 games} 13... Nc6 {Prac at least
+58.0, few games (12), engine 58.0 · end: no reply with enough games}) 9... Nc6
+{Prac 68.7 d3, engine 62.5; Kf8 54.9} 10. Qe2 {46% of 461 games} 10... O-O
+{Prac 69.0 d3, engine 64.7} 11. Nf3 {48% of 200 games} 11... Nd4 {Prac 71.6 d3,
+engine 64.7} 12. Nxd4 {95% of 62 games} 12... cxd4 {Prac 71.4 d3, engine 64.7 ·
+end: no reply likely enough}) 6... O-O {Prac 55.3 d3, engine 50.0; a6 50.6, Bd7
+43.2, h6 40.8} 7. Bd3 {29% of 66,972 games} (7. Be2 {28% of 66,972 games}
+7... b5 {Prac 62.1 d5, engine 50.0; e6 56.7, Na6 53.0, a6 52.2} 8. Bxb5 {53% of
+6,947 games} (8. e5 {26% of 6,947 games} 8... dxe5 {Prac 54.5 d3, engine 50.0;
+Nfd7 49.6} 9. fxe5 {99% of 1,498 games} 9... Ng4 {Prac 54.9 d3, engine 50.0}
+10. Bf4 {63% of 1,437 games} 10... b4 {Prac 69.1 d3, engine 56.8; Nd7 62.5, a6
+34.8} 11. Ne4 {94% of 665 games} 11... Nd7 {Prac 71.2 d3, engine 56.8; Bb7
+63.7, Bf5 49.3} 12. e6 {54% of 247 games} 12... fxe6 {Prac 80.5 d3, engine
+76.3} 13. dxe6 {73% of 116 games} 13... Rxf4 {Prac 80.5 d3, engine 79.3}
+14. exd7 {90% of 72 games} 14... Qxd7 {Prac at least 79.3, few games (34),
+engine 79.3} 15. Qxd7 {71% of 34 games} 15... Bxd7 {Prac at least 79.3, few
+games (24), engine 79.3} 16. Nxc5 {96% of 24 games} 16... Bxb2 {Prac at least
+79.3, few games (8), engine 79.3 · end: few games (8)}) 8... Nxe4 {Prac 64.6
+d3, engine 60.1; Qa5 62.2, Qb6 42.5} 9. Nxe4 {84% of 6,970 games} 9... Qa5+
+{Prac 65.0 d3, engine 60.1} 10. Nc3 {54% of 5,823 games} 10... Bxc3+ {Prac 70.3
+d3, engine 60.1} 11. bxc3 {100% of 3,160 games} 11... Qxb5 {Prac 70.7 d3,
+engine 60.1} 12. Qd3 {40% of 3,137 games} 12... Ba6 {Prac 73.3 d3, engine 68.1
+(over Qa4 73.7: ChessDB +2.06 vs +1.49); c4 64.2} 13. Qxb5 {86% of 732 games}
+13... Bxb5 {Prac 73.5 d3, engine 68.1} 14. Nd2 {34% of 809 games} 14... Nd7
+{Prac 70.3 d3, engine 68.1 · end: no reply likely enough}) (7. e5 {10% of
+66,972 games} 7... Nfd7 {Prac 57.5 d5, engine 50.0; Ne8 57.2, dxe5 55.7, Nh5
+47.6} 8. e6 {44% of 1,276 games} 8... fxe6 {Prac 58.5 d3, engine 56.1; Nf6
+51.0} 9. dxe6 {81% of 520 games} 9... Nf6 {Prac 59.0 d3, engine 56.1; Nb6 52.7}
+10. Bc4 {66% of 325 games} 10... Nc6 {Prac 60.7 d3, engine 56.2; a6 57.0 ·
+transposes to 5. f4 Bg7 6. e5 Nfd7 7. e6 fxe6 8. dxe6 Nf6 9. Bc4 Nc6 10. Nf3
+O-O}) (7. h3 {10% of 66,972 games} 7... b5!? {Prac 60.2 d5, engine 47.1 (best
+e6 50.3); e6 58.5, a6 58.4, Nbd7 57.1} 8. Bxb5 {63% of 2,832 games} 8... Nxe4
+{Prac 58.6 d3, engine 54.8; Qa5 58.3, Ba6 39.2} 9. Nxe4 {84% of 1,432 games}
+9... Qa5+ {Prac 62.0 d3, engine 54.9} 10. Nc3 {52% of 1,208 games} 10... Bxc3+
+{Prac 66.2 d3, engine 56.7} 11. bxc3 {100% of 626 games} 11... Qxb5 {Prac 66.1
+d3, engine 56.7} 12. Qd3 {37% of 620 games} 12... Ba6 {Prac 69.4 d3, engine
+61.6} 13. Qxb5 {80% of 149 games} 13... Bxb5 {Prac 69.3 d3, engine 61.6 · end:
+no reply likely enough}) 7... Qb6!? {Prac 58.3 d1, engine 44.0 (best a6 50.0);
+b5 55.7, e6 51.3, a6 51.1} 8. Na4 {17% of 503 games} (8. Qe2 {15% of 503 games}
+8... e6 {Prac at least 51.9, few games (21), engine 51.9} 9. dxe6 {57% of 21
+games} 9... Bxe6 {Prac at least 54.6, few games (8), engine 54.6 · end: few
+games (8)}) 8... Qa5+ {Prac 72.4 d3, engine 69.5} 9. c3 {70% of 61 games}
+9... b5 {Prac at least 73.6, few games (27), engine 73.6} 10. b4 {56% of 27
+games} 10... cxb4 {Prac at least 82.9, few games (2), engine 82.9 · end: few
+games (2)}) (5. Bb5+ {14% of 298,389 games} 5... Bd7 {Prac 49.4 d5, engine
+48.7; Nbd7 48.7, Nfd7 43.2} 6. a4 {79% of 26,868 games} (6. Bxd7+ {10% of
+26,868 games} 6... Nbxd7 {Prac 52.7 d5, engine 47.8; Qxd7 49.7, Nfxd7 46.6}
+7. Nf3 {46% of 3,070 games} 7... b5 {Prac 55.0 d5, engine 51.4; Bg7 51.7, a6
+50.8} 8. Nxb5 {34% of 50 games} 8... Qa5+ {Prac at least 57.1, few games (5),
+engine 56.8 · end: few games (5)}) 6... Bg7 {Prac 48.8 d1, engine 48.4; Bxb5
+48.6, Na6 47.5} 7. Nf3 {77% of 21,148 games} 7... Bxb5 {Prac 49.1 d5, engine
+48.7; Na6 48.2} 8. axb5 {99% of 1,431 games} 8... Nbd7 {Prac 49.0 d3, engine
+48.6; O-O 48.9, a6 48.3} 9. O-O {77% of 785 games} 9... O-O {Prac 49.6 d3,
+engine 48.7; a6 46.9} 10. h3 {33% of 2,258 games} 10... a6 {Prac 50.5 d3,
+engine 49.0; Ne8 49.1, Qb6 49.0, Nb6 48.7} 11. bxa6 {72% of 906 games}
+11... Rxa6 {Prac 49.6 d3, engine 48.8 (over Qb6 49.9: ChessDB -0.13 vs -0.38);
+bxa6 45.7} 12. Rxa6 {97% of 477 games} 12... bxa6 {Prac 49.4 d3, engine 48.7}
+13. Qe2 {43% of 477 games} 13... Qa5 {Prac at least 48.7, few games (24),
+engine 48.8 (over Qb6 48.8: ChessDB -0.13 vs -0.33)} 14. Bd2 {71% of 24 games}
+14... Rb8 {Prac at least 48.5, few games (11), engine 48.7} 15. b3 {91% of 11
+games} 15... Ne8 {Prac at least 48.4, few games (5), engine 48.5 · end: few
+games (5)}) (5. Be2 {8% of 298,389 games} 5... Bg7 {Prac 50.0 d5, engine 48.9;
+Na6 48.2, a6 46.9, Qa5 46.8} 6. Nf3 {69% of 30,166 games · transposes to 5. Nf3
+Bg7 6. Be2} (6. h4 {10% of 30,166 games} 6... O-O {Prac 56.7 d5, engine 49.9;
+h5 48.9, h6 48.6, Qa5 47.8} 7. h5 {96% of 1,703 games} 7... b5 {Prac 57.9 d5,
+engine 50.0; a6 46.9, Na6 45.3} 8. hxg6 {62% of 948 games} 8... fxg6 {Prac 59.4
+d3, engine 50.0; hxg6 47.9} 9. Bxb5 {45% of 354 games} 9... Nxe4 {Prac 58.1 d3,
+engine 52.3} 10. Nxe4 {89% of 122 games} 10... Qa5+ {Prac 55.5 d3, engine 52.5
+· end: no reply likely enough}) (6. g4 {8% of 30,166 games} 6... O-O {Prac 51.2
+d5, engine 49.6; h6 50.0, e6 48.6, Na6 48.0} 7. g5 {82% of 2,000 games}
+7... Ne8 {Prac 52.4 d5, engine 49.5; Nfd7 50.2} 8. h4 {84% of 368 games}
+8... e6 {Prac 52.2 d3, engine 49.7; a6 44.3, Nd7 41.2} 9. h5 {77% of 631 games}
+9... Nc7 {Prac 52.3 d3, engine 49.8; exd5 45.3} 10. hxg6 {46% of 65 games}
+10... fxg6 {Prac at least 52.2, few games (18), engine 52.2 · end: no reply
+with enough games})) (5. Bg5 {7% of 298,389 games} 5... a6!? {Prac 54.7 d5,
+engine 45.5 (best Bg7 48.6); Bg7 53.4, Qb6 53.1, h6 51.7} 6. Bxf6 {30% of 514
+games} (6. Qd2 {18% of 514 games} 6... Nbd7 {Prac 53.1 d5, engine 49.4; Bg7
+52.8} 7. a4 {52% of 108 games} 7... Bg7 {Prac 54.4 d5, engine 49.9; h6 51.4}
+8. Bh6 {32% of 530 games} 8... Bxh6 {Prac 57.4 d3, engine 50.0; O-O 49.9}
+9. Qxh6 {100% of 164 games} 9... Qb6 {Prac 57.4 d3, engine 50.0; Qa5 54.1, Ne5
+48.5 · end: no reply likely enough}) (6. Nf3 {15% of 514 games} 6... b5 {Prac
+57.0 d5, engine 50.6; Bg7 54.2, Nbd7 52.3} 7. Bxf6 {27% of 150 games} 7... exf6
+{Prac 63.0 d5, engine 56.7 · transposes to 5. Bg5 a6 6. Bxf6 exf6 7. Nf3 b5})
+(6. a4 {13% of 514 games} 6... Bg7 {Prac 50.9 d5, engine 45.3; Nbd7 50.2}
+7. Qd2 {45% of 1,558 games} 7... Nbd7 {Prac 54.7 d5, engine 49.9; h6 52.5, Qa5
+52.4, O-O 51.0 · transposes to 5. Bg5 a6 6. Qd2 Nbd7 7. a4 Bg7}) (6. f4 {8% of
+514 games} 6... Bg7 {Prac 53.8 d5, engine 49.6; Nbd7 52.0} 7. Nf3 {31% of 193
+games} 7... O-O!? {Prac 55.1 d5, engine 47.7 (best b5 53.9)} 8. a4 {58% of 587
+games} 8... Qa5?! {Prac 57.1 d3, engine 40.0 (best Nbd7 47.6); Nbd7 51.2, Bg4
+48.3 · end: no reply likely enough}) 6... exf6 {Prac 57.3 d1, engine 51.9}
+7. Nf3 {26% of 251 games} 7... b5 {Prac 63.0 d5, engine 56.7; Bg7 59.1} 8. Be2
+{40% of 134 games} 8... Bg7 {Prac 63.4 d3, engine 62.0} 9. O-O {80% of 61
+games} 9... O-O {Prac 64.8 d3, engine 61.6 · end: no reply likely enough})
+(5. h3 {6% of 298,389 games} 5... Bg7 {Prac 51.3 d5, engine 48.9; a6 49.4, e6
+41.2, h5 37.6} 6. Nf3 {74% of 22,391 games · transposes to 5. Nf3 Bg7 6. h3})
+(5. f3 {3% of 298,389 games} 5... Bg7 {Prac 52.0 d5, engine 48.7; a6 51.9, Nbd7
+50.2, e6 47.1} 6. Be3 {57% of 15,362 games} 6... O-O {Prac 55.5 d5, engine
+49.7; a6 53.3, Qa5 53.1, h5 52.0} 7. Qd2 {89% of 11,361 games} 7... e6 {Prac
+57.0 d5, engine 49.7; Nbd7 53.5, a6 52.0, Qa5 51.9} 8. O-O-O {42% of 5,702
+games} 8... exd5 {Prac 55.6 d3, engine 50.1; e5 37.5} 9. Nxd5 {53% of 2,158
+games} 9... Nxd5 {Prac 73.2 d3, engine 58.5; Nc6 54.3, Be6 53.5} 10. Qxd5 {72%
+of 887 games} 10... Nc6 {Prac 77.2 d3, engine 59.5; Qa5 75.7, Be6 53.5}
+11. Qxd6 {71% of 86 games} 11... Qb6 {Prac at least 79.8, few games (23),
+engine 79.8} 12. c3 {83% of 23 games} 12... Rd8 {Prac at least 83.0, few games
+(15), engine 83.0} 13. Qxc5 {93% of 15 games} 13... Rxd1+ {Prac at least 83.0,
+few games (14), engine 83.0} 14. Kxd1 {100% of 14 games} 14... Qxb2 {Prac at
+least 83.0, few games (12), engine 83.0 · end: no reply with enough games})
+(5. Bf4 {3% of 298,389 games} 5... Bg7 {Prac 58.3 d5, engine 48.3; Qb6 54.4, a6
+51.7, Qa5 51.3} 6. Qd2 {37% of 55,166 games} (6. Nf3 {26% of 55,166 games}
+6... O-O {Prac 57.2 d5, engine 48.3; Qb6 54.6, Qa5 52.6, a6 52.1} 7. Be2 {26%
+of 18,241 games} 7... b5 {Prac 58.9 d5, engine 50.0; a6 50.1, Na6 49.8, Qa5
+49.2} 8. Bxb5 {73% of 1,227 games} 8... Nxe4 {Prac 58.1 d3, engine 50.0; Qa5
+57.7} 9. Nxe4 {81% of 998 games} 9... Qa5+ {Prac 60.2 d3, engine 50.0 · end: no
+reply likely enough}) 6... Qb6 {Prac 68.4 d5, engine 47.8; Nbd7 56.3, Qa5 54.6,
+O-O 54.4} 7. O-O-O {54% of 1,052 games} 7... Nxe4 {Prac 77.5 d5, engine 70.6;
+Nbd7 67.0} 8. Qe3 {34% of 251 games} 8... Nxc3 {Prac 74.1 d3, engine 74.1}
+9. bxc3 {99% of 83 games} 9... Nd7 {Prac at least 74.1, few games (6), engine
+74.1 · end: few games (6)}) (5. Bd3 {3% of 298,389 games} 5... Bg7 {Prac 51.3
+d5, engine 48.3; a6 50.5, Nbd7 49.7} 6. Nge2 {25% of 10,875 games} (6. Nf3 {25%
+of 10,875 games · transposes to 5. Nf3 Bg7 6. Bd3}) 6... a6 {Prac 54.8 d5,
+engine 46.4; Nbd7 54.3, O-O 50.0, Na6 48.5} 7. a4 {49% of 492 games} 7... Nbd7
+{Prac 51.8 d3, engine 44.5; O-O 49.7} 8. O-O {62% of 181 games} 8... Ne5 {Prac
+53.0 d3, engine 48.6; O-O 51.1} 9. f4 {63% of 62 games} 9... Nxd3 {Prac at
+least 50.2, few games (37), engine 50.2 · end: no reply likely enough})
+5... Bg7 {Prac 49.7 d5, engine 48.3; a6 48.6, Qa5 45.7, Nfd7 41.4} 6. Be2 {26%
+of 197,995 games} (6. Bb5+ {24% of 197,995 games} 6... Bd7 {Prac 49.8 d5,
+engine 48.5 (over Nbd7 50.5: ChessDB -0.16 vs -0.79); Nfd7 45.5} 7. a4 {67% of
+31,428 games · transposes to 5. Bb5+ Bd7 6. a4 Bg7 7. Nf3} (7. Bxd7+ {17% of
+31,428 games} 7... Nbxd7 {Prac 51.7 d5, engine 47.9; Qxd7 50.1, Nfxd7 45.4}
+8. O-O {76% of 7,283 games} 8... O-O {Prac 52.6 d3, engine 47.9; a6 51.3}
+9. Re1 {33% of 5,607 games} 9... a6 {Prac 51.7 d3, engine 47.8; Re8 51.1, Qb6
+51.0, Rb8 49.3} 10. a4 {43% of 1,266 games} 10... Re8 {Prac 49.3 d3, engine
+48.0; b6 47.9, Qc7 47.6, Ne8 47.5 · end: no reply likely enough})) (6. h3 {11%
+of 197,995 games} 6... O-O {Prac 52.1 d5, engine 49.8; a6 48.9, Qa5 48.4, e5
+43.1} 7. Be2 {30% of 38,946 games} (7. Bd3 {24% of 38,946 games} 7... e6 {Prac
+51.2 d5, engine 49.8; a6 50.5, Na6 49.9, b5 48.4} 8. O-O {60% of 6,651 games}
+8... exd5 {Prac 50.0 d3, engine 49.7; a6 48.3, Na6 48.0, Re8 47.1} 9. exd5 {84%
+of 4,193 games} 9... Na6 {Prac 51.2 d3, engine 49.7; Nbd7 50.8, a6 49.0, Re8
+47.3} 10. a3 {32% of 1,010 games} 10... Nc7 {Prac 52.3 d3, engine 50.3} 11. Bc4
+{44% of 331 games} 11... a6 {Prac 51.7 d3, engine 51.0} 12. a4 {95% of 82
+games} 12... b6 {Prac at least 51.1, few games (32), engine 51.1 · end: no
+reply likely enough}) (7. a4 {15% of 38,946 games} 7... e6 {Prac 50.7 d5,
+engine 49.8; a6 50.4, Na6 49.4, b6 47.1} 8. Be2 {45% of 3,379 games} 8... exd5
+{Prac 50.5 d3, engine 50.1; Re8 50.0} 9. exd5 {100% of 1,642 games} 9... Na6
+{Prac 51.1 d3, engine 50.1; Re8 50.3, b6 48.9, Nbd7 48.0} 10. O-O {84% of 323
+games} 10... Re8 {Prac 52.5 d3, engine 50.0; Nb4 52.0, Nc7 51.3} 11. Bf4 {44%
+of 292 games} 11... Nb4 {Prac 55.2 d3, engine 50.4; Nc7 53.3 · end: no reply
+likely enough}) (7. Bc4 {10% of 38,946 games} 7... b5 {Prac 56.1 d5, engine
+50.0; Nbd7 51.9, a6 49.4, Na6 49.1} 8. Bxb5 {82% of 1,357 games · transposes to
+5. Nf3 Bg7 6. h3 O-O 7. Be2 b5 8. Bxb5}) 7... b5 {Prac 56.8 d5, engine 50.0; a6
+54.6, e6 50.0, Na6 49.6} 8. Bxb5 {69% of 2,965 games} 8... Nxe4 {Prac 56.2 d3,
+engine 50.0; Qa5 52.9, Ba6 39.0} 9. Nxe4 {83% of 3,201 games} 9... Qa5+ {Prac
+57.6 d3, engine 50.0} 10. Nc3 {58% of 2,648 games} 10... Bxc3+ {Prac 59.0 d3,
+engine 50.0} 11. bxc3 {100% of 1,528 games} 11... Qxb5 {Prac 65.4 d3, engine
+50.0} 12. Bh6 {45% of 1,518 games} 12... Re8 {Prac 67.3 d3, engine 51.4}
+13. Rb1 {38% of 751 games} 13... Qc4 {Prac 67.7 d3, engine 65.7 · end: no reply
+likely enough}) (6. Bd3 {10% of 197,995 games} 6... O-O {Prac 49.1 d1, engine
+48.5; a6 49.0, Na6 47.9, Bg4 45.7} 7. O-O {59% of 18,013 games} 7... e6 {Prac
+50.2 d3, engine 48.4 (over a6 51.1: ChessDB -0.17 vs -0.28); Na6 49.2, Nbd7
+47.1, Bg4 45.8} 8. Bg5 {33% of 4,798 games} 8... h6 {Prac 49.8 d3, engine 48.5;
+a6 49.4, exd5 47.7, Qb6 47.3} 9. Bh4 {67% of 625 games} 9... exd5 {Prac 54.3
+d3, engine 49.4; g5 51.5} 10. Nxd5 {67% of 110 games} 10... g5 {Prac 56.3 d3,
+engine 49.9} 11. Bg3 {52% of 90 games} 11... Nxd5 {Prac 61.7 d3, engine 61.9}
+12. exd5 {100% of 72 games} 12... f5 {Prac at least 61.7, few games (21),
+engine 61.7 · end: no reply likely enough}) (6. Bc4 {8% of 197,995 games}
+6... O-O {Prac 49.5 d5, engine 48.3; a6 49.0, Na6 48.8, Qa5 47.7} 7. O-O {80%
+of 17,595 games} 7... Na6 {Prac 48.9 d5, engine 48.3 (over Nbd7 48.9: ChessDB
+-0.18 vs -0.91); a6 48.2, Bg4 48.0, e6 46.9} 8. h3 {35% of 2,667 games}
+8... Nc7 {Prac 48.9 d3, engine 48.3; Rb8 43.9} 9. a4 {62% of 1,912 games}
+9... e6 {Prac 48.8 d3, engine 48.4; a6 47.2, b6 46.3, Rb8 45.7} 10. dxe6 {34%
+of 105 games} 10... Bxe6 {Prac 48.7 d3, engine 48.5 · end: no reply likely
+enough}) (6. Bg5 {6% of 197,995 games} 6... O-O {Prac 56.2 d3, engine 48.7;
+Nbd7 50.3, h6 50.1, Na6 47.8} 7. Qd2 {30% of 15,263 games} 7... Qb6 {Prac 66.2
+d5, engine 49.0; a6 55.1, Nbd7 52.3, Bg4 50.9} 8. O-O-O {48% of 426 games}
+8... Nxe4 {Prac 79.6 d3, engine 75.4} 9. Qe3 {53% of 96 games} 9... Nxc3 {Prac
+at least 75.4, few games (46), engine 75.4} 10. bxc3 {100% of 46 games}
+10... Qa5 {Prac at least 75.4, few games (32), engine 75.4 · end: no reply
+likely enough}) 6... O-O {Prac 49.9 d5, engine 48.9; Na6 49.2, a6 46.6, Bg4
+46.3} 7. O-O {79% of 65,991 games} 7... e6 {Prac 50.0 d5, engine 48.9; Na6
+49.4, a6 48.4, b6 48.2} 8. Nd2 {20% of 15,831 games} (8. Bg5 {17% of 15,831
+games} 8... h6 {Prac 49.9 d3, engine 48.7; a6 48.8, exd5 48.2, Qb6 46.7} 9. Bh4
+{74% of 1,063 games} 9... exd5 {Prac 51.2 d3, engine 50.0; g5 50.4} 10. exd5
+{59% of 199 games} 10... g5 {Prac 52.8 d3, engine 50.1; a6 51.3, Nbd7 51.0, Re8
+48.8} 11. Bg3 {97% of 228 games} 11... Nh5 {Prac 52.7 d3, engine 50.2; a6 51.3,
+Bf5 44.5} 12. Nd2 {39% of 184 games} 12... Nxg3 {Prac 51.4 d3, engine 51.2}
+13. hxg3 {78% of 78 games} 13... Nd7 {Prac at least 51.3, few games (25),
+engine 51.3} 14. Nc4 {60% of 25 games} 14... Nb6 {Prac at least 53.4, few games
+(5), engine 53.0 · end: few games (5)}) (8. h3 {16% of 15,831 games} 8... exd5
+{Prac 49.9 d3, engine 49.8; Na6 48.0, e5 42.0} 9. exd5 {98% of 5,446 games}
+9... Na6 {Prac 50.7 d3, engine 49.8; Re8 49.5, b6 48.1, Nbd7 47.9} 10. Bf4 {53%
+of 1,284 games} 10... Nc7 {Prac 52.0 d3, engine 49.7; Re8 50.4, Bf5 46.5}
+11. a4 {72% of 775 games} 11... b6 {Prac 53.2 d3, engine 49.6; Re8 52.8, a6
+51.0, Rb8 50.1} 12. Re1 {26% of 307 games} 12... a6 {Prac 53.3 d3, engine 49.8;
+Re8 51.8, Bb7 51.2 · end: no reply likely enough}) (8. dxe6 {15% of 15,831
+games} 8... Bxe6 {Prac 50.1 d3, engine 49.3; fxe6 46.3} 9. Bf4 {39% of 2,132
+games} 9... d5 {Prac 49.2 d3, engine 49.1; Ne8 46.5} 10. exd5 {69% of 595
+games} 10... Nxd5 {Prac 49.7 d3, engine 49.0} 11. Nxd5 {97% of 418 games}
+11... Bxd5 {Prac 49.5 d3, engine 48.9; Qxd5 49.0} 12. c3 {83% of 200 games}
+12... Re8 {Prac at least 48.8, few games (7), engine 48.8 (over Nc6 49.0:
+ChessDB -0.13 vs -0.24) · end: few games (7)}) 8... exd5 {Prac 50.2 d3, engine
+49.9; Re8 49.0, a6 48.9, Na6 48.6} 9. exd5 {99% of 4,745 games} 9... Nbd7 {Prac
+50.7 d3, engine 49.9; Na6 49.7, Re8 49.7, b6 48.8} 10. Nc4 {67% of 1,644 games}
+10... Nb6 {Prac 50.7 d3, engine 49.9; Ne5 48.9} 11. Ne3 {60% of 824 games}
+11... Re8 {Prac 50.5 d3, engine 49.9; a6 48.6} 12. a4 {81% of 328 games}
+12... Ne4 {Prac 51.5 d3, engine 49.9; a5 50.0, a6 47.0} 13. Nxe4 {93% of 137
+games} 13... Rxe4 {Prac 51.0 d3, engine 49.9} 14. a5 {55% of 128 games}
+14... Rd4 {Prac at least 49.9, few games (23), engine 49.9} 15. Qe1 {57% of 23
+games} 15... Nxd5 {Prac at least 49.9, few games (12), engine 49.9 · end: no
+reply with enough games} *
