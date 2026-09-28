@@ -10,6 +10,7 @@ var DEFAULTS = {
   peUseSiteToken: true,
   peFollowPanel: true,
   peMaia: true,
+  peMaiaPreview: true,
   prepEnabled: true,
   prepBar: false
 };

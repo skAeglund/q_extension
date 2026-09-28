@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 432 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 457 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -580,6 +580,37 @@ missing model all behave. qchess.net was unreachable from the container, so Qche
 wasn't read: that it runs this same model (the size matches) and passes one rating as both
 `elo_self` and `elo_oppo` (the platform does) is assumed. Not yet run against the real
 Lichess and ChessDB, and not run on Windows.
+
+**Maia preview (v1.15.0).** Requested 2026-09-28: a quick Practical value from Maia and
+ChessDB alone, shown while the Lichess one deepens. `search.js` got `maiaOnly` (never ask
+the explorer; Maia weighs every reply, as it does below `maiaOnlyBelow`). `rounds.js`
+`createPreviewedSearch` runs it beside the Lichess search on the same rows, in its own
+lockstep rounds. A row's preview is dropped (`remove`) once its Lichess value is 3 plies
+deep, final, or failed, and isn't restarted by a repeated `add`; a right-click removes
+both, and putting the row back starts both afresh. Its updates carry `pass: 'maia'`, which
+the bridge leaves out of `pending`. `main-world.js` keeps them in `pe.maia`. A row shows
+its preview while the Lichess value is queued, or is a non-final value under depth 3 that
+is shallower than the preview. Green is computed separately for previews and Lichess
+values. The prepared bars ignore the preview. The ChessDB lane now takes a priority
+(`createLimiter`): 1 for the Lichess search, 0 for the preview and analysis requests. A
+Lichess lookup that joins one the preview queued raises it (`p.job`).
+
+Measured on 2026-09-28 by running `evaluateRow`/`createRootSearch` in Node with a Maia-only
+provider: live ChessDB (2 in flight), and Qchess's Maia 3 model in onnxruntime-web 1.26.0
+WASM, the version its worker loads. Nothing was cached.
+- Start position, e4 d4 Nf3 c4, 1 thread: d1 in 2.4–2.9 s (the first ChessDB request is
+  slow), d3 in 11.8 s, d5 in 28.2 s. 163 ChessDB lookups (336 ms average) and 91 Maia
+  policies (160 ms average).
+- After 1.Nf3 d5 2.c4 d4, six rows, 4 threads: d1 in 1.4–2.3 s, d3 in 10.5 s, d5 in 29.5 s.
+  168 lookups (343 ms) and 99 policies (69 ms).
+
+So the preview is bound by ChessDB, at about 1.7 lookups per Maia policy, not by Maia. The
+study page is cross-origin isolated (COOP `same-origin`, COEP `require-corp`), so ORT can
+use threads there. Compare the v1.6.1 note: the same position's Lichess d3 took 94 s. Under
+the v1.14 limits a Lichess d3 fits in the burst when the bucket is full, and takes about a
+minute when it's empty (browsing). A side effect: with the preview on, the tab's Maia
+instance now starts on every position of yours, not only in thin ones. Its load time and
+memory in the browser are unmeasured. Harness only; not yet seen live.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

@@ -335,6 +335,122 @@ module.exports = async function run(check) {
   await check('  ...and a failed request for analysis never fails the search', () =>
     assert.strictEqual(Number(res.value.toFixed(1)), 65.3));
 
+  console.log('\npractical eval: Maia preview');
+  // The Lichess search and the preview over switchTree. switchTree has 1000 games
+  // everywhere, so the Lichess search never asks Maia; the preview never asks the explorer.
+  // hook / maiaHook(pass, san, info) -> undefined | Promise (a delay or a rejection).
+  const PPOL = { 'row b - -': [['r1', 1]], 'p1 b - -': [['x1', 1]], 'p2 b - -': [['y1', 1]],
+    'srow b - -': [['s1', 1]], 'q1 b - -': [['z', 1]] };
+  const tickMs = ms => new Promise(r => setTimeout(r, ms));
+  const gate = () => { let open; const p = new Promise(r => { open = r; }); return { p, open }; };
+  const runPaired = o => {
+    const pubs = [], log = [];
+    const mk = pass => (san, isAborted, counts) => {
+      const p = fakeProvider(o.tree);
+      const inner = p.explorer;
+      p.explorer = (fen, info) => {
+        log.push({ pass, san, what: 'explorer' });
+        if (isAborted()) return Promise.reject(cancelled());
+        counts.misses++;
+        return Promise.resolve(o.hook && o.hook(pass, san, info)).then(() => inner(fen, info));
+      };
+      p.maia = (fen, info) => {
+        log.push({ pass, san, what: 'maia' });
+        return Promise.resolve(o.maiaHook && o.maiaHook(pass, san, info))
+          .then(() => (PPOL[fen] || []).map(([m, prob]) => ({ san: m, prob })));
+      };
+      return p;
+    };
+    const pub = pass => (san, r) => pubs.push({ pass, san, depth: r.depth, final: r.final,
+      maia: r.maia, state: r.state });
+    const search = R.createPreviewedSearch({
+      rootFen: 'root w - -', opts: { maia: true },
+      makeProvider: mk('lichess'),
+      onResult: pub('lichess'),
+      onError: (san, e) => pubs.push({ pass: 'lichess', san, error: e }),
+      preview: o.noPreview ? null : {
+        makeProvider: mk('maia'),
+        onResult: pub('maia'),
+        onError: (san, e) => pubs.push({ pass: 'maia', san, error: e })
+      }
+    });
+    const depths = (pass, san) => pubs.filter(p => p.pass === pass && p.san === san && !p.error)
+      .map(p => p.depth);
+    return { search, pubs, log, depths };
+  };
+
+  let rg = gate(), pg = gate();
+  let pr = runPaired({ tree: switchTree(-100),
+    hook: (pass, san, info) => (info.plies === 3 ? rg.p : undefined),
+    maiaHook: (pass, san, info) => (info.plies === 5 ? pg.p : undefined) });
+  pr.search.add(['R', 'S']);
+  await tickMs(20);
+  await check('the preview deepens while the Lichess search waits on the explorer', () => {
+    assert.deepStrictEqual([pr.depths('maia', 'R'), pr.depths('maia', 'S')], [[1, 3], [1, 3]]);
+    assert.deepStrictEqual([pr.depths('lichess', 'R'), pr.depths('lichess', 'S')], [[1], [1]]);
+  });
+  await check('  ...with Maia alone, never asking the explorer', () => {
+    assert.ok(pr.pubs.filter(p => p.pass === 'maia').every(p => p.maia === 1), 'not all Maia');
+    assert.strictEqual(pr.log.filter(x => x.pass === 'maia' && x.what === 'explorer').length, 0);
+    assert.strictEqual(pr.log.filter(x => x.pass === 'lichess' && x.what === 'maia').length, 0);
+  });
+  rg.open();
+  await tickMs(20);
+  pg.open();
+  await pr.search.done();
+  await check('once the Lichess value is 3 plies deep, that row\'s preview stops', () => {
+    assert.deepStrictEqual([pr.depths('maia', 'R'), pr.depths('maia', 'S')], [[1, 3], [1, 3]]);
+    assert.deepStrictEqual(pr.depths('lichess', 'R'), [1, 3, 5]);
+  });
+  let n0 = pr.pubs.length;
+  pr.search.add(['R']);
+  await pr.search.done();
+  await check('  ...and asking for the row again doesn\'t restart it', () =>
+    assert.strictEqual(pr.pubs.length, n0));
+
+  pg = gate();
+  const boom = () => tickMs(5).then(() => { throw Object.assign(new Error('x'), { status: 500 }); });
+  rg = gate();
+  pr = runPaired({ tree: switchTree(-100),
+    hook: (pass, san, info) => (san === 'R' && info.plies === 1 ? boom()
+      : san === 'S' && info.plies === 3 ? rg.p : undefined),
+    maiaHook: (pass, san, info) => (info.plies === 3 ? pg.p : undefined) });
+  pr.search.add(['R', 'S']);
+  await tickMs(20);
+  pg.open();
+  await tickMs(20);
+  await check('a row whose Lichess search fails loses its preview too; the others go on', () => {
+    assert.ok(pr.pubs.some(p => p.pass === 'lichess' && p.san === 'R' && p.error), 'no error');
+    assert.deepStrictEqual(pr.depths('maia', 'R'), [1]);
+    assert.deepStrictEqual(pr.depths('maia', 'S'), [1, 3, 5]);
+  });
+  rg.open();
+  await pr.search.done();
+
+  rg = gate();
+  pr = runPaired({ tree: switchTree(-100),
+    hook: (pass, san, info) => (info.plies === 3 ? rg.p : undefined) });
+  pr.search.add(['R']);
+  await tickMs(20);
+  pr.search.remove('R');
+  pr.search.add(['R']);
+  await tickMs(20);
+  await check('a row taken out and put back starts both afresh', () =>
+    assert.deepStrictEqual(pr.depths('maia', 'R'), [1, 3, 5, 1, 3, 5]));
+  rg.open();
+  await pr.search.done();
+  await check('  ...and the Lichess one still gets there', () =>
+    assert.deepStrictEqual(pr.depths('lichess', 'R'), [1, 1, 3, 5]));
+
+  pr = runPaired({ tree: switchTree(-100), noPreview: true });
+  pr.search.add(['R', 'S']);
+  await pr.search.done();
+  await check('without the preview, no Maia search runs', () => {
+    assert.strictEqual(pr.pubs.filter(p => p.pass === 'maia').length, 0);
+    assert.strictEqual(pr.log.filter(x => x.pass === 'maia').length, 0);
+    assert.deepStrictEqual(pr.depths('lichess', 'R'), [1, 3, 5]);
+  });
+
   console.log('\npractical eval: Maia');
   // A provider whose Maia answers from `pol` (fen -> [[san, prob]]), counting calls.
   const withMaia = (tree, pol, log) => Object.assign(fakeProvider(tree, log), {
@@ -420,6 +536,36 @@ module.exports = async function run(check) {
     near(b.v, 0.25 * W(300) + 0.75 * W(-300), 1e-9, 'b');
     const a = 4 / 2;                           // alpha / k at the row, k = 2
     near(res.maia, (5 + a) / (200 + 2 * a), 1e-9, 'maia share');
+  });
+
+  console.log('\npractical eval: Maia alone (the preview\'s search)');
+  const MONLY = Object.assign({ maiaOnly: true }, MAIA);
+  log = { explorer: 0, chessdb: 0 };
+  res = await S.evaluateRow(withMaia(thin([3000, 1000]), POL, log), 'root w - -', 'R', 1, MONLY);
+  await check('maiaOnly: Maia alone weighs the replies, however many games there are', () => {
+    near(res.value, 0.2 * W(100) + 0.3 * W(0) + 0.5 * W(-100), 1e-9);
+    near(res.maia, 1, 1e-9, 'maia share');
+    assert.strictEqual(res.state, 'value');
+  });
+  await check('  ...and the explorer is never asked', () => assert.strictEqual(log.explorer, 0));
+  log = { explorer: 0, chessdb: 0 };
+  const MPOL = { 'row b - -': [['a', 0.6], ['b', 0.4]], 'pa b - -': [['x', 1]],
+    'pb b - -': [['y', 0.25], ['z', 0.75]] };
+  res = await S.evaluateRow(withMaia(DEEP, MPOL, log), 'root w - -', 'R', 3,
+    Object.assign({ replyThreshold: 0.02, reachFloor: 0.02 }, MONLY));
+  await check('  ...at every depth: each opponent position is Maia\'s', () => {
+    assert.strictEqual(log.explorer, 0);
+    assert.deepStrictEqual(log.maiaFens.slice().sort(), ['pa b - -', 'pb b - -', 'row b - -']);
+    const b = res.replies.find(r => r.san === 'b');
+    near(b.share, 0.4, 1e-9, 'b share');
+    near(b.v, 0.25 * W(300) + 0.75 * W(-300), 1e-9, 'b');
+  });
+  log = { explorer: 0, chessdb: 0 };
+  res = await S.evaluateRow(withMaia(thin([3000, 1000]), {}, log), 'root w - -', 'R', 1, MONLY);
+  await check('  ...and with no answer from Maia there is no value, still without the explorer', () => {
+    assert.strictEqual(res.state, 'few');
+    assert.strictEqual(res.maiaMissing, true);
+    assert.strictEqual(log.explorer, 0);
   });
 
   console.log('\npractical eval: fewer requests');
@@ -1069,6 +1215,42 @@ module.exports = async function run(check) {
     assert.ok(gone && gone.cancelled);
     assert.strictEqual(b2.spent, 0);
   });
+
+  // The ChessDB lane: the Lichess search's lookups (1) before the preview's (0).
+  const lane = P.createLimiter(1);
+  const laneOrder = [];
+  const hold = gate();
+  lane(() => hold.p);
+  const waiting = [
+    lane(() => { laneOrder.push('a'); }, null, 0),
+    lane(() => { laneOrder.push('b'); }, null, 1),
+    lane(() => { laneOrder.push('c'); }, null, 0),
+    lane(() => { laneOrder.push('d'); }, null, 0)
+  ];
+  waiting[2].job.priority = 2;
+  hold.open();
+  await Promise.all(waiting);
+  await check('lookups waiting for the ChessDB lane go highest priority first', () =>
+    assert.deepStrictEqual(laneOrder, ['c', 'b', 'a', 'd']));
+  const cdbHold = gate();
+  const boards = [];
+  const pfetch = url => {
+    boards.push(new URLSearchParams(url.split('?')[1]).get('board'));
+    return (boards.length <= 2 ? cdbHold.p : Promise.resolve()).then(() => ({ ok: true,
+      status: 200, headers: new Map(), json: () => Promise.resolve({ status: 'ok', moves: [] }) }));
+  };
+  const pprov = P.createProviders({ fetch: pfetch, cache: C.createMemoryCache(now),
+    getToken: () => Promise.resolve('tok'), stats: {}, now, sleep });
+  const looks = [pprov.chessdb(pos(1), null, 1), pprov.chessdb(pos(2), null, 1)];
+  await tickMs(5);
+  looks.push(pprov.chessdb(pos(3), null, 0), pprov.chessdb(pos(4), null, 0));
+  await tickMs(5);
+  looks.push(pprov.chessdb(pos(4), null, 1));
+  await tickMs(5);
+  cdbHold.open();
+  await Promise.all(looks);
+  await check('  ...and a lookup the preview queued moves up when the Lichess search joins it', () =>
+    assert.deepStrictEqual(boards, [pos(1), pos(2), pos(4), pos(3)]));
   // Asking ChessDB to analyse what it doesn't know.
   t = 0;
   const cdbLog = [];
