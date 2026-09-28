@@ -52,27 +52,42 @@ function lanOf(m) { return m.from + m.to + (m.promotion || ''); }
  * the first, in PGN order. `side` is the repertoire's; `state` a repgen run's state, for
  * reach. Each: { key, fen, path (SANs), ply, leaf, own (my move), moves (the PGN's SANs from
  * here), reach, above (FENs from the start down to its parent) }.
+ *
+ * Without a run, reach comes from the PGN itself when its opponent moves carry a share
+ * comment (`{22%}`, or repgen's `{22% of 1234 games}`): the shares multiply down a line, an
+ * opponent move without one counts as 100%, and transpositions add up. A PGN with no such
+ * comment leaves reach null (nearest the start first).
  */
 export function positions(game, side, state) {
-  var out = [], seen = new Map();
-  (function walk(nd, path, above) {
+  var out = [], seen = new Map(), shares = false;
+  (function walk(nd, path, above, r) {
     var key = fenKey(nd.fen);
     var have = seen.get(key);
     if (have) {
       // A transposition: its moves count too (a line may go on from either place).
       nd.children.forEach(function (c) { if (have.moves.indexOf(c.san) < 0) have.moves.push(c.san); });
       have.leaf = have.leaf && !nd.children.length;
+      have.pgnReach += r;
     } else {
       var sn = state && state.nodes && state.nodes[key];
       have = { key: key, fen: nd.fen, path: path, ply: path.length, leaf: !nd.children.length,
         own: sideToMove(nd.fen) === side, moves: nd.children.map(function (c) { return c.san; }),
-        reach: sn && sn.reach != null ? sn.reach : null, above: above };
+        reach: sn && sn.reach != null ? sn.reach : null, above: above, pgnReach: r };
       seen.set(key, have);
       out.push(have);
     }
     var below = above.concat([nd.fen]);
-    nd.children.forEach(function (c) { walk(c, path.concat([c.san]), below); });
-  })(game.root, [], []);
+    var theirs = sideToMove(nd.fen) !== side;
+    nd.children.forEach(function (c) {
+      var m = theirs && /^\s*(\d+(?:\.\d+)?)%/.exec(c.comment || '');
+      if (m) shares = true;
+      walk(c, path.concat([c.san]), below, m ? r * Number(m[1]) / 100 : r);
+    });
+  })(game.root, [], [], 1);
+  out.forEach(function (p) {
+    if (!state && shares) p.reach = p.pgnReach;
+    delete p.pgnReach;
+  });
   return out;
 }
 

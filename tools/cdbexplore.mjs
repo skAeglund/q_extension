@@ -15,6 +15,7 @@
  * Works on any PGN (--side for one that isn't repgen's). Next to a repgen run
  * (sicilian.json) it orders the positions by how often they are reached, and
  * `node tools/repgen.mjs --out sicilian --check` afterwards picks up the new evals.
+ * Without a run, the opponent moves' share comments ({22%}) give that order instead.
  *
  * A bare file name that isn't in the current directory is looked up in repertoires/.
  * Writes <name>.explore.log and <name>.explore.json (what was explored when; a position

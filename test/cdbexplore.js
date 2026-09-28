@@ -86,6 +86,26 @@ module.exports = async function run(check) {
     assert.deepStrictEqual(t.map(x => x.path.length), [5, 4, 0]);
   });
 
+  await check("explore: without a run, reach comes from the PGN's share comments", () => {
+    // Black's repertoire. 2.Nc3 and 2.Bc4 both reach 1.e4 e5 2.Nc3 Nf6 3.Bc4 / 2.Bc4 Nf6 3.Nc3.
+    const [gp] = T.parsePgn(`[White "Lichess"]
+[Black "Repertoire"]
+
+1. e4 {60%} (1. d4 {30%} d5 2. c4 {50% of 1000 games} e6) e5 {mine, not a share: 90%} 2. Nc3 {40%}
+(2. Bc4 {20%} Nf6 3. Nc3 {25%} Nc6) (2. Nf3 Nc6) Nf6 3. Bc4 {50%} Nc6 *`);
+    const lp = X.positions(gp, 'b', null);
+    const r = sans => lp.find(p => p.path.join(' ') === sans).reach;
+    const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, a + ' vs ' + b);
+    near(r(''), 1);
+    near(r('d4 d5 c4'), 0.15);
+    near(r('e4 e5'), 0.6);                      // my move's comment isn't a share
+    near(r('e4 e5 Nc3 Nf6 Bc4'), 0.6 * 0.4 * 0.5 + 0.6 * 0.2 * 0.25);   // transposition adds up
+    near(r('e4 e5 Nf3'), 0.6);                  // their move without a share counts as 100%
+    // A run's state wins, and a PGN without shares stays null.
+    assert.strictEqual(X.positions(gp, 'b', { nodes: {} })[0].reach, null);
+    assert.ok(list.every(p => p.reach === null));
+  });
+
   /* --- the search ------------------------------------------------------ */
 
   // A ChessDB made of a table: fen key -> {uci: score}. A missing position has no moves;

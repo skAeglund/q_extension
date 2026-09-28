@@ -18,7 +18,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 410 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 411 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator)
                               # and test/pgnclean.js (PGN tree, cleaning, transpositions)
