@@ -10,7 +10,9 @@ work on it.
 
 ## The short version
 
-- No build step, no dependencies, no framework. The files in `src/` are what ships.
+- No build step, no dependencies, no framework. The files in `src/` are what ships. (One
+  exception, outside the extension: `repgen --maia` needs onnxruntime-node, in
+  `tools/package.json`.)
 - The extension reads **undocumented internals of a third-party site**. That coupling is the
   whole design, and it's the thing most likely to break.
 - `node test/harness.js` is the real test suite and the primary way to verify changes.
@@ -18,9 +20,10 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 412 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 432 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
-                              # and test/repgen.js (the repertoire generator)
+                              # and test/repgen.js (the repertoire generator, Maia's
+                              # encoding with a fake model; needs no npm install)
                               # and test/pgnclean.js (PGN tree, cleaning, transpositions)
                               # and test/cdbexplore.js (target picking, ChessDB search)
 node --check src/main-world.js
@@ -103,7 +106,7 @@ Live findings the source didn't make obvious:
 | `#dbh-score-label` | static markup | the "Score" header text. Page CSS gives it `width: 0; overflow: visible; pointer-events: none`, so its text overflows into `.move-percentages`, a later flex sibling painted on top. To be clickable (the prepared toggle) it needs `pointer-events: auto`, and `position: relative; z-index: 1`, scoped to our `#db-column-header.qx-prep-toggle`. The site adds `.sort-active-header` to it when sorting by score, and never rewrites its text |
 | `#tree-move-styles` | page-injected `<style>` | fixed `!important` column widths, and rows `height:20px; overflow:hidden` |
 | `localStorage.lichessToken` | page storage | the site's own Lichess token (see the design's open question 1; not used by default) |
-| `/Frontend/maia/maia-worker.js` | module worker | Maia 3 (ONNX, ~46 MB, in IndexedDB `QchessMaiaModels`). Messages in: `init` → `status` `ready` or `no-cache`; `policy {id, fen, elo}` → `policy-result {id, moves: [{san, prob}]}`. The extension starts **its own instance** from the MAIN world (the page's is closure-private) and only ever sends `init` and `policy`: `clear` would delete the user's model |
+| `/Frontend/maia/maia-worker.js` | module worker | Maia 3 (ONNX, ~46 MB, in IndexedDB `QchessMaiaModels`). Messages in: `init` → `status` `ready` or `no-cache`; `policy {id, fen, elo}` → `policy-result {id, moves: [{san, prob}]}`. The extension starts **its own instance** from the MAIN world (the page's is closure-private) and only ever sends `init` and `policy`: `clear` would delete the user's model. The model is most likely CSSLab's `maia3_simplified.onnx` (45,683,686 bytes), which repgen runs itself (`tools/repgen/maia.mjs`) |
 | `window.maiaIsEnabled()` | function | the page's Maia switch; after a `no-cache`, the extension tries its worker again only once this is true |
 | `window.parseQueryAll(text)` | function | ChessDB's plain-text `queryall` answer → `{kind: 'list' \| 'unknown' \| …, items}`. Used by the Eval header's refresh (v1.11.0), so its answer takes the page's own path into `normalizeChessDBResults` |
 | `lichessCache` | script-scope `const` | the Lichess path's cache for the session (80 entries): stats, games and evals **with ChessDB's first answer merged in**. A cache hit redraws from it without asking ChessDB again, which is why the refresh exists. Not read or written by the extension; the `displayStatistics` wrapper's overlay (`cdbSeen`) covers its redraws. The Elite/other-DB path has no such cache and asks ChessDB on every visit |
@@ -233,6 +236,15 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
   `test/repgen.js`; `root.mjs` is
   `background.js`'s `startRoot` without the port, so a change to one likely belongs in the
   other.
+- `tools/repgen/maia.mjs` runs Maia 3 in Node for `repgen --maia`: onnxruntime-node
+  (`tools/package.json`, `npm install --prefix tools`, pinned to 1.30.0) and CSSLab's
+  `maia3_simplified.onnx`, downloaded into `repertoires/` (gitignored) from a pinned commit of
+  CSSLab/maia-platform-frontend and checked by sha256. That repository is GPL-3: the encoding
+  (tokens, the 4352-move index, the flip for Black) is written from its description and
+  checked against its move table, not copied. Keep it that way, and don't commit the model.
+  `onnxruntime-node` is imported dynamically, so the harness and every other tool run without
+  it. The session is created with `graphOptimizationLevel: 'extended'`: the default `'all'`
+  segfaulted on session creation (1.30.0, Linux x64).
 - `tools/pgnclean.mjs` reads PGN back (`repgen/pgntree.mjs`, variations and all) and finds
   transpositions by replaying moves with chess.js, never by parsing repgen's comments.
   `repgen/clean.mjs` recognises repgen's comment wording (`N% of N games`, `Prac `,
@@ -545,6 +557,29 @@ Two further changes:
 The user asked about alternating their two tokens to double the rate. That was declined as
 evading Lichess's per-account limit, and it would also starve Qchess's panel. Harness only;
 not yet seen live.
+
+**Repgen: Maia 3 (2026-09-28).** Requested: blend Maia in under 100 games, as the column
+does, so a repertoire's choices stay practical down to about 10 games. `--maia` turns on the
+search's own Maia path (`search.js`, unchanged) for a run, saved in `state.search`; the model
+runs in Node (`repgen/maia.mjs`), not in a tab. Off by default: it needs an install, and a
+checked run must search the way it was made. Maia's rating comes from the filter like
+`peMaiaElo` (2100 for repgen's default 1800/2000/2200) unless `--maia-elo` is given. Nodes
+save `maia` (the pick's Maia share, in the PGN as `N% Maia` inside the `Prac` bit, so
+`clean.mjs` needed no change) and `maiaElo`; `--check --maia` re-searches positions searched
+without it that had a candidate under `maiaUntil` games (70% of the searched positions in the
+runs in `repertoires/`: most positions have some rarely played candidate). The plan itself is
+unchanged: replies are still followed by games, and `stopGames` still ends lines, so a move
+nobody plays can win on Maia alone and end its line there.
+Verified in this container on 2026-09-28: the model loads in onnxruntime-node and predicts
+sensibly (start position at 2100: e4 52%, d4 32%; after 1.e4: c5 26%, e5 20%; mirrored
+positions give identical outputs), about 35 ms a position alone and 12 ms each in a batch of
+32. The move index formula matches all 4352 entries of the platform's `all_moves_maia3.json`.
+An offline CLI run against a fake `fetch` (thin fake games) searched 12 positions with
+2,946 Maia positions in 81 s, and resume, `--pgn-only`, `--maia off`, a missing install and a
+missing model all behave. qchess.net was unreachable from the container, so Qchess's worker
+wasn't read: that it runs this same model (the size matches) and passes one rating as both
+`elo_self` and `elo_oppo` (the platform does) is assumed. Not yet run against the real
+Lichess and ChessDB, and not run on Windows.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

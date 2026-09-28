@@ -1,9 +1,12 @@
 /*
  * One of my positions, searched the way the Practical column searches it: the column's
  * own lockstep rounds (src/pe/rounds.js) over the shared providers. This is
- * background.js's startRoot without the port, the tab and Maia.
+ * background.js's startRoot without the port and the tab: Maia, which the extension asks
+ * the tab for, comes from `o.maia` (repgen/maia.mjs) instead.
  *
- * o = { providers, filter, child(fen, san) -> fen, analyseMax }
+ * o = { providers, filter, child(fen, san) -> fen, uci(fen, san) -> uci, analyseMax,
+ *       maia(fen, elo) -> Promise<[{ san, prob }] | null> }
+ * With opts.maia on, the search gets Maia at opts.maiaElo; without o.maia it has none.
  * Returns runRoot(fen, rows, { opts, budget, shares }) -> Promise<{ results, spent }>,
  * results a Map of each row's last published result. A row that failed outright has
  * { state: 'error', error }.
@@ -57,6 +60,10 @@ export function makeRunRoot(o) {
             return sent;
           }, function () { return false; });
         },
+        maia: o.maia ? function (f) {
+          if (isAborted()) return Promise.resolve(null);
+          return o.maia(f, x.opts && x.opts.maiaElo);
+        } : undefined,
         child: o.child
       };
     }

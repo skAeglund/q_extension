@@ -70,6 +70,11 @@ export function pawns(cp) {
   return (cp >= 0 ? '+' : '-') + (Math.abs(cp) / 100).toFixed(2);
 }
 function thousands(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+// How much of a Practical value rests on Maia's predictions rather than games.
+function maiaPart(x) {
+  var p = Math.round((x || 0) * 100);
+  return p >= 1 ? ', ' + p + '% Maia' : '';
+}
 
 export function toPgn(state, o) {
   o = o || {};
@@ -133,7 +138,7 @@ export function toPgn(state, o) {
       var s = n.few
         ? 'Prac at least ' + win(n.value) + ', few games' +
           (mine && mine.games != null ? ' (' + mine.games + ')' : '') + ', engine ' + win(n.engine)
-        : 'Prac ' + win(n.value) + ' d' + n.depth + ', engine ' + win(n.engine);
+        : 'Prac ' + win(n.value) + ' d' + n.depth + maiaPart(n.maia) + ', engine ' + win(n.engine);
       // Marked: say what it was measured against.
       if (e.mark) s += ' (best ' + e.best.san + ' ' + win(e.best.win) + ')';
       // A near-tie ChessDB decided: the move with the top Practical value it beat.

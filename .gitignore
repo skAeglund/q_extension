@@ -3,6 +3,9 @@
 
 # repgen's shared answer cache: ~19 MB and growing, regenerable from Lichess/ChessDB
 repertoires/repgen-cache.jsonl
+# repgen --maia's model (46 MB), downloaded on first use
+repertoires/*.onnx
+repertoires/*.onnx.part
 
 # Scratch copies of the site fetched while investigating (see CLAUDE.md)
 ShowGame.css

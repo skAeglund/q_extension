@@ -75,11 +75,13 @@ export var REPGEN_DEFAULTS = {
   closeCp: 5
 };
 
-// The Practical column's defaults as they were when repgen was built, minus Maia (the
-// model lives in the Qchess tab). The column's later request savings (v1.14.0: replies from
-// 3%, no explorer under 10 games, my alternatives only from 10% reach) are off here, so a
-// checked run searches again the way it was made; --reply-threshold 3
-// --skip-explorer-below 10 --compare-reach-min 10 turn them on.
+// The Practical column's defaults as they were when repgen was built. The column's later
+// request savings (v1.14.0: replies from 3%, no explorer under 10 games, my alternatives
+// only from 10% reach) are off here, so a checked run searches again the way it was made;
+// --reply-threshold 3 --skip-explorer-below 10 --compare-reach-min 10 turn them on.
+// Maia is off for the same reason, and because it needs onnxruntime-node and its model
+// (repgen/maia.mjs): --maia turns it on for a run, with the column's blend. maiaElo 0 means
+// "from the run's rating filter", as the column's does.
 export var SEARCH_DEFAULTS = {
   replyThreshold: 0.02,
   minGames: 50,
@@ -88,7 +90,11 @@ export var SEARCH_DEFAULTS = {
   ownMargin: 5,
   ownMaxCandidates: 3,
   compareReachMin: 0,
-  maia: false
+  maia: false,
+  maiaElo: 0,
+  maiaUntil: 100,
+  maiaOnlyBelow: 10,
+  maiaWeight: 20
 };
 
 // 0 means "the top reply only".
@@ -409,7 +415,9 @@ export function createGenerator(o) {
               analysing: r.res.analysing || 0,
               games: r.res.games != null ? r.res.games : null,
               score: c.scores[r.san] != null ? c.scores[r.san] : null,
-              cp: c.cps[r.san] != null ? c.cps[r.san] : null };
+              cp: c.cps[r.san] != null ? c.cps[r.san] : null,
+              // The share of the value that rests on Maia rather than games.
+              maia: r.res.maia ? r.res.maia : undefined };
           });
         var san = pick ? pick.san : c.best.san;
         settle(n, d.play(n.fen, san), {
@@ -422,6 +430,10 @@ export function createGenerator(o) {
             cp: c.cps[pick.over.san], mine: c.cps[pick.san] } : undefined,
           value: pick ? pick.res.value : null,
           depth: pick ? pick.res.depth : 0,
+          maia: pick && pick.res.maia ? pick.res.maia : undefined,
+          // The rating Maia played at, when the search had Maia: a check tells searches
+          // made without it by its absence.
+          maiaElo: opts.maia ? opts.maiaElo : undefined,
           engine: c.wins[san],
           bestMove: c.best.san,
           bestEngine: c.best.win,
