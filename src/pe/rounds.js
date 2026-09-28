@@ -206,3 +206,68 @@ export function createRootSearch(o) {
     }
   };
 }
+
+/*
+ * The Lichess search with a Maia preview beside it: a second search of the same rows with
+ * Maia's predictions in place of games (opts.maiaOnly). It asks ChessDB and Maia only,
+ * so it deepens in seconds where the explorer's rate limit takes minutes, and the table
+ * shows it until the Lichess value is `previewUntil` plies deep.
+ *
+ * A row's preview stops as soon as the table no longer needs it: once its Lichess value
+ * reaches that depth, is final (complete, stopped, few games, no eval) or fails. The two
+ * searches share rows otherwise: a row added goes to both, a row removed (right-click)
+ * leaves both, and adding it back starts both afresh.
+ *
+ * o = as for createRootSearch, plus
+ *   preview: { makeProvider, onResult, onError } or null for no preview
+ *   previewUntil: 3
+ */
+export function createPreviewedSearch(o) {
+  var until = o.previewUntil || 3;
+  var retired = new Set();
+  var preview = null;
+
+  function retire(san) {
+    if (!preview || retired.has(san)) return;
+    retired.add(san);
+    preview.remove(san);
+  }
+
+  var real = createRootSearch(Object.assign({}, o, {
+    onResult: function (san, res) {
+      o.onResult(san, res);
+      if (!(res.state === 'value' && res.final === false && res.depth < until)) retire(san);
+    },
+    onError: function (san, e) {
+      o.onError(san, e);
+      retire(san);
+    }
+  }));
+
+  if (o.preview) {
+    preview = createRootSearch({
+      rootFen: o.rootFen,
+      // No prepared split: it is measured by game results, and the preview has none.
+      opts: Object.assign({}, o.opts, { maiaOnly: true, prep: false }),
+      makeProvider: o.preview.makeProvider,
+      isStale: o.isStale,
+      onResult: o.preview.onResult,
+      onError: o.preview.onError
+    });
+  }
+
+  return {
+    add: function (sans) {
+      real.add(sans);
+      if (preview) preview.add((sans || []).filter(function (s) { return !retired.has(s); }));
+    },
+    remove: function (san) {
+      retired.delete(san);
+      if (preview) preview.remove(san);
+      return real.remove(san);
+    },
+    done: function () {
+      return Promise.all([real.done(), preview ? preview.done() : null]).then(function () {});
+    }
+  };
+}

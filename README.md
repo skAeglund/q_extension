@@ -153,6 +153,27 @@ pool.
   This uses the Maia model Qchess already keeps: turn Maia on in Qchess once to download
   it. The extension runs its own copy of Qchess's Maia worker, so the page's Maia column
   is unaffected, and the Maia switch doesn't need to stay on.
+- **Maia preview while Lichess catches up.** The Lichess explorer allows about 16 requests
+  a minute, so a new position's values can take a minute or more to reach depth 3. In the
+  meantime the column shows a quick preview: the same search with Maia's predicted replies
+  in place of Lichess games everywhere, which needs only ChessDB and Maia. It reads `≈54`
+  in purple italics. Measured against live ChessDB with Qchess's Maia model and nothing
+  cached, 4 to 6 rows reached depth 1 in about 2 s, depth 3 in about 10 s and depth 5 in
+  about 30 s. A preview gives way to the Lichess value once that is 3 plies deep, or
+  finished, and until then only when it is deeper than the Lichess value.
+  - It's a way to see early whether a move is worth waiting for, for example one that
+    scores above the engine's best. Maia doesn't know opening theory, though: where the
+    players in the filter know the book reply, the preview can overrate a trap that
+    Lichess games will show doesn't work. That is why the Lichess value replaces it.
+  - Green marks the best preview among those at one depth, as it does for Lichess values.
+    A preview is never compared with a Lichess value.
+  - The preview's tooltip gives its replies and how far the Lichess search has got. The
+    Lichess value's tooltip names the last preview afterwards.
+  - It makes no Lichess requests, and its ChessDB lookups wait behind the Lichess
+    search's, so it never slows the real value down. Both searches share ChessDB's cache,
+    so the preview's lookups are often ones the Lichess search needs later anyway.
+  - It needs Qchess's Maia model, like the fill-in above, and has its own switch in the
+    popup.
 - `–` means too few games (under 50, when Maia isn't available) or no ChessDB eval, and
   `?` means an error. Hover either one for the reason; click `?` to retry.
 - Hovering a value lists the main replies with the move you'd answer each with
@@ -212,8 +233,8 @@ Settings are in the popup's **Practical eval** section: on/off, token and Test, 
 follow the panel's filter (and the fallback speeds and ratings), and under Advanced the row
 and reply thresholds, the minimum games, the request rate, how rare a line can be and still
 be followed, the maximum depth, how many of your own moves are compared and how close they
-must be, the requests per position, and Maia's game limits and weight. Maia itself has a
-switch next to the filter settings.
+must be, the requests per position, and Maia's game limits and weight. Maia itself, and
+the Maia preview, have switches next to the filter settings.
 
 ### Prepared score (the Score column)
 

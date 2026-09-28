@@ -66,6 +66,7 @@
     ownMaxCandidates: 3,
     peRequestBudget: 60,
     peMaia: true,
+    peMaiaPreview: true,
     maiaUntil: 100,
     maiaOnlyBelow: 10,
     maiaWeight: 20,
@@ -195,6 +196,9 @@
       '#database-trees .qx-pe.qx-maia{color:#b392f0}',
       '#database-trees .qx-pe.qx-best.qx-maia{color:#3fb950;text-decoration:underline;',
       'text-decoration-color:#b392f0;text-decoration-thickness:2px;text-underline-offset:2px}',
+      // The Maia preview (≈, and qx-maia's purple): italic, so it never reads as a Lichess
+      // value that happens to rest mostly on Maia.
+      '#database-trees .qx-pe.qx-mp{font-style:italic}',
       '#database-trees .qx-pe.qx-q{opacity:.45}',
       '#database-trees .qx-pe.qx-x{opacity:.35}',
       // While deeper iterations run, the % sign gives way to a small depth marker.
@@ -769,8 +773,9 @@
   var PE_MAX_AUTO = 8;
   // excluded: "<root>|<san>" keys the user right-clicked out of the analysis. Kept for
   // the browser session by the worker (chrome.storage.session), via the bridge.
-  var pe = { results: new Map(), gen: 0, root: null, stats: null, evals: null, timer: null,
-    excluded: new Set(), rechecks: new Map() };
+  // maia: the Maia preview's results, keyed like `results` (see pePreview).
+  var pe = { results: new Map(), maia: new Map(), gen: 0, root: null, stats: null, evals: null,
+    timer: null, excluded: new Set(), rechecks: new Map() };
 
   function stripFen(f) {
     return String(f || '').trim().split(/\s+/).slice(0, 4).join(' ');
@@ -910,10 +915,11 @@
     return list.slice(0, PE_MAX_AUTO);
   }
 
-  function peRemember(key, val) {
-    pe.results.delete(key);
-    pe.results.set(key, val);
-    if (pe.results.size > 3000) pe.results.delete(pe.results.keys().next().value);
+  function peRemember(key, val, map) {
+    map = map || pe.results;
+    map.delete(key);
+    map.set(key, val);
+    if (map.size > 3000) map.delete(map.keys().next().value);
   }
 
   function num(v, dflt) {
@@ -984,6 +990,7 @@
         ownMaxCandidates: Math.max(1, num(settings.ownMaxCandidates, 3)),
         budget: num(settings.peRequestBudget, 60),
         maia: settings.peMaia !== false,
+        maiaPreview: settings.peMaia !== false && settings.peMaiaPreview !== false,
         maiaElo: peMaiaElo(filter),
         maiaUntil: num(settings.maiaUntil, 100),
         maiaOnlyBelow: num(settings.maiaOnlyBelow, 10),
@@ -1033,7 +1040,8 @@
   var PE_MAIA_MISSING = 'Maia unavailable: turn Maia on in Qchess once to download its '
     + 'model, then thin positions are filled in with its predictions.';
 
-  function peTooltip(r, filter) {
+  // m: the row's Maia preview, if any, for comparison.
+  function peTooltip(r, filter, m) {
     if (r.state === 'few') {
       return 'Only ' + (r.games || 0) + ' games here with the current filter (minimum '
         + settings.minGames + ').' + (r.engine != null ? '\nEngine: ' + Math.round(r.engine) + '%' : '')
@@ -1041,23 +1049,9 @@
     }
     if (r.state === 'none') return 'ChessDB has no eval for this position.';
     if (r.state === 'error') return r.reason + '\nClick to retry.';
-    var diff = r.engine != null ? Math.round(r.value - r.engine) : null;
-    var lines = ['Practical ' + Math.round(r.value) + '%' + (r.engine != null
-      ? ' · engine ' + Math.round(r.engine) + '% (' + (diff >= 0 ? '+' : '') + diff + ')' : '')];
+    var lines = [peValueLine('Practical ' + Math.round(r.value) + '%', r)];
     lines.push((r.games || 0).toLocaleString('en-US') + ' games · Lichess ' + filterLabel(filter));
-    var min = (Number(settings.replyThreshold) || 0) / 100;
-    (r.replies || []).filter(function (x) { return x.share >= min; }).slice(0, 8)
-      .forEach(function (x) {
-        lines.push('  ' + x.san + '  ' + Math.round(x.share * 100) + '% → ' + Math.round(x.v) + '%'
-          + (x.move ? '  (' + x.move + ')' : '') + (x.maiaOnly ? '  Maia' : ''));
-      });
-    if (r.tailShare > 0.0005) {
-      lines.push('  others under ' + settings.replyThreshold + '%: '
-        + (r.tailShare * 100).toFixed(1) + '% (engine eval)');
-    }
-    if (r.unexplained > 0.0005) {
-      lines.push('  no engine eval: ' + (r.unexplained * 100).toFixed(1) + '% (left out)');
-    }
+    peReplyLines(r, lines, true);
     if (r.maia >= 0.005) {
       lines.push('Maia: ' + Math.round(r.maia * 100) + '% of this value (rating ' + r.maiaElo
         + '), filling in where there are under ' + num(settings.maiaUntil, 100) + ' games');
@@ -1071,10 +1065,48 @@
         + (r.final === false ? 'Deeper rounds pick up its answers.'
           : 'Come back in a few minutes to search again with its answers.'));
     }
+    peSwitchLines(r, lines);
+    if (m) {
+      lines.push('Maia preview: ' + Math.round(m.value) + '% at depth ' + m.depth
+        + ', with Maia\'s predictions in place of games');
+    }
+    lines.push(peDepthLine(r));
+    return lines.join('\n');
+  }
+
+  // "<label> · engine 55% (+3)"
+  function peValueLine(label, r) {
+    var diff = r.engine != null ? Math.round(r.value - r.engine) : null;
+    return label + (r.engine != null
+      ? ' · engine ' + Math.round(r.engine) + '% (' + (diff >= 0 ? '+' : '') + diff + ')' : '');
+  }
+
+  // The main replies, then the tail valued by engine and the share left out. `maiaMark`
+  // flags replies with no games, which says nothing in the preview: none have any there.
+  function peReplyLines(r, lines, maiaMark) {
+    var min = (Number(settings.replyThreshold) || 0) / 100;
+    (r.replies || []).filter(function (x) { return x.share >= min; }).slice(0, 8)
+      .forEach(function (x) {
+        lines.push('  ' + x.san + '  ' + Math.round(x.share * 100) + '% → ' + Math.round(x.v) + '%'
+          + (x.move ? '  (' + x.move + ')' : '') + (maiaMark && x.maiaOnly ? '  Maia' : ''));
+      });
+    if (r.tailShare > 0.0005) {
+      lines.push('  others under ' + settings.replyThreshold + '%: '
+        + (r.tailShare * 100).toFixed(1) + '% (engine eval)');
+    }
+    if (r.unexplained > 0.0005) {
+      lines.push('  no engine eval: ' + (r.unexplained * 100).toFixed(1) + '% (left out)');
+    }
+  }
+
+  function peSwitchLines(r, lines) {
     (r.switches || []).forEach(function (w) {
       lines.push('Your move ' + (w.path.length ? 'after ' + w.path.join(' ') : 'here') + ': '
         + w.to + ', not ChessDB\'s ' + w.from + ' (+' + w.gain.toFixed(1) + ')');
     });
+  }
+
+  function peDepthLine(r) {
     var depth = 'Depth ' + r.depth + ' · ' + r.positions + ' position'
       + (r.positions === 1 ? '' : 's') + ' searched';
     if (r.final === false) depth += ' · searching deeper…';
@@ -1082,11 +1114,75 @@
     else if (r.stopped === 'maxPly') depth += ' · stopped at the depth limit';
     else if (r.stopped === 'error') depth += ' · stopped: a request failed';
     else if (r.complete) depth += ' · complete: nothing deeper to search';
-    lines.push(depth);
+    return depth;
+  }
+
+  /*
+   * The Maia preview (src/pe/rounds.js, createPreviewedSearch): the same search with
+   * Maia's predictions in place of Lichess games. It needs ChessDB and Maia only, so it
+   * reaches depth 3 and 5 while the Lichess search is still at depth 1. It stands in for a
+   * row's Lichess value until that value is PE_PREVIEW_UNTIL deep or final (the worker
+   * stops the preview there too), and only while the preview is the deeper of the two.
+   * Before any Lichess value, any preview value shows.
+   */
+  var PE_PREVIEW_UNTIL = 3;
+  function pePreview(key, r) {
+    if (settings.peMaia === false || settings.peMaiaPreview === false) return null;
+    var m = pe.maia.get(key);
+    if (!m || m.state !== 'value' || m.value == null) return null;
+    if (r && r.state !== 'queued') {
+      if (r.state !== 'value' || r.final !== false || r.depth >= PE_PREVIEW_UNTIL) return null;
+      if (m.depth <= r.depth) return null;
+    }
+    return m;
+  }
+
+  function pePreviewTooltip(m, r) {
+    var lines = [peValueLine('Maia preview ' + Math.round(m.value) + '%', m)];
+    lines.push('Replies weighted by Maia\'s predictions (rating ' + m.maiaElo + '), not by '
+      + 'Lichess games. The Lichess value replaces it at depth ' + PE_PREVIEW_UNTIL + '.');
+    peReplyLines(m, lines, false);
+    peSwitchLines(m, lines);
+    lines.push(peDepthLine(m));
+    lines.push(r && r.state === 'value'
+      ? 'Lichess so far: ' + Math.round(r.value) + '% at depth ' + r.depth + ', searching…'
+      : 'Lichess: computing…');
     return lines.join('\n');
   }
 
-  function peRenderCell(cell, r, mine, filter, best) {
+  // The preview's cell: "≈54", purple italics. Green like any value when it is the best
+  // of the previews shown at one depth. Clicking it plays the move, as a value does.
+  function peRenderPreview(cell, m, r, best) {
+    var cls = ['qx-pe', 'qx-maia', 'qx-mp'];
+    if (best != null && Math.round(m.value) === best) cls.push('qx-best');
+    cell.className = cls.join(' ');
+    cell.textContent = '≈' + Math.round(m.value);
+    cell.removeAttribute('data-d');
+    cell.title = pePreviewTooltip(m, r);
+  }
+
+  /*
+   * Green: the highest value among `vals`, compared as displayed, so that equal-looking
+   * numbers are marked alike. Values only compare at one depth - deeper ones drift
+   * upwards - so a row at another depth (one added by a click, catching up) sits out; a
+   * row that can't go any deeper (`complete`) is exact at every depth and always takes
+   * part. With fewer than two to compare, nothing is marked.
+   */
+  function peBestOf(vals) {
+    var top = 0;
+    vals.forEach(function (r) { if (!r.complete && r.depth > top) top = r.depth; });
+    var best = null, cmp = new Set();
+    vals.forEach(function (r) {
+      if (!r.complete && r.depth !== top) return;
+      cmp.add(r);
+      var v = Math.round(r.value);
+      if (best == null || v > best) best = v;
+    });
+    return { best: cmp.size < 2 ? null : best, cmp: cmp };
+  }
+
+  // m: the row's Maia preview, named in the tooltip once the Lichess value has taken over.
+  function peRenderCell(cell, r, mine, filter, best, m) {
     var cls = ['qx-pe'];
     var text = '', title = '', depth = '';
     if (!mine) {
@@ -1103,7 +1199,7 @@
       if (r.final === false) depth = 'd' + r.depth;
       if (best != null && Math.round(r.value) === best) cls.push('qx-best');
       if (r.maia >= 0.5) cls.push('qx-maia');
-      title = peTooltip(r, filter);
+      title = peTooltip(r, filter, m && m.state === 'value' && m.value != null ? m : null);
     } else if (r.state === 'few' || r.state === 'none') {
       text = '–';
       title = peTooltip(r, filter);
@@ -1157,7 +1253,10 @@
       + 'still searching, 3 plies deep so far; all rows finish a depth before any goes '
       + 'deeper.'
       + (settings.peMaia !== false ? ' Purple: mostly Maia\'s predictions, where there are '
-        + 'under ' + num(settings.maiaUntil, 100) + ' games.' : ''));
+        + 'under ' + num(settings.maiaUntil, 100) + ' games.' : '')
+      + (settings.peMaia !== false && settings.peMaiaPreview !== false ? ' ≈ in purple '
+        + 'italics: Maia\'s quick preview, with its predictions in place of games, shown '
+        + 'until the Lichess value is ' + PE_PREVIEW_UNTIL + ' plies deep.' : ''));
     if (filter.player) notes.push('The panel\'s player filter is not applied here.');
     h.title = notes.join('\n');
 
@@ -1170,29 +1269,24 @@
       var nm = rows[i].classList.contains('total-row') ? null : rows[i].querySelector('.move-name');
       sans.push(nm ? String(nm.textContent || '').trim() : null);
     }
-    // The best practical move gets the colour: the highest value shown, compared as
-    // displayed so that equal-looking numbers are marked alike. With only one value in
-    // the table there is nothing to compare, so nothing is marked.
-    //
-    // Values only compare at one depth - deeper ones drift upwards - so a row still
-    // catching up to the others (one added by a click) sits out. A row that can't go any
-    // deeper (`complete`) is exact at every depth and always takes part.
-    var vals = [];
-    sans.forEach(function (san) {
-      var r = san && pe.results.get(root + '|' + san);
-      if (r && r.state === 'value' && !pe.excluded.has(root + '|' + san)) vals.push(r);
+    // What each row shows: its Lichess value, or the Maia preview standing in for it.
+    // The best practical move gets the colour (peBestOf), Lichess values and previews each
+    // compared among themselves: they are different measures.
+    var vals = [], shownReal = [], shownPrev = [], prev = [];
+    sans.forEach(function (san, j) {
+      var key = san && root + '|' + san;
+      if (!key || pe.excluded.has(key)) return;
+      var r = pe.results.get(key);
+      prev[j] = mine ? pePreview(key, r) : null;
+      if (prev[j]) shownPrev.push(prev[j]);
+      if (r && r.state === 'value') {
+        vals.push(r);
+        if (!prev[j]) shownReal.push(r);
+      }
     });
-    var top = 0;
-    vals.forEach(function (r) { if (!r.complete && r.depth > top) top = r.depth; });
-    var best = null, shown = 0, cmp = new Set();
-    vals.forEach(function (r) {
-      if (!r.complete && r.depth !== top) return;
-      cmp.add(r);
-      shown++;
-      var v = Math.round(r.value);
-      if (best == null || v > best) best = v;
-    });
-    if (shown < 2) best = null;
+    var bestReal = peBestOf(shownReal), bestPrev = peBestOf(shownPrev);
+    // The prepared bars have no preview: their green compares every Lichess value.
+    var cmp = peBestOf(vals).cmp;
     for (i = 0; i < rows.length; i++) {
       var row = rows[i];
       if (row.classList.contains('total-row')) {
@@ -1211,7 +1305,12 @@
         continue;
       }
       var res = pe.results.get(root + '|' + san);
-      peRenderCell(cell, res, mine, filter, cmp.has(res) ? best : null);
+      if (prev[i]) {
+        peRenderPreview(cell, prev[i], res, bestPrev.cmp.has(prev[i]) ? bestPrev.best : null);
+        continue;
+      }
+      peRenderCell(cell, res, mine, filter, bestReal.cmp.has(res) ? bestReal.best : null,
+        pe.maia.get(root + '|' + san));
     }
     prepPaint({ rows: rows, sans: sans, root: root, mine: mine, cmp: cmp, filter: filter });
   }
@@ -1581,7 +1680,7 @@
     if (!msg || !msg.root || !msg.san || !msg.result) return;
     if (msg.result.state === 'excluded') return;     // the worker confirming a right-click
     msg.result.at = Date.now();
-    peRemember(msg.root + '|' + msg.san, msg.result);
+    peRemember(msg.root + '|' + msg.san, msg.result, msg.pass === 'maia' ? pe.maia : pe.results);
     if (msg.root === stripFen(G.fen)) pePaint();
   });
 

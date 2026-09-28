@@ -8,8 +8,9 @@
  *   - Lichess explorer: one request in flight, a token bucket of `ratePerMin` (burst
  *     `burst`), and a 60 s pause of every queued call on HTTP 429. Qchess's own Lichess
  *     panel may draw on the same allowance, so the bucket sits under Lichess's own (below).
- *   - ChessDB: at most two requests in flight, lookups and analysis requests together.
- *     A position or move is asked to be analysed at most once a day.
+ *   - ChessDB: at most two requests in flight, lookups and analysis requests together,
+ *     the Lichess search's lookups first. A position or move is asked to be analysed at
+ *     most once a day.
  *   - Waiting explorer calls go highest priority first (the search's reach), and each
  *     root position has a request budget (see explorer()).
  *   - A cache hit costs nothing: no token, no budget, no queue slot.
@@ -189,25 +190,45 @@ export function createRateLimiter(o) {
   };
 }
 
-// At most `n` jobs in flight; the rest wait in call order.
+/*
+ * At most `n` jobs in flight; the rest wait, highest priority first, then in call order.
+ * The returned promise carries its job (`p.job`), so a caller that joins a request already
+ * waiting can raise its priority: the Maia preview's ChessDB lookups (priority 0) queue
+ * behind the Lichess search's (1), and one the Lichess search also needs moves up.
+ */
 export function createLimiter(n) {
   var active = 0;
   var queue = [];
-  function next() {
-    if (active >= n || !queue.length) return;
-    var job = queue.shift();
-    if (job.isStale && job.isStale()) { job.reject(Cancelled()); next(); return; }
-    active++;
-    Promise.resolve().then(job.fn).then(job.resolve, job.reject).then(function () {
-      active--;
-      next();
-    });
+  var seq = 0;
+  function take() {
+    var bi = 0;
+    for (var i = 1; i < queue.length; i++) {
+      var a = queue[i], b = queue[bi];
+      if (a.priority > b.priority || (a.priority === b.priority && a.seq < b.seq)) bi = i;
+    }
+    return queue.splice(bi, 1)[0];
   }
-  return function (fn, isStale) {
-    return new Promise(function (resolve, reject) {
-      queue.push({ fn: fn, isStale: isStale, resolve: resolve, reject: reject });
-      next();
+  function next() {
+    while (active < n && queue.length) {
+      var job = take();
+      if (job.isStale && job.isStale()) { job.reject(Cancelled()); continue; }
+      active++;
+      Promise.resolve().then(job.fn).then(job.resolve, job.reject).then(function () {
+        active--;
+        next();
+      });
+    }
+  }
+  return function (fn, isStale, priority) {
+    var job = { fn: fn, isStale: isStale, priority: priority || 0, seq: seq++ };
+    var p = new Promise(function (resolve, reject) {
+      job.resolve = resolve;
+      job.reject = reject;
     });
+    queue.push(job);
+    next();
+    p.job = job;
+    return p;
   };
 }
 
@@ -351,7 +372,8 @@ export function createProviders(o) {
 
   function now() { return (o.now || Date.now)(); }
 
-  function chessdb(fen, isStale) {
+  // priority: among lookups waiting for the lane, higher goes first (createLimiter).
+  function chessdb(fen, isStale, priority) {
     var key = fenKey(fen);
     return Promise.all([
       o.cache.get('chessdb', key, TTL.chessdb),
@@ -366,6 +388,10 @@ export function createProviders(o) {
       if (hit && !asked && (hit.status === 'ok' || now() - hit.t < TTL.chessdbUnknown)) {
         return hit;
       }
+      var joined = inflight.get('c' + key);
+      if (joined && joined.job && (priority || 0) > joined.job.priority) {
+        joined.job.priority = priority;
+      }
       return once('c' + key, function () {
         return cdbLane(function () {
           stats.chessdbRequests = (stats.chessdbRequests || 0) + 1;
@@ -378,7 +404,7 @@ export function createProviders(o) {
             v.t = now();
             return o.cache.put('chessdb', key, v).then(function () { return v; });
           });
-        }, isStale);
+        }, isStale, priority);
       });
     });
   }

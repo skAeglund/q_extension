@@ -15,7 +15,7 @@
 
 import { Chess } from './vendor/chess.js';
 import { fenKey } from './pe/search.js';
-import { createRootSearch } from './pe/rounds.js';
+import { createPreviewedSearch } from './pe/rounds.js';
 import { createProviders, burstFor, EXPLORER_URL, LICHESS_RATE } from './pe/providers.js';
 import { createCache } from './pe/cache.js';
 
@@ -238,6 +238,13 @@ function askMaia(port, st, fen, elo) {
   return p;
 }
 
+/*
+ * One root position: the Lichess search, and beside it the Maia preview (rounds.js,
+ * createPreviewedSearch) when Maia and the preview are on. The two share the ChessDB
+ * lane, the Maia instance in the tab and the cap on analysis requests; the preview's
+ * ChessDB lookups wait behind the Lichess search's, so it never slows that search down.
+ * Its updates carry `pass: 'maia'`.
+ */
 function startRoot(port, st, msg) {
   var gen = msg.gen;
   function rootStale() { return !st.alive || gen < st.gen; }
@@ -246,10 +253,16 @@ function startRoot(port, st, msg) {
   var budget = { limit: Number(msg.opts && msg.opts.budget) || DEFAULT_BUDGET, spent: 0 };
   var analysed = 0;
   var maiaElo = Number(msg.opts && msg.opts.maiaElo) || 1900;
+  var wantPreview = !!(msg.opts && msg.opts.maia && msg.opts.maiaPreview);
 
-  function makeProvider(san, isAborted, counts) {
+  function providerFor(pass) {
+    return function (san, isAborted, counts) { return makeProvider(san, isAborted, counts, pass); };
+  }
+
+  function makeProvider(san, isAborted, counts, pass) {
     function isStale() { return rootStale() || isAborted(); }
     var share = shares[san] || 0.01;
+    var cdbPriority = pass === 'maia' ? 0 : 1;
 
     // Identical requests from different rows share one fetch. If the row that queued it
     // goes stale, the others get a cancellation they didn't ask for: ask again.
@@ -265,6 +278,8 @@ function startRoot(port, st, msg) {
 
     return {
       explorer: function (fen, info) {
+        // The preview never asks (maiaOnly); this only makes sure it can't spend requests.
+        if (pass === 'maia') return Promise.resolve(null);
         // Within a round, work goes in descending mass: the row's share of games times
         // the node's reach. Round 1 jumps the queue and is never refused.
         var first = !info || info.plies === 1;
@@ -275,7 +290,9 @@ function startRoot(port, st, msg) {
         }).catch(tag('Lichess'));
       },
       chessdb: function (fen) {
-        return retrying(function () { return providers.chessdb(fen, isStale); }).catch(tag('ChessDB'));
+        return retrying(function () {
+          return providers.chessdb(fen, isStale, cdbPriority);
+        }).catch(tag('ChessDB'));
       },
       // Positions the search needed and ChessDB didn't know: ask it to analyse them, so
       // coming back later finds evals there. Capped per root position.
@@ -296,23 +313,31 @@ function startRoot(port, st, msg) {
     };
   }
 
-  function post(san, result) {
+  function post(san, result, pass) {
     saveStats();
     if (rootStale()) return;
+    var m = { type: 'update', gen: gen, root: fenKey(msg.rootFen), san: san, result: result };
+    if (pass) m.pass = pass;
     try {
-      port.postMessage({ type: 'update', gen: gen, root: fenKey(msg.rootFen), san: san,
-        result: result });
+      port.postMessage(m);
     } catch (e) { st.alive = false; }
   }
 
-  return createRootSearch({
+  return createPreviewedSearch({
     rootFen: msg.rootFen,
     opts: msg.opts,
     budget: budget,
-    makeProvider: makeProvider,
+    makeProvider: providerFor('lichess'),
     isStale: rootStale,
     onResult: function (san, res) { res.tokenSource = tokenSource; post(san, res); },
-    onError: function (san, e) { post(san, { state: 'error', reason: reasonOf(e), final: true }); }
+    onError: function (san, e) { post(san, { state: 'error', reason: reasonOf(e), final: true }); },
+    preview: wantPreview ? {
+      makeProvider: providerFor('maia'),
+      onResult: function (san, res) { post(san, res, 'maia'); },
+      onError: function (san, e) {
+        post(san, { state: 'error', reason: reasonOf(e), final: true }, 'maia');
+      }
+    } : null
   });
 }
 

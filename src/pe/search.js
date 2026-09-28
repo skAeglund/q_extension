@@ -45,6 +45,8 @@ export var PE_DEFAULTS = {
   maiaUntil: 100,          // Maia weighs in below this many games...
   maiaOnlyBelow: 10,       // ...and alone below this many
   maiaWeight: 20,          // Maia's weight in pseudo-games, just above maiaOnlyBelow
+  maiaOnly: false,         // Maia's predictions alone, no explorer at all: the preview
+                           // background.js runs while the Lichess search deepens
   alpha: 4,                // smoothing: w = games + alpha / k over the k used replies
   reachFloor: 0.02,        // nodes below this reach are not expanded
   maxPly: 6,               // deepening cap, from the root: the row move is ply 1
@@ -273,6 +275,10 @@ function makeSearch(provider, opts, rootSide, stats, plies) {
    * led here already had fewer games than that, the explorer isn't even asked, since this
    * position can have no more games than that move.
    *
+   * With `maiaOnly` the explorer is never asked and Maia alone weighs every reply: the
+   * same search, with Maia standing in for the games everywhere. It costs ChessDB and Maia
+   * only, so it deepens in seconds where Lichess's rate limit takes minutes.
+   *
    * Without Maia (off, model not downloaded, or no answer) a node under `minGames` is a
    * leaf, as before. Below a move with under `skipExplorerBelow` games it is one without
    * asking the explorer either: valued by ChessDB, whatever the explorer would say.
@@ -291,8 +297,8 @@ function makeSearch(provider, opts, rootSide, stats, plies) {
     stats.positions++;
     var info = { reach: reach, plies: plies };
     var useMaia = !!opts.maia && typeof provider.maia === 'function';
-    var skipEx = hint != null &&
-      hint < (useMaia ? opts.maiaOnlyBelow : opts.skipExplorerBelow);
+    var skipEx = !!opts.maiaOnly || (hint != null &&
+      hint < (useMaia ? opts.maiaOnlyBelow : opts.skipExplorerBelow));
     return Promise.all([
       skipEx ? null : provider.explorer(pos, info),
       provider.chessdb(pos, info)

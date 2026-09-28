@@ -43,6 +43,7 @@
     ownMaxCandidates: 3,
     peRequestBudget: 60,
     peMaia: true,
+    peMaiaPreview: true,
     maiaUntil: 100,
     maiaOnlyBelow: 10,
     maiaWeight: 20,
@@ -115,8 +116,11 @@
       }
       if (!msg || msg.type !== 'update') return;
       // A row sends one update per iteration; only its last one ends it. Results from
-      // before phase 2 carry no flag and count as final.
-      if (pending > 0 && !(msg.result && msg.result.final === false)) pending--;
+      // before phase 2 carry no flag and count as final. The Maia preview's updates don't
+      // count: it only runs while the row's Lichess search does.
+      if (pending > 0 && msg.pass !== 'maia' && !(msg.result && msg.result.final === false)) {
+        pending--;
+      }
       document.dispatchEvent(new CustomEvent('qx:pe:update', { detail: JSON.stringify(msg) }));
     });
     port.onDisconnect.addListener(function () {
