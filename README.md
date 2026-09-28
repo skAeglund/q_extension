@@ -272,8 +272,8 @@ that).
 `tools/repgen.mjs` builds a repertoire from the Practical eval without a browser. It's meant
 to run for hours, overnight for example, and produces a PGN you import into a Qchess chapter.
 It uses the extension's own search, depth rounds and Lichess/ChessDB clients (`src/pe`), so
-its values are the ones the Prac column would show. It needs Node 22 or later and nothing to
-install.
+its values are the ones the Prac column would show. It needs Node 22 or later, and nothing
+else unless you turn on Maia ([below](#maia)).
 
 ```bash
 # PowerShell: $env:LICHESS_TOKEN = 'lip_...'
@@ -298,10 +298,10 @@ groups (`--speeds`, `--ratings`). A run keeps the filter it started with.
   this (`--score-rows`, `--score-min-games`). They are searched in lockstep rounds, depth 5 for
   your moves in the first 6 plies after the start position (`--deep-plies`) and depth 3
   after that. The best Practical value
-  wins, compared only at one depth, as the column's green is. A move with too few games for a
-  Practical value (under 50) competes on ChessDB's eval instead, which its Practical value
-  would be at least about, so it wins only when even that beats the rest; the PGN says
-  `Prac at least …, few games`. A near-tie goes to ChessDB: a move within 1 point of
+  wins, compared only at one depth, as the column's green is. Without Maia, a move with too
+  few games for a Practical value (under 50) competes on ChessDB's eval instead, which its
+  Practical value would be at least about, so it wins only when even that beats the rest;
+  the PGN says `Prac at least …, few games`. A near-tie goes to ChessDB: a move within 1 point of
   the top Practical value wins when ChessDB rates it at least 0.05 higher
   (`--close-within`, in win% points, 0 turns it off; `--close-cp`, in centipawns). A
   lead of more than a point wins however ChessDB rates the move. The PGN then says what
@@ -318,8 +318,8 @@ groups (`--speeds`, `--ratings`). A run keeps the filter it started with.
   below 0.1% (`--line-min-reach`) or more than 40 plies past the start position (`--max-ply`).
 - **Order.** The most likely positions are done first, so a run stopped at any point has
   covered what matters most. A position reached by two move orders is searched once.
-- **Maia isn't used.** Its model lives in the Qchess tab. Positions under 50 games count as
-  leaves, as they do with Maia switched off in the column.
+- **Maia** is off unless you turn it on (`--maia`, [below](#maia)). Without it, positions
+  under 50 games count as leaves, as they do with Maia switched off in the column.
 
 **Output files** (for `--out sicilian`) go into the `repertoires/` folder of the project.
 An `--out` with a directory (`--out D:/chess/sicilian`) is used as given instead. The other
@@ -362,6 +362,52 @@ as before, so a checked run is searched again the way it was built. `--reply-thr
 --skip-explorer-below 10 --compare-reach-min 10` switch these savings on.
 
 `node tools/repgen.mjs --help` lists every option with its default.
+
+### Maia
+
+With `--maia`, Maia 3's move predictions fill in where the games are few, the way they do in
+the Practical column. Under 100 games, a reply's weight is its games plus up to 20
+"pseudo-games" spread by Maia's probabilities, a share that shrinks as the games add up. Under
+10 games Maia alone decides, and below a reply with under 10 games Lichess isn't asked at all.
+Without Maia, the search treats a position under 50 games as a leaf, so your moves in
+positions with a few dozen games competed on ChessDB's eval alone. With it they get Practical
+values, and the PGN says how much of a value rests on Maia:
+`{Prac 54.2 d3, 35% Maia, engine 53.0}`.
+
+Set it up once, from the project folder:
+
+```bash
+npm install --prefix tools
+```
+
+This installs [onnxruntime-node](https://www.npmjs.com/package/onnxruntime-node) into
+`tools/node_modules` (about 300 MB, since it carries every platform's binaries). On Linux
+x64 its installer also downloads CUDA libraries, which Maia doesn't need:
+`ONNXRUNTIME_NODE_INSTALL=skip npm install --prefix tools` skips them.
+
+The first run with Maia downloads the model into `repertoires/`: `maia3_simplified.onnx`
+(46 MB) from CSSLab's [Maia platform](https://github.com/CSSLab/maia-platform-frontend)
+(GPL-3), at a fixed commit and checked against its checksum. `--maia-model <file>` uses a
+copy you already have instead; it isn't saved with the run, so pass it every time. Qchess's
+own Maia model is the same size, but whether it is the same file hasn't been checked.
+
+```bash
+node tools/repgen.mjs --moves "1.e4 c5" --side white --out sicilian --maia --hours 8
+```
+
+- `--maia` is saved with the run, so the same command without it carries on with Maia.
+  `--maia off` turns it off again.
+- Maia plays at the middle of the rating filter, as in the column: 2100 for the default
+  1800, 2000 and 2200 (`--maia-elo` sets it). `--maia-until`, `--maia-only-below` and
+  `--maia-weight` are the column's other Maia settings.
+- On the CPU, Maia takes about 35 ms a position, or 12 ms each when a search asks for
+  several at once. Lichess's rate limit still sets the pace of a run.
+- A move nobody plays can now win on Maia's predictions alone. Its line then ends, because
+  a position with fewer than 10 games ends a line (`--stop-games`).
+- To bring a run made without Maia up to date, use `--check --maia` (see
+  [Checking a run later](#checking-a-run-later)). It searches again every position where
+  one of your candidates had under 100 games. In the runs in `repertoires/` that is about
+  70% of the positions searched. Their Lichess games come from the cache.
 
 ### Deepening ChessDB's evals
 
@@ -438,7 +484,9 @@ something changed:
   too few games whose eval beats the chosen move's Practical value (runs from before such
   moves competed passed them over), a near-tie that ChessDB's new evals decide differently
   (including runs from before near-ties went to ChessDB), or, where
-  ChessDB's best was played for want of games, ChessDB's best changing. `--check-all`
+  ChessDB's best was played for want of games, ChessDB's best changing. With Maia turned on
+  (`--check --maia`), a search made without it where one of your candidates had under 100
+  games is searched again too. `--check-all`
   searches every one of your moves again. Runs made before the check existed didn't record
   the positions their searches found without an eval, so check those with `--check-all`
   once.
@@ -607,6 +655,7 @@ test/cdbexplore.js  cdbexplore's tests, run by the harness
 tools/repgen.mjs    the repertoire generator (Node; not part of the extension)
 tools/pgnclean.mjs  finishes a repgen PGN: comments and transpositions
 tools/cdbexplore.mjs deepens ChessDB's evals below a PGN's line ends and close decisions
-tools/repgen/       their plan, PGN reader/writers, file cache, root search adapter and
-                    ChessDB exploration (explore.mjs)
+tools/repgen/       their plan, PGN reader/writers, file cache, root search adapter,
+                    ChessDB exploration (explore.mjs) and Maia 3 (maia.mjs)
+tools/package.json  onnxruntime-node, for repgen --maia only
 ```

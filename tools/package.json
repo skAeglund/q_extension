@@ -1,0 +1,8 @@
+{
+  "name": "qchess-transpositions-tools",
+  "private": true,
+  "description": "Only repgen --maia needs this: onnxruntime-node runs Maia 3. Install with `npm install --prefix tools` from the project folder. The extension itself has no dependencies.",
+  "dependencies": {
+    "onnxruntime-node": "1.30.0"
+  }
+}

@@ -16,8 +16,9 @@
  * they could change a move; --dry-run only reports.
  *
  * The search, the rounds and the providers are the extension's own (src/pe). What this
- * adds is the plan (repgen/generator.mjs) and Node plumbing. Maia isn't used: its model
- * lives in the Qchess tab.
+ * adds is the plan (repgen/generator.mjs) and Node plumbing. With --maia, Maia 3 fills in
+ * thin positions as it does in the column; repgen runs the model itself (repgen/maia.mjs),
+ * which needs `npm install --prefix tools` once.
  *
  * See README.md, "Repertoire generator", for the options.
  */
@@ -32,7 +33,8 @@ import { makeRunRoot } from './repgen/root.mjs';
 import { createFileCache, withFreshChessdb } from './repgen/filecache.mjs';
 import { runCheck, apply as applyCheck, outcome as checkOutcome } from './repgen/check.mjs';
 import { toPgn, engineLoss, markFor } from './repgen/pgn.mjs';
-import { outPath } from './repgen/paths.mjs';
+import { outPath, REPERTOIRES } from './repgen/paths.mjs';
+import { loadMaia, maiaEloFor, clampElo, MAIA_FILE } from './repgen/maia.mjs';
 
 var STANDARD = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -69,11 +71,15 @@ function usage() {
     '           --chessdb-rate <ChessDB requests/min, default 60>',
     'Lichess:   --speeds blitz,rapid,classical  --ratings 1800,2000,2200  --token-file <file>',
     '           (or the LICHESS_TOKEN environment variable)',
+    'Maia:      --maia [on|off] (off; kept with the run), --maia-model <file> (default',
+    '           repertoires/' + MAIA_FILE + ', downloaded on first use), --maia-elo <n>',
+    '           (default: from --ratings, 2100 for 1800,2000,2200), --maia-until 100,',
+    '           --maia-only-below 10, --maia-weight 20',
     'Plan:      ' + Object.keys(REPGEN_DEFAULTS).map(function (k) {
       return '--' + k.replace(/[A-Z]/g, function (c) { return '-' + c.toLowerCase(); }) +
         ' ' + REPGEN_DEFAULTS[k];
     }).join('\n           '),
-    'Search:    ' + Object.keys(SEARCH_DEFAULTS).filter(function (k) { return k !== 'maia'; })
+    'Search:    ' + Object.keys(SEARCH_DEFAULTS).filter(function (k) { return !/^maia/.test(k); })
       .map(function (k) {
         return '--' + k.replace(/[A-Z]/g, function (c) { return '-' + c.toLowerCase(); }) +
           ' ' + SEARCH_DEFAULTS[k];
@@ -117,6 +123,14 @@ function sideOf(v, fen) {
   if (v === 'w' || v === 'white') return 'w';
   if (v === 'b' || v === 'black') return 'b';
   throw new Error('--side is white or black');
+}
+
+function onOff(v) {
+  if (v === true) return true;
+  var s = String(v).toLowerCase();
+  if (s === 'on' || s === 'true' || s === 'yes' || s === '1') return true;
+  if (s === 'off' || s === 'false' || s === 'no' || s === '0') return false;
+  throw new Error('--maia is on or off, got ' + v);
 }
 
 function readToken(args) {
@@ -186,6 +200,23 @@ function main() {
   }
   Object.assign(state.config, pick(args, REPGEN_DEFAULTS));
   Object.assign(state.search, pick(args, SEARCH_DEFAULTS));
+  if (args.maia != null) {
+    var maiaWas = !!state.search.maia;
+    state.search.maia = onOff(args.maia);
+    if (maiaWas !== state.search.maia && state.searches > 0 && !checking) {
+      log(state.search.maia
+        ? 'Note: the positions searched so far were searched without Maia. --check searches ' +
+          'again those where it matters.'
+        : 'Note: the positions searched so far keep the values they had with Maia.');
+    }
+  }
+  if (state.search.maiaElo) state.search.maiaElo = clampElo(state.search.maiaElo);
+  // Maia plays at the filter's rating unless told otherwise, so a run that changes its
+  // filter moves Maia with it.
+  var maiaOn = !!state.search.maia;
+  var maiaElo = state.search.maiaElo || maiaEloFor(state.filter.ratings);
+  var maiaFile = args.maiaModel && args.maiaModel !== true ? path.resolve(String(args.maiaModel))
+    : path.join(REPERTOIRES, MAIA_FILE);
 
   function save() {
     var tmp = statePath + '.tmp';
@@ -244,18 +275,44 @@ function main() {
     return m.from + m.to + (m.promotion || '');
   }
 
+  // Loaded before the first search. A position Maia fails on is searched without it, as
+  // in the column; the first failure is logged.
+  var maia = null;
+  var maiaFailed = false;
+  function maiaPolicy(fen, elo) {
+    if (!maia) return Promise.resolve(null);
+    return maia.policy(fen, elo).catch(function (e) {
+      if (!maiaFailed) {
+        maiaFailed = true;
+        log('Maia failed (' + (e && e.message || e) + '); positions it fails on are searched without it.');
+      }
+      return null;
+    });
+  }
+  function startMaia() {
+    if (!maiaOn || maia) return Promise.resolve();
+    return loadMaia({ file: maiaFile, download: !args.maiaModel || args.maiaModel === true, log: log })
+      .then(function (m) {
+        maia = m;
+        log('Maia 3 at ' + maiaElo + (state.search.maiaElo ? '' : ' (from the rating filter)') +
+          ': it blends in under ' + gen.search.maiaUntil + ' games, and decides alone under ' +
+          gen.search.maiaOnlyBelow + '.');
+      });
+  }
+
   var runRoot = makeRunRoot({
     providers: providers,
     filter: state.filter,
     child: function (fen, san) { return play(fen, san).fen; },
-    uci: uci
+    uci: uci,
+    maia: maiaOn ? maiaPolicy : null
   });
 
   var NEVER = function () { return false; };
   var gen = createGenerator({
     state: state,
     config: state.config,
-    search: state.search,
+    search: Object.assign({}, state.search, maiaOn ? { maiaElo: maiaElo } : {}),
     deps: {
       explorer: function (fen) {
         return providers.explorer(fen, state.filter, NEVER, { priority: 100 });
@@ -292,7 +349,8 @@ function main() {
       (c.queued + c.wait + c.recheck) + ' left; ' + (stats.explorerRequests || 0) +
       ' Lichess and ' + (stats.chessdbRequests || 0) + ' ChessDB requests in ' +
       mmss(Date.now() - started) + (stats.explorer429 ?
-        ', ' + stats.explorer429 + ' rate-limited' : '') + '.');
+        ', ' + stats.explorer429 + ' rate-limited' : '') +
+      (maia ? '; Maia ' + maia.counts().positions + ' positions' : '') + '.');
     var o = checkOutcome(state);
     if (o.changed.length || o.added.length || o.kept || o.pending) {
       log('Check: ' + o.changed.length + ' move' + (o.changed.length === 1 ? '' : 's') +
@@ -346,7 +404,9 @@ function main() {
         var el = engineLoss(n);
         log('Me   ' + lineOf(n) + ': ' + n.move + markFor(el, state.config) +
           (n.pickedBy === 'practical'
-          ? ' (Prac ' + n.value.toFixed(1) + (n.few ? ' few games' : ' d' + n.depth) + (alts.length ? '; ' + alts.join(', ') : '') +
+          ? ' (Prac ' + n.value.toFixed(1) + (n.few ? ' few games' : ' d' + n.depth) +
+            (n.maia >= 0.005 ? ', ' + Math.round(n.maia * 100) + '% Maia' : '') +
+            (alts.length ? '; ' + alts.join(', ') : '') +
             (n.ms != null ? '; ' + mmss(n.ms) + ', ' + n.spent + ' requests' : '') + ')'
           : ' (engine, ' + n.why + ')') +
           (n.checkPrev && n.checkPrev.move
@@ -420,9 +480,14 @@ function main() {
     });
   }
 
-  if (checking) return check().then(function (go) { return go ? loop() : null; });
+  // Maia is loaded before anything is asked of Lichess, so a missing install stops the run
+  // at once. A dry run searches nothing.
+  if (checking) {
+    return (args.dryRun ? Promise.resolve() : startMaia()).then(check)
+      .then(function (go) { return go ? loop() : null; });
+  }
   save();
-  return loop();
+  return startMaia().then(loop);
 }
 
 main().then(function () { process.exit(0); }, function (e) {

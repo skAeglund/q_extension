@@ -680,4 +680,189 @@ module.exports = async function run(check) {
     assert.ok(ctxs.some(c => c.priority === 10 + 0.6 && c.exempt === true), JSON.stringify(ctxs));
     assert.ok(ctxs.every(c => c.budget && c.budget.limit === 10));
   });
+
+  console.log('\nrepertoire generator: Maia');
+  const M = await load('tools/repgen/maia.mjs');
+  const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  const E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+  await check('the move space: every pair of squares, then promotions to the last rank', () => {
+    assert.deepStrictEqual([M.moveIndex('a1', 'b1'), M.moveIndex('a1', 'a2'), M.moveIndex('e2', 'e4'),
+      M.moveIndex('h8', 'h8'), M.moveIndex('a7', 'a8', 'q'), M.moveIndex('a7', 'a8', 'n'),
+      M.moveIndex('a7', 'b8', 'q'), M.moveIndex('h7', 'h8', 'n')],
+    [1, 8, 796, 4095, 4096, 4099, 4100, 4351]);
+    assert.strictEqual(M.MAIA_MOVES, 4352);
+  });
+  const ones = t => Array.from(t).reduce((a, x, i) => (x ? a.concat(i) : a), []);
+  await check('the board: one piece per square, White\'s first', () => {
+    const t = M.maiaTokens(START);
+    assert.strictEqual(ones(t).length, 32);
+    // Ra1, Ke1, Pe2, then Black's ke8.
+    [0 * 12 + 3, 4 * 12 + 5, 12 * 12 + 0, 60 * 12 + 11].forEach(i => assert.strictEqual(t[i], 1, 'index ' + i));
+  });
+  await check('  ...and with Black to move, as Black sees it: flipped, colours swapped', () => {
+    // After 1.e4 the model sees White to move against 1...e5.
+    assert.deepStrictEqual(Array.from(M.maiaTokens(E4)),
+      Array.from(M.maiaTokens('rnbqkbnr/pppp1ppp/8/4p3/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')));
+    assert.strictEqual(M.maiaTokens(E4)[36 * 12 + 6], 1);
+  });
+  const logits = (n, set) => {
+    const l = new Float32Array(n * M.MAIA_MOVES);
+    set.forEach(([i, v]) => { l[i] = v; });
+    return l;
+  };
+  await check('the policy is a softmax over the legal moves alone', () => {
+    // e2-e5 isn't legal: its logit counts for nothing.
+    const p = M.policyFrom(START, logits(1, [[M.moveIndex('e2', 'e4'), Math.log(3)],
+      [M.moveIndex('e2', 'e5'), 50]]), 0);
+    assert.strictEqual(p[0].san, 'e4');
+    assert.ok(Math.abs(p[0].prob - 3 / 22) < 1e-6, p[0].prob);
+    assert.strictEqual(p.length, 20);
+    assert.ok(Math.abs(p.reduce((a, x) => a + x.prob, 0) - 1) < 1e-6);
+  });
+  await check('  ...Black\'s moves are read back from the flipped board', () =>
+    // 1...c5 is c2-c4 to the model.
+    assert.strictEqual(M.policyFrom(E4, logits(1, [[M.moveIndex('c2', 'c4'), 5]]), 0)[0].san, 'c5'));
+  await check('  ...castling and promotions for either side, at a position\'s place in a batch', () => {
+    const PW = 'r3k2r/1P6/8/8/8/8/8/R3K2R w KQkq - 0 1', PB = 'r3k2r/8/8/8/8/8/1p6/R3K2R b KQkq - 0 1';
+    const K = M.MAIA_MOVES;
+    const l = logits(2, [[M.moveIndex('e1', 'g1'), 9], [M.moveIndex('b7', 'b8', 'q'), 8],
+      [K + M.moveIndex('e1', 'g1'), 8], [K + M.moveIndex('b7', 'b8', 'q'), 9]]);
+    // The new queen checks along the back rank.
+    assert.deepStrictEqual(M.policyFrom(PW, l, 0).slice(0, 2).map(x => x.san), ['O-O', 'b8=Q+']);
+    assert.deepStrictEqual(M.policyFrom(PB, l, K).slice(0, 2).map(x => x.san), ['b1=Q+', 'O-O']);
+  });
+  await check('  ...without the long tail, and empty with no legal move', () => {
+    assert.deepStrictEqual(M.policyFrom(START, logits(1, [[M.moveIndex('e2', 'e4'), 12]]), 0)
+      .map(x => x.san), ['e4']);
+    assert.deepStrictEqual(M.policyFrom('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1', logits(1, []), 0), []);
+  });
+  await check('Maia plays at the middle of the rating filter, as in the column', () => {
+    assert.strictEqual(M.maiaEloFor([1800, 2000, 2200]), 2100);
+    assert.strictEqual(M.maiaEloFor([1600, 1800, 2000, 2200, 2500]), 2150);
+    assert.strictEqual(M.maiaEloFor([]), 1900);
+    assert.deepStrictEqual([M.clampElo(3000), M.clampElo(100), M.clampElo(2124)], [2600, 600, 2100]);
+  });
+
+  const runs = [];
+  let failNext = false;
+  const mm = M.createMaia({
+    maxBatch: 2,
+    run: (tokens, elos, batch) => {
+      runs.push({ batch, elos: Array.from(elos), tokens: tokens.length });
+      if (failNext) { failNext = false; return Promise.reject(new Error('boom')); }
+      return Promise.resolve(logits(batch, []));
+    }
+  });
+  const asked = await Promise.all([mm.policy(START, 2100), mm.policy(E4, 2100), mm.policy(START, 2100),
+    mm.policy(START, 1500)]);
+  await check('positions asked together run as one batch, up to maxBatch', () => {
+    assert.deepStrictEqual(runs.map(r => [r.batch, r.tokens]), [[2, 2 * 768], [1, 768]]);
+    assert.deepStrictEqual(runs.map(r => r.elos), [[2100, 2100], [1500]]);
+    assert.strictEqual(asked[0], asked[2]);     // one position and rating: asked once
+    assert.strictEqual(asked[0].length, 20);
+  });
+  await mm.policy(E4, 2100);
+  await check('  ...and what was computed is remembered', () => {
+    assert.strictEqual(runs.length, 2);
+    assert.deepStrictEqual(mm.counts(), { positions: 3, batches: 2 });
+  });
+  const KK = '8/8/8/8/8/8/8/K6k w - - 0 1';
+  failNext = true;
+  const boom = await mm.policy(KK, 2100).then(() => null, e => e);
+  const kk = await mm.policy(KK, 2100);
+  await check('  ...a failed run fails its positions, which are asked again next time', () => {
+    assert.strictEqual(boom && boom.message, 'boom');
+    assert.deepStrictEqual(kk.map(x => x.san).sort(), ['Ka2', 'Kb1', 'Kb2']);
+  });
+
+  const mdir = fs.mkdtempSync(path.join(os.tmpdir(), 'repgen-maia-'));
+  const bytes = Buffer.from('not really a model');
+  const sum = require('crypto').createHash('sha256').update(bytes).digest('hex');
+  let fetched = 0;
+  const fakeFetch = url => {
+    fetched++;
+    if (/404$/.test(url)) return Promise.resolve({ ok: false, status: 404 });
+    return Promise.resolve({ ok: true, status: 200,
+      arrayBuffer: () => Promise.resolve(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.length)) });
+  };
+  const mfile = path.join(mdir, 'sub', 'm.onnx');
+  const wrong = await M.ensureModel(mfile, { url: 'u', sha256: 'f'.repeat(64), fetch: fakeFetch })
+    .then(() => null, e => e);
+  await check('the model is saved only when it is the expected file', () => {
+    assert.ok(/not the expected file/.test(wrong && wrong.message), String(wrong));
+    assert.ok(!fs.existsSync(mfile) && !fs.existsSync(mfile + '.part'));
+  });
+  await M.ensureModel(mfile, { url: 'u', sha256: sum, fetch: fakeFetch });
+  await M.ensureModel(mfile, { url: 'u', sha256: sum, fetch: fakeFetch });
+  await check('  ...and downloaded once', () => {
+    assert.strictEqual(fs.readFileSync(mfile, 'utf8'), 'not really a model');
+    assert.strictEqual(fetched, 2);
+  });
+  const e404 = await M.ensureModel(path.join(mdir, 'n.onnx'), { url: 'x/404', fetch: fakeFetch })
+    .then(() => null, e => e);
+  await check('  ...and a failed download says why', () =>
+    assert.ok(/HTTP 404/.test(e404 && e404.message), String(e404)));
+  fs.rmSync(mdir, { recursive: true, force: true });
+
+  const maiaAsked = [];
+  const runRootM = R.makeRunRoot({
+    providers: {
+      explorer: fen => Promise.resolve(RW[fen] && RW[fen].ex),
+      chessdb: fen => Promise.resolve((RW[fen] && RW[fen].cdb) || { status: 'unknown', moves: [] })
+    },
+    filter: {},
+    child: (fen, san) => RW[fen].next[san],
+    maia: (fen, elo) => {
+      maiaAsked.push([fen, elo]);
+      return Promise.resolve([{ san: 'B1', prob: 0.9 }, { san: 'B2', prob: 0.1 }]);
+    }
+  });
+  const rm = await runRootM('root w - -', ['c4'], { opts: { maxPly: 2, maia: true, maiaElo: 2100 },
+    budget: 10, shares: {} });
+  const rmOff = await runRootM('root w - -', ['c4'], { opts: { maxPly: 2 }, budget: 10, shares: {} });
+  await check('with Maia on, a row with too few games gets a Practical value', () => {
+    const r = rm.results.get('c4');
+    assert.strictEqual(r.state, 'value');
+    assert.ok(r.maia > 0 && r.maia < 1, String(r.maia));
+    assert.deepStrictEqual(maiaAsked[0], ['row2 b - -', 2100]);
+  });
+  await check('  ...and with it off, the row is as before and Maia isn\'t asked', () => {
+    assert.strictEqual(rmOff.results.get('c4').state, 'few');
+    assert.strictEqual(maiaAsked.length, 1);
+  });
+
+  const wm = world();
+  wm['S w - - 0 1'].root = { e4: val(55, 3), d4: val(58, 3, { maia: 0.4 }) };
+  const sm = G.newState('S w - - 0 1', 'w');
+  const dpm = deps(wm);
+  await drain(G.createGenerator({ state: sm, deps: dpm, now: () => 0, search: { maia: true, maiaElo: 2100 } }),
+    { t: 0 });
+  await check('a run with Maia searches with it, and keeps its share and rating', () => {
+    const o = dpm.log.roots[0].opts;
+    assert.deepStrictEqual([o.maia, o.maiaElo, o.maiaUntil, o.maiaOnlyBelow, o.maiaWeight],
+      [true, 2100, 100, 10, 20]);
+    const n = sm.nodes['S w - -'];
+    assert.deepStrictEqual([n.move, n.maia, n.maiaElo], ['d4', 0.4, 2100]);
+    assert.strictEqual(n.rows.find(r => r.san === 'd4').maia, 0.4);
+    assert.strictEqual(N['S w - -'].maiaElo, undefined);
+  });
+  await check('  ...the PGN says how much of the value is Maia\'s, and pgnclean drops it', () => {
+    const b = PG.toPgn(sm).split('\n\n')[1].replace(/\n/g, ' ');
+    assert.ok(b.startsWith('1. d4 {Prac 58.0 d3, 40% Maia, engine '), b);
+    assert.strictEqual(CL.cleanComment('Prac 58.0 d3, 40% Maia, engine 52.1; e4 55.0'), null);
+  });
+
+  const mopts = Object.assign({}, G.SEARCH_DEFAULTS, { maia: true });
+  const fn = Object.assign({}, sf.nodes['S w - -']);     // e4 won on 5 games, without Maia
+  const reasons = (n, so) => CK.assess(n, wf['S w - - 0 1'].ex, wf['S w - - 0 1'].cdb, D, so).reasons.join('; ');
+  await check('a check with Maia on searches again where a search without it had thin moves', () => {
+    assert.strictEqual(CK.assess(fn, wf['S w - - 0 1'].ex, wf['S w - - 0 1'].cdb, D, mopts).action, 'recheck');
+    assert.ok(/searched without Maia, and 1 move has under 100 games/.test(reasons(fn, mopts)), reasons(fn, mopts));
+    assert.ok(/2 moves have under 100 games/.test(reasons(Object.assign({}, fn, { games: 60 }), mopts)));
+  });
+  await check('  ...but not with Maia off, nor where the search had it', () => {
+    assert.ok(!/Maia/.test(reasons(fn, G.SEARCH_DEFAULTS)), reasons(fn, G.SEARCH_DEFAULTS));
+    assert.ok(!/Maia/.test(reasons(Object.assign({}, fn, { maiaElo: 2100 }), mopts)));
+    assert.ok(!/Maia/.test(reasons(Object.assign({}, N['S w - -']), mopts)));
+  });
 };

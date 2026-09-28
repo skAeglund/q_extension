@@ -17,7 +17,9 @@
  *   - A search again (`recheck`, see generator.mjs) when the new evals could change the
  *     pick: a move ChessDB now rates close enough to be a candidate, my move no longer
  *     being one, positions the last search found without an eval, or ChessDB's best
- *     changing where its best was played. With `all`, every searched position.
+ *     changing where its best was played. With Maia now on for the run, a search made
+ *     without it where a move had fewer games than Maia starts at. With `all`, every
+ *     searched position.
  *   - Back in the queue when it ended for want of an eval that ChessDB now has, or
  *     because the last try failed.
  */
@@ -40,6 +42,17 @@ function cpOf(cdb, san) {
   if (!cdb || cdb.status !== 'ok') return null;
   var m = (cdb.moves || []).find(function (x) { return moveKey(x.san) === moveKey(san); });
   return m ? m.score : null;
+}
+
+// How many of a search's moves had fewer than `until` games: all of them in a position
+// with fewer, else those whose saved games say so, or that had too few for a value (runs
+// from before rows saved their games).
+function thinRows(n, until) {
+  var rows = n.rows || [];
+  if (n.games != null && n.games < until) return rows.length || 1;
+  return rows.filter(function (r) {
+    return r.state === 'few' || (r.games != null && r.games < until);
+  }).length;
 }
 
 /*
@@ -113,6 +126,17 @@ export function assess(n, ex, cdb, cfg, sopts, all) {
     if (missing) {
       out.reasons.push(missing + ' position' + (missing === 1 ? '' : 's') +
         ' had no ChessDB eval in the last search');
+    }
+    // Maia turned on for a run searched without it: where a move had fewer games than
+    // Maia starts at, its value was a leaf's (or ChessDB's alone) and is now a blend.
+    // Deeper thin positions under well-played moves count for less, and wait for
+    // --check-all.
+    if (sopts.maia && n.maiaElo == null) {
+      var thin = thinRows(n, sopts.maiaUntil);
+      if (thin) {
+        out.reasons.push('searched without Maia, and ' + thin + ' move' + (thin === 1 ? ' has' : 's have') +
+          ' under ' + sopts.maiaUntil + ' games');
+      }
     }
   }
   if (n.pickedBy === 'engine' && moveKey(best.san) !== moveKey(n.move)) {
