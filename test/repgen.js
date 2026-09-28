@@ -107,6 +107,10 @@ module.exports = async function run(check) {
   });
   await check('a reply besides the top one needs minReach', () =>
     assert.strictEqual(sans(G.pickReplies(E, 0.02, 0, D)), 'a b'));
+  await check('a reply besides the top one needs minShare of the position', () => {
+    assert.strictEqual(sans(G.pickReplies(E, 1, 0, Object.assign({}, D, { minShare: 0.2 }))), 'a b');
+    assert.strictEqual(sans(G.pickReplies(E, 1, 0, Object.assign({}, D, { minShare: 0.6 }))), 'a');
+  });
   await check('the top reply goes on down to lineMinReach, and no further', () => {
     assert.strictEqual(sans(G.pickReplies(E, 0.004, 0, D)), 'a');
     assert.strictEqual(sans(G.pickReplies(E, 0.0019, 0, D)), '');

@@ -37,7 +37,7 @@ import { outPath } from './repgen/paths.mjs';
 var STANDARD = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 // Options that are shares may be given as fractions (0.9) or percentages (90).
-var SHARES = ['coverage', 'coverageStep', 'singleBelow', 'minReach', 'lineMinReach', 'rowShare',
+var SHARES = ['coverage', 'coverageStep', 'singleBelow', 'minReach', 'minShare', 'lineMinReach', 'rowShare',
   'replyThreshold', 'reachFloor', 'compareReachMin'];
 
 function camel(s) { return s.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); }); }

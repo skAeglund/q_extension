@@ -21,7 +21,8 @@
  *   opp  their move. Replies are followed most played first until they cover
  *        `coverage` of the games. Coverage drops by `coverageStep` at every later
  *        opponent decision on the line; below `singleBelow` only the top reply goes on.
- *        A reply besides the top one also needs `minReach`, and no line goes on below
+ *        A reply besides the top one also needs `minReach` and `minShare` (of that
+ *        position's games), and no line goes on below
  *        `lineMinReach` or once a position has fewer than `stopGames` games.
  *
  * Work goes best first by reach (the chance of the line, from the opponent's move
@@ -40,6 +41,7 @@ export var REPGEN_DEFAULTS = {
   coverageStep: 0.1,      // ...and this much less at each later one on the line
   singleBelow: 0.5,       // under this coverage, only the most played reply goes on
   minReach: 0.005,        // a reply other than the top one needs this reach
+  minShare: 0,            // ...and this share of the position's games
   lineMinReach: 0.001,    // no line goes on below this reach
   stopGames: 10,          // a position with fewer games ends the line
   maxPly: 40,             // plies from the start position
@@ -106,7 +108,7 @@ export function pickReplies(ex, reach, oi, cfg) {
     var share = moves[i].games / ex.total;
     // Sorted by games, so once one reply falls short every later one does too.
     if (i === 0 ? reach * share < cfg.lineMinReach
-                : cum >= cov || reach * share < cfg.minReach) break;
+                : cum >= cov || reach * share < cfg.minReach || share < cfg.minShare) break;
     out.push({ san: moves[i].san, share: share, games: moves[i].games });
     cum += share;
   }
