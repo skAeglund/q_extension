@@ -198,9 +198,10 @@ module.exports = async function run(check) {
     const sans = g.sans.slice(0, PLIES);
     for (let i = 0; i <= sans.length; i++) {
       const k = fenKey(c.fen());
-      if (!want.has(k)) want.set(k, { fen: c.fen(), tot: [0, 0, 0], moves: new Map() });
+      if (!want.has(k)) want.set(k, { fen: c.fen(), tot: [0, 0, 0], cut: 0, moves: new Map() });
       const e = want.get(k);
       e.tot[res]++;
+      if (i === sans.length && g.sans.length > PLIES) e.cut++;   // went on past the limit
       if (i < sans.length) {
         const mv = c.move(sans[i]);
         const a = e.moves.get(mv.san) || [0, 0, 0];
@@ -226,7 +227,9 @@ module.exports = async function run(check) {
       recs.forEach(x => { tot[0] += x.white; tot[1] += x.draws; tot[2] += x.black; });
       assert.deepStrictEqual(tot, e.tot, k);
       const c = new Chess(e.fen);
-      const moves = recs.filter(x => x.code);
+      const moves = recs.filter(x => x.code && x.code !== G.CUT);
+      const cut = recs.filter(x => x.code === G.CUT).reduce((n, x) => n + x.white + x.draws + x.black, 0);
+      assert.strictEqual(cut, e.cut, k);
       assert.strictEqual(moves.length, e.moves.size, k);
       for (const [san, counts] of e.moves) {
         const code = codeOf(c.move(san));
@@ -235,10 +238,14 @@ module.exports = async function run(check) {
         assert.deepStrictEqual(x && [x.white, x.draws, x.black], counts, k + ' ' + san);
       }
     }
-    // And the explorer-shaped answer, for a few of them.
-    [...want.entries()].slice(0, 40).forEach(([k, e]) => {
+    assert.ok([...want.values()].some(e => e.cut), 'no game reached the ply limit');
+    // And the explorer-shaped answer, for a few of them and every cut-off one.
+    [...want.entries()].filter(([, e], i) => i < 40 || e.cut).forEach(([k, e]) => {
       const a = S.explorerAnswer(db, k);
-      assert.deepStrictEqual([a.white, a.draws, a.black], e.tot, k);
+      assert.strictEqual(a.white + a.draws + a.black, e.tot[0] + e.tot[1] + e.tot[2] - e.cut, k);
+      assert.strictEqual(a.cut, e.cut, k);
+      assert.strictEqual(a.moves.reduce((n, m) => n + m.white + m.draws + m.black, 0) <=
+        a.white + a.draws + a.black, true, k);
       a.moves.forEach(m => assert.deepStrictEqual([m.white, m.draws, m.black], e.moves.get(m.san), k + ' ' + m.san));
     });
   });
@@ -261,6 +268,86 @@ module.exports = async function run(check) {
     assert.strictEqual(t(10).positions, atLeast(10));
     assert.strictEqual(t(1).bytes, db.count * S.REC);
   });
+
+  console.log('\nexplorerdb: the server');
+  const START = new Chess().fen();
+  const SV = await load('tools/explorerdb/server.mjs');
+  const P = await load('src/pe/providers.js');
+  const logs = [];
+  const reported = new Set();
+  const ask = u => SV.handle(db, u, reported, l => logs.push(l));
+  await check('/info names the index, and /lichess answers like the explorer', () => {
+    const info = ask('/info');
+    assert.strictEqual(info.status, 200);
+    assert.ok(/^dump\.pgn@\d{4}-/.test(info.body.id), info.body.id);
+    assert.deepStrictEqual(info.body.filter, meta.filter);
+    const a = ask('/lichess?variant=standard&fen=' + encodeURIComponent(fenKey(START)) +
+      '&speeds=blitz,rapid,classical&ratings=1600,1800,2000,2200,2500&moves=2');
+    const full = S.explorerAnswer(db, START);
+    assert.deepStrictEqual([a.body.white, a.body.draws, a.body.black], [full.white, full.draws, full.black]);
+    assert.deepStrictEqual(a.body.moves, full.moves.slice(0, 2));
+    assert.deepStrictEqual(logs, []);
+  });
+  await check('a bad request gets a 400 or 404, and another filter is logged once', () => {
+    assert.strictEqual(ask('/lichess').status, 400);
+    assert.strictEqual(ask('/lichess?fen=nonsense').status, 400);
+    assert.strictEqual(ask('/masters?fen=' + encodeURIComponent(START)).status, 404);
+    ask('/lichess?fen=' + encodeURIComponent(START) + '&speeds=bullet&ratings=2000');
+    ask('/lichess?fen=' + encodeURIComponent(START) + '&speeds=bullet&ratings=2000');
+    assert.strictEqual(logs.length, 1);
+    assert.ok(/bullet/.test(logs[0]) && /only has blitz, rapid, classical/.test(logs[0]), logs[0]);
+  });
+
+  const server = SV.createServer(db);
+  await new Promise(r => server.listen(0, '127.0.0.1', r));
+  const address = 'localhost:' + server.address().port;
+  const FILTER = { speeds: ['blitz'], ratings: [2000] };
+  const noCache = { get: () => Promise.reject(new Error('the cache was read')),
+    put: () => Promise.reject(new Error('the cache was written')) };
+  let tokenAsked = 0;
+  let use = address;
+  const stats = {};
+  const prov = P.createProviders({ fetch, cache: noCache, stats,
+    getToken: () => { tokenAsked++; return Promise.resolve(''); },
+    localExplorer: () => use });
+  await check('providers ask the local explorer: no token, cache or budget, a hit for rounds.js', async () => {
+    const counts = { hits: 0, misses: 0 };
+    const budget = { limit: 0, spent: 0 };
+    const v = await prov.explorer(START, FILTER, () => false, { counts, budget });
+    const full = S.explorerAnswer(db, START);
+    assert.strictEqual(v.total, full.white + full.draws + full.black);
+    assert.deepStrictEqual(v.moves.map(m => m.san), full.moves.map(m => m.san));
+    assert.strictEqual(v.moves[0].games, full.moves[0].white + full.moves[0].draws + full.moves[0].black);
+    assert.deepStrictEqual([counts.hits, counts.misses, budget.spent, tokenAsked, stats.localRequests],
+      [1, 0, 0, 0, 1]);
+    const info = await prov.localInfo(address + '/');
+    assert.strictEqual(info.id, ask('/info').body.id);
+  });
+  await check('with the address cleared, the next request goes to Lichess again', async () => {
+    use = '';
+    await assert.rejects(prov.explorer(START, FILTER, () => false, {}), /the cache was read/);
+    use = address;
+  });
+  await check('addresses are spelled one way, and the local URL is the explorer\'s query', () => {
+    assert.strictEqual(P.localAddress(' localhost:9337/ '), 'http://localhost:9337');
+    assert.strictEqual(P.localAddress('https://x.lan:1/'), 'https://x.lan:1');
+    assert.strictEqual(P.localAddress(''), '');
+    const u = P.localExplorerUrl(START, FILTER, 'localhost:9337');
+    assert.strictEqual(u, P.explorerUrl(START, FILTER).replace(P.EXPLORER_URL, 'http://localhost:9337/lichess'));
+  });
+  const other = require('http').createServer((q, r) => { r.end('{}'); });
+  await new Promise(r => other.listen(0, '127.0.0.1', r));
+  await check('a server that isn\'t running, or isn\'t one, says so', async () => {
+    await assert.rejects(P.localInfo(fetch, 'localhost:' + other.address().port), /is not a local explorer/);
+    const port = other.address().port;
+    await new Promise(r => other.close(r));
+    await assert.rejects(P.localInfo(fetch, 'localhost:' + port), /nothing answers at http:\/\/localhost:/);
+    use = 'localhost:' + port;
+    await assert.rejects(prov.explorer(START, FILTER, () => false, {}), /local explorer not answering/);
+    use = address;
+  });
+  server.closeAllConnections();
+  await new Promise(r => server.close(r));
   db.close();
 
   if (typeof zlib.zstdCompressSync === 'function') {

@@ -243,13 +243,47 @@ export function filterHash(f) {
   ].join('|');
 }
 
-export function explorerUrl(fen, f) {
+// `base` is the explorer to ask: Lichess's unless a local one (localExplorerUrl) is given.
+export function explorerUrl(fen, f, base) {
   var q = 'variant=standard&fen=' + encodeURIComponent(fenKey(fen)) +
     '&speeds=' + (f.speeds || []).join(',') +
     '&ratings=' + (f.ratings || []).join(',') +
     '&moves=30&topGames=0&recentGames=0';
   if (f.since) q += '&since=' + f.since;
-  return EXPLORER_URL + '?' + q;
+  return (base || EXPLORER_URL) + '?' + q;
+}
+
+/*
+ * A local explorer (tools/explorerdb.mjs serve) answers the same queries at <address>/lichess
+ * and says which index it serves at <address>/info. The address is what the user typed,
+ * e.g. "http://localhost:9337"; '' means none.
+ */
+export function localAddress(a) {
+  a = String(a || '').trim().replace(/\/+$/, '');
+  if (a && !/^https?:\/\//i.test(a)) a = 'http://' + a;
+  return a;
+}
+export function localExplorerUrl(fen, f, address) {
+  return explorerUrl(fen, f, localAddress(address) + '/lichess');
+}
+
+// What the local explorer at `address` serves (its /info), or an error saying why not.
+export function localInfo(fetchFn, address) {
+  address = localAddress(address);
+  if (!address) return Promise.reject(HttpError(0, 'no address'));
+  return Promise.resolve().then(function () {
+    return fetchFn(address + '/info', { cache: 'no-store' });
+  }).catch(function (e) {
+    throw HttpError(0, 'nothing answers at ' + address + ' (' + (e && e.message || e) + ')');
+  }).then(function (res) {
+    if (!res.ok) throw HttpError(res.status, address + ' answered HTTP ' + res.status);
+    return res.json().catch(function () { return null; });
+  }).then(function (j) {
+    if (!j || !j.id || !j.filter) {
+      throw HttpError(0, address + ' is not a local explorer (tools/explorerdb.mjs serve)');
+    }
+    return j;
+  });
 }
 
 // Only what the search needs: the counts per move and for the position also feed the
@@ -279,10 +313,12 @@ export function compactChessdb(j) {
 }
 
 /*
- * o = { fetch, cache, getToken, stats, now, sleep, ratePerMin, burst }
+ * o = { fetch, cache, getToken, stats, now, sleep, ratePerMin, burst, localExplorer }
  *   cache.get(store, key, ttlMs) -> Promise<value|undefined>; cache.put(store, key, value)
  *   getToken() -> Promise<string>; empty means "no token"
  *   stats: an object whose counters are bumped (explorerRequests, explorer429, ...)
+ *   localExplorer: the address of a local explorer, or a function returning it (it can
+ *     change while the worker runs); '' or absent means Lichess
  */
 export function createProviders(o) {
   var stats = o.stats || {};
@@ -315,6 +351,8 @@ export function createProviders(o) {
    */
   function explorer(fen, filter, isStale, ctx) {
     ctx = ctx || {};
+    var local = localAddress(typeof o.localExplorer === 'function' ? o.localExplorer() : o.localExplorer);
+    if (local) return localExplorer(local, fen, filter, ctx);
     var key = fenKey(fen) + '#' + filterHash(filter);
     var counts = ctx.counts || {};
     return o.cache.get('explorer', key, TTL.explorer).then(function (hit) {
@@ -360,6 +398,29 @@ export function createProviders(o) {
       });
       if (budget) p.catch(function (e) { if (e && e.cancelled) budget.spent--; });
       return p;
+    });
+  }
+
+  /*
+   * The local explorer is asked directly: no token, no rate limit, no budget, since
+   * none of them protect anything on your own machine. Its answers aren't cached either.
+   * The server answers in a millisecond or two, and a cache would mix one index's counts
+   * with Lichess's under the same key. For the budget estimate in rounds.js an answer counts
+   * as a cache hit, since it costs no Lichess request.
+   */
+  function localExplorer(address, fen, filter, ctx) {
+    var counts = ctx.counts || {};
+    counts.hits = (counts.hits || 0) + 1;
+    var url = localExplorerUrl(fen, filter, address);
+    return once('l' + url, function () {
+      stats.localRequests = (stats.localRequests || 0) + 1;
+      return Promise.resolve().then(function () { return o.fetch(url); }).catch(function (e) {
+        throw HttpError(0, 'local explorer not answering at ' + address + ' (' +
+          (e && e.message || e) + ')');
+      }).then(function (res) {
+        if (!res.ok) throw HttpError(res.status, 'local explorer');
+        return res.json();
+      }).then(compactExplorer);
     });
   }
 
@@ -488,6 +549,7 @@ export function createProviders(o) {
     chessdb: chessdb,
     analyse: analyse,
     testToken: testToken,
+    localInfo: function (address) { return localInfo(o.fetch, address); },
     pausedFor: lichess.pausedFor,
     sweep: lichess.sweep,
     queued: lichess.queued,

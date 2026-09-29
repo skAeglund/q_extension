@@ -132,11 +132,58 @@ $('pe-test').addEventListener('click', function () {
     });
 });
 
+/* ------------------------------------------------------- local explorer */
+
+function localNote(text, cls) {
+  var n = $('pe-local-note');
+  n.textContent = text;
+  n.className = 'note' + (cls ? ' ' + cls : '');
+}
+
+// The same spelling as providers.js's localAddress: no trailing slash, http:// if missing.
+function localAddress(a) {
+  a = String(a || '').trim().replace(/\/+$/, '');
+  if (a && !/^https?:\/\//i.test(a)) a = 'http://' + a;
+  return a;
+}
+
+// The index's filter against the one the search asks for isn't known here (it can
+// follow the panel), so the note just says what the index holds.
+function describeIndex(info) {
+  return info.source + ': ' + info.positions.toLocaleString('en-US') + ' positions, ' +
+    info.filter.speeds.join(', ') + ', ratings ' + info.filter.ratings.join(', ') +
+    ', first ' + info.plies + ' plies, positions with ' + info.minGames + '+ games.';
+}
+
+chrome.storage.local.get({ peLocalExplorer: '' }, function (r) {
+  $('pe-local').value = r.peLocalExplorer || '';
+});
+
+$('pe-local-save').addEventListener('click', function () {
+  var v = localAddress($('pe-local').value);
+  chrome.storage.local.set({ peLocalExplorer: v }, function () {
+    $('pe-local').value = v;
+    localNote(v ? 'Saved. Searches from now on ask ' + v + '.' : 'Cleared: searches ask Lichess.', 'ok');
+  });
+});
+
+$('pe-local-test').addEventListener('click', function () {
+  var v = localAddress($('pe-local').value);
+  if (!v) { localNote('Type the address the server printed, e.g. localhost:9337.', 'warn'); return; }
+  localNote('Testing…');
+  chrome.runtime.sendMessage({ type: 'qx:pe:testLocal', address: v }, function (r) {
+    if (chrome.runtime.lastError || !r) { localNote('Background worker not reachable.', 'warn'); return; }
+    if (r.ok) localNote(describeIndex(r.info), 'ok');
+    else localNote(r.error, 'warn');
+  });
+});
+
 function refreshPeStats() {
   chrome.runtime.sendMessage({ type: 'qx:pe:stats' }, function (r) {
     if (chrome.runtime.lastError || !r) return;
     var cached = r.cache ? (r.cache.explorer || 0) : 0;
     var parts = [cached + ' positions cached', r.explorerRequests + ' Lichess requests this session'];
+    if (r.localExplorer || r.localRequests) parts.push(r.localRequests + ' local explorer answers');
     if (r.explorer429) parts.push(r.explorer429 + '× rate-limited');
     if (r.maiaPositions) parts.push(r.maiaPositions + ' positions from Maia');
     if (r.chessdbAnalyse) parts.push(r.chessdbAnalyse + ' positions sent to ChessDB for analysis');

@@ -61,6 +61,18 @@
       it never reaches the page.</small>
     </div>
 
+    <div class="field">
+      <span class="field-label">Local explorer</span>
+      <div class="row">
+        <input type="text" id="pe-local" autocomplete="off" spellcheck="false"
+               placeholder="localhost:9337">
+        <button type="button" id="pe-local-save">Save</button>
+        <button type="button" id="pe-local-test">Test</button>
+      </div>
+      <small id="pe-local-note" class="note">Asked instead of Lichess when set:
+      <code>node tools/explorerdb.mjs serve</code>. Empty for Lichess.</small>
+    </div>
+
     <div class="options">
       <label>
         <input type="checkbox" id="opt-peUseSiteToken">

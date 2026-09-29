@@ -80,6 +80,9 @@ function saveLimiter() {
   }, 1000);
 }
 
+// A local explorer (tools/explorerdb.mjs serve), set in the popup: asked instead of Lichess.
+var localExplorer = '';
+
 var providers = createProviders({
   fetch: function (url, init) {
     var p = fetch(url, init);
@@ -88,12 +91,14 @@ var providers = createProviders({
   },
   cache: cache,
   getToken: getToken,
-  stats: stats
+  stats: stats,
+  localExplorer: function () { return localExplorer; }
 });
 
 // Searches wait for this: the right burst for the token, then the saved bucket.
-var limiterReady = chrome.storage.local.get({ lichessToken: '' }).then(function (r) {
+var limiterReady = chrome.storage.local.get({ lichessToken: '', peLocalExplorer: '' }).then(function (r) {
   ownToken = String(r.lichessToken || '').trim();
+  localExplorer = String(r.peLocalExplorer || '');
   applyBurst();
   return chrome.storage.session.get('peLimiter');
 }).then(function (r) {
@@ -107,6 +112,9 @@ chrome.storage.sync.get({ peRatePerMin: LICHESS_RATE }).then(function (s) {
 chrome.storage.onChanged.addListener(function (changes, area) {
   if (area === 'sync' && changes.peRatePerMin) {
     providers.setRate(Number(changes.peRatePerMin.newValue) || LICHESS_RATE);
+  }
+  if (area === 'local' && changes.peLocalExplorer) {
+    localExplorer = String(changes.peLocalExplorer.newValue || '');
   }
   if (area === 'local' && changes.lichessToken) {
     ownToken = String(changes.lichessToken.newValue || '').trim();
@@ -378,8 +386,18 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
         rateHeaders: stats.rateHeaders || null,
         cache: r[1],
         pausedFor: providers.pausedFor(),
-        tokenSource: tokenSource
+        tokenSource: tokenSource,
+        localRequests: stats.localRequests || 0,
+        localExplorer: localExplorer
       });
+    });
+    return true;
+  }
+  if (msg.type === 'qx:pe:testLocal') {
+    providers.localInfo(String(msg.address || '')).then(function (info) {
+      sendResponse({ ok: true, info: info });
+    }, function (e) {
+      sendResponse({ ok: false, error: String(e && e.message || e) });
     });
     return true;
   }

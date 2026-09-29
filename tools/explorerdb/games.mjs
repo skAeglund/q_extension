@@ -155,9 +155,14 @@ export function findMove(c, san) {
 
 /*
  * A move as 16 bits: from + 64 × to + 4096 × promotion, squares numbered a1 = 0 … h8 = 63,
- * promotion 0 none, 1 n, 2 b, 3 r, 4 q. Castling is the king's move (e1g1). 0 is a1a1,
- * never a move, so it stands for "no move": the game ended here, or the ply limit did.
+ * promotion 0 none, 1 n, 2 b, 3 r, 4 q. Castling is the king's move (e1g1). Two codes
+ * that are never moves count games that stop at a position: ENDED (0, a1a1) for games
+ * that ended there, CUT (65, b1b1) for games the ply limit cut off. The two differ for
+ * the server: a cut-off game went on with a move the index doesn't know, so its results
+ * must not count towards the position's total next to the moves that are known.
  */
+export var ENDED = 0;
+export var CUT = 65;
 var PROMO = { n: 1, b: 2, r: 3, q: 4 };
 var PROMO_CHAR = ['', 'n', 'b', 'r', 'q'];
 

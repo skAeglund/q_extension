@@ -205,7 +205,9 @@ shows another database; the header's tooltip then says "Practical: Lichess data"
 
 **Token.** The Lichess explorer needs a personal token. Paste one into the popup, or leave
 it empty and the extension uses the one Qchess keeps after "Connect Lichess" (switchable).
-Either way the token stays in the background worker and never reaches the page.
+Either way the token stays in the background worker and never reaches the page. With a
+**local explorer** set in the popup (see [A local explorer](#a-local-explorer-explorerdb)),
+no token is needed and none of the limits below apply.
 
 **Politeness.** One Lichess request at a time, 16 a minute (a setting, 18 at most), with
 bursts after a pause. The explorer's own limit, measured in September 2026, lets 22 or 23
@@ -229,7 +231,8 @@ requests made this session. ChessDB is asked to analyse a position or move at mo
 day, and at most 30 times per position you look at. After asking, the position is looked
 up again every 2 minutes, only while a search needs it, for an hour at most.
 
-Settings are in the popup's **Practical eval** section: on/off, token and Test, whether to
+Settings are in the popup's **Practical eval** section: on/off, token and Test, the local
+explorer's address and Test, whether to
 follow the panel's filter (and the fallback speeds and ratings), and under Advanced the row
 and reply thresholds, the minimum games, the request rate, how rare a line can be and still
 be followed, the maximum depth, how many of your own moves are compared and how close they
@@ -579,8 +582,28 @@ how many positions each threshold from 1 to 1000 would keep, and how big the ind
 so one month tells you what the whole archive would cost.
 
 `query` prints a position the way the Lichess explorer answers it (totals, then each move's
-uci, SAN and results, most played first). Nothing reads the index yet: the search and repgen
-still ask Lichess.
+uci, SAN and results, most played first).
+
+**Serving it.** To have the Practical column and repgen use the index instead of Lichess:
+
+```bash
+node tools/explorerdb.mjs serve aug26                # http://localhost:9337, Ctrl+C stops it
+```
+
+- **The column:** type `localhost:9337` under **Local explorer** in the popup, then Save.
+  Test shows which index answers. Searches from then on ask the server: no token, no rate
+  limit, no per-position budget, so rows deepen as fast as ChessDB answers. Its answers
+  aren't cached, since one month's counts and Lichess's shouldn't share a cache. Clear the
+  field to go back to Lichess.
+- **repgen:** add `--explorer localhost:9337`. No token is needed, and a new run takes the
+  index's filter. The run remembers which explorer it used and notes a switch, since one
+  month and all of Lichess count different games.
+
+The filter is the index's, fixed at import. A request asking for another one (the panel's
+filter, say) gets the index's answer all the same, and the server prints a note the first
+time. Positions under `--min-games` answer with no games, which the search treats as too
+few, as it does for rare positions on Lichess. So do positions only reached at the ply limit:
+their games went on, but the index doesn't know with which moves.
 
 What it needs:
 - **Node 22.15 or later** reads `.zst` itself. An older Node needs the `zstd` program, or a

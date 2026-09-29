@@ -26,7 +26,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { Chess } from '../src/vendor/chess.js';
-import { createProviders } from '../src/pe/providers.js';
+import { createProviders, localAddress, localInfo } from '../src/pe/providers.js';
 import { fenKey } from '../src/pe/search.js';
 import { createGenerator, newState, REPGEN_DEFAULTS, SEARCH_DEFAULTS } from './repgen/generator.mjs';
 import { makeRunRoot } from './repgen/root.mjs';
@@ -71,6 +71,8 @@ function usage() {
     '           --chessdb-rate <ChessDB requests/min, default 60>',
     'Lichess:   --speeds blitz,rapid,classical  --ratings 1800,2000,2200  --token-file <file>',
     '           (or the LICHESS_TOKEN environment variable)',
+    '           --explorer localhost:9337: ask a local explorer (tools/explorerdb.mjs serve)',
+    '           instead; no token needed, and a new run takes the index\'s filter',
     'Maia:      --maia [on|off] (off; kept with the run), --maia-model <file> (default',
     '           repertoires/' + MAIA_FILE + ', downloaded on first use), --maia-elo <n>',
     '           (default: from --ratings, 2100 for 1800,2000,2200), --maia-until 100,',
@@ -143,10 +145,21 @@ function mmss(ms) {
   return Math.floor(s / 60) + 'm' + String(s % 60).padStart(2, '0') + 's';
 }
 
+/*
+ * --explorer: the local explorer is asked what it serves before anything else, since a
+ * new run takes its filter (repgen's default filter is not the importer's).
+ */
 function main() {
   var args = parseArgs(process.argv.slice(2));
   if (args.help) { console.log(usage()); return Promise.resolve(); }
+  if (args.explorer == null) return run(args, null);
+  if (args.explorer === true) throw new Error('--explorer needs the local explorer\'s address, e.g. --explorer localhost:9337');
+  return localInfo(fetch, String(args.explorer)).then(function (info) {
+    return run(args, { address: localAddress(String(args.explorer)), info: info });
+  });
+}
 
+function run(args, local) {
   var out = outPath(args.out && args.out !== true ? String(args.out) : 'repertoire');
   fs.mkdirSync(path.dirname(out), { recursive: true });
   var statePath = out + '.json', pgnPath = out + '.pgn', logPath = out + '.log';
@@ -183,7 +196,7 @@ function main() {
   } else {
     var st = startFrom(args);
     state = newState(st.fen, sideOf(args.side, st.fen), st.prefix);
-    state.filter = {
+    state.filter = local ? { speeds: local.info.filter.speeds.slice(), ratings: local.info.filter.ratings.slice() } : {
       speeds: String(args.speeds || 'blitz,rapid,classical').split(',').filter(Boolean),
       ratings: String(args.ratings || '1800,2000,2200').split(',').filter(Boolean).map(Number)
     };
@@ -231,8 +244,29 @@ function main() {
     return Promise.resolve();
   }
 
-  var token = readToken(args);
-  if (!token) {
+  // Where the games come from, kept with the run: one month of your own index and all of
+  // Lichess are two different pools, like two filters.
+  var source = local ? 'local ' + local.info.id : 'lichess';
+  var searchedBefore = Object.keys(state.nodes).length > 1;
+  if (state.explorer && state.explorer !== source && searchedBefore && !checking) {
+    log('Note: this run was searched with ' + state.explorer + ' and now uses ' + source +
+      '. The two count different games.');
+  } else if (!state.explorer && local && searchedBefore) {
+    log('Note: this run was searched with Lichess and now uses ' + source + '.');
+  }
+  state.explorer = source;
+  if (local) {
+    var f = local.info.filter;
+    var same = function (a, b) { return String(a.slice().sort()) === String(b.slice().sort()); };
+    if (!same(f.speeds, state.filter.speeds) || !same(f.ratings.map(String), state.filter.ratings.map(String))) {
+      log('Note: the run\'s filter is ' + state.filter.speeds.join(',') + ' / ' +
+        state.filter.ratings.join(',') + ', but ' + local.address + ' serves ' + f.speeds.join(',') +
+        ' / ' + f.ratings.join(',') + ' (its answers are for that).');
+    }
+  }
+
+  var token = local ? '' : readToken(args);
+  if (!token && !local) {
     throw new Error('No Lichess token. Create one at https://lichess.org/account/oauth/token ' +
       '(no scopes needed) and set LICHESS_TOKEN, or pass --token-file.');
   }
@@ -261,6 +295,7 @@ function main() {
     fetch: politeFetch,
     cache: withFreshChessdb(createFileCache(cachePath), freshSince),
     getToken: function () { return Promise.resolve(token); },
+    localExplorer: local ? local.address : '',
     stats: stats,
     ratePerMin: args.rate ? numberOpt('rate', args.rate) : 15
   });
@@ -374,7 +409,8 @@ function main() {
   });
 
   log('repgen: ' + (state.side === 'w' ? 'White' : 'Black') + ' from ' + state.startFen +
-    (state.prefix.length ? ' (' + state.prefix.join(' ') + ')' : '') + '; Lichess ' +
+    (state.prefix.length ? ' (' + state.prefix.join(' ') + ')' : '') + '; ' +
+    (local ? 'local explorer ' + local.info.source + ' at ' + local.address : 'Lichess') + ' ' +
     state.filter.speeds.join(',') + ' / ' + state.filter.ratings.join(',') + '.');
   if (Object.keys(state.config).length || Object.keys(state.search).length) {
     log('Options: ' + JSON.stringify(Object.assign({}, state.config, state.search)));

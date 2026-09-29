@@ -11,7 +11,7 @@
  */
 
 import { parentPort, workerData } from 'node:worker_threads';
-import { createReplayer, movetextSans } from './games.mjs';
+import { createReplayer, movetextSans, ENDED, CUT } from './games.mjs';
 import { aggregateShard, createSpill } from './store.mjs';
 
 var o = workerData;
@@ -34,14 +34,17 @@ function count(path, hash, code, result) {
 function replayGames(games) {
   var bad = 0, plies = 0;
   for (var g = 0; g < games.length; g++) {
-    var sans = movetextSans(games[g].moves, o.plies);
+    // One ply more than counted, to tell a game the limit cut off from one that ended.
+    var sans = movetextSans(games[g].moves, o.plies + 1);
+    var stop = ENDED;
+    if (sans.length > o.plies) { sans.length = o.plies; stop = CUT; }
     var walk = replay(sans);
     if (!walk) { bad++; continue; }
     var r = games[g].result;
     var w = r === 0 ? 1 : 0, d = r === 1 ? 1 : 0, b = r === 2 ? 1 : 0;
     var path = '';
     for (var i = 0; i <= sans.length; i++) {
-      var code = i < sans.length ? walk.codes[i] : 0;
+      var code = i < sans.length ? walk.codes[i] : stop;
       if (i < o.combinePlies) {
         count(path + '|' + code, walk.hashes[i], code, r);
         if (i < sans.length) path += ' ' + sans[i];

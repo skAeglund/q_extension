@@ -20,13 +20,14 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 481 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 487 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
                               # and test/pgnclean.js (PGN tree, cleaning, transpositions)
                               # and test/cdbexplore.js (target picking, ChessDB search)
-                              # and test/explorerdb.js (dump filter, fast replay, import)
+                              # and test/explorerdb.js (dump filter, fast replay, import,
+                              # the server and providers.js's local path)
 node --check src/main-world.js
 python icons/make_icons.py    # regenerate PNGs (stdlib only, no Pillow)
 ```
@@ -272,6 +273,14 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
   and each shard is counted by a typed-array sort. The first 12 plies are the exception.
   They are counted in memory, keyed by the move string, or the start position alone would be
   25 M records in one shard.
+- `explorerdb.mjs serve` (`explorerdb/server.mjs`) answers the explorer's `/lichess` query
+  and `/info`. `providers.js` asks it when `localExplorer` is set (the popup's
+  `peLocalExplorer`, repgen's `--explorer`). That path skips the token, the limiter and the
+  budget, and it counts as a cache hit for `rounds.js`'s budget estimate. It also skips the
+  cache: one month's counts must not land under the keys of Lichess's all-time ones. The
+  index keeps games the ply limit cut off (`CUT`) apart from ended ones (`ENDED`). The answer's
+  totals leave the cut games out, because the search reads moves as shares of the total and
+  those games' next moves are unknown. Index format 2; format 1 files must be re-imported.
 
 ## Status
 
@@ -659,14 +668,22 @@ counts from Lichess's own monthly dumps has no limit. `import` reads one dump wi
 fixed at import time (default: the extension's own, blitz/rapid/classical at an average of
 1600+, 40 plies). It keeps the positions reached by `--min-games` (10) games and reports what
 each threshold from 1 to 1000 would keep, so one month can be projected to the whole archive.
-`query` answers in the explorer's JSON shape (castling as e1h1), but nothing reads the index
-yet: providers.js and repgen still ask Lichess.
+`query` answers in the explorer's JSON shape (castling as e1h1); `serve` (v1.17.0, below)
+puts that answer behind HTTP for providers.js and repgen.
 Measured in this container on a synthetic dump of 200 k games in the dumps' layout (clocks
 in comments, about 2 kB a game): the main thread reads and filters about 89 k games/s, and
 replay runs at about 275 k plies/s per worker. So a real month (about 100 M games, about
 25 M kept) should be bound by reading, at 20–40 minutes on a machine with several cores.
 database.lichess.org is blocked from the container (proxy 403), so no real dump has been
 imported. The sizes and times for a real month are estimates until the user runs one.
+
+**Local explorer server (v1.17.0)**, the same day: `serve`, the popup's Local explorer field
+(address, Save, Test → `qx:pe:testLocal`), repgen `--explorer`, and `localhost`/`127.0.0.1`
+host permissions. Checked in this container: repgen with `--explorer` against the synthetic
+index ran a search from the start position with no token and 0 Lichess requests (108 ChessDB
+requests in 1m48s, at repgen's ChessDB pace), adopting the index's filter. The extension's
+use of it is covered by the harness only. Not loaded in Chrome yet, which also leaves the new
+host permissions and the popup field untried.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

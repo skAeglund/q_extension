@@ -15,7 +15,7 @@ import zlib from 'node:zlib';
 import { spawn } from 'node:child_process';
 import { Worker } from 'node:worker_threads';
 import { makeFilter, HASH_NAME } from './games.mjs';
-import { SHARDS, REC, THRESHOLDS, shardFile, writeHeader } from './store.mjs';
+import { SHARDS, REC, THRESHOLDS, FORMAT, shardFile, writeHeader } from './store.mjs';
 
 export var DEFAULTS = {
   speeds: ['blitz', 'rapid', 'classical'],
@@ -228,7 +228,7 @@ export async function importDump(o) {
   report.seconds = Math.round((Date.now() - t0) / 1000);
 
   var meta = {
-    format: 1,
+    format: FORMAT,
     hash: HASH_NAME,
     source: path.basename(o.input),
     filter: { speeds: o.speeds, ratings: o.ratings },

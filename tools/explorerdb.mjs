@@ -19,6 +19,11 @@
  *
  * `query` prints a position the way the Lichess explorer answers (the parts the search
  * reads). Bare names are looked up in and written to repertoires/ (repgen/paths.mjs).
+ *
+ *   node tools/explorerdb.mjs serve aug26 [--port 9337]
+ *
+ * answers the explorer's queries over HTTP (explorerdb/server.mjs), for the extension's
+ * "Local explorer" setting and repgen's --explorer.
  */
 
 import fs from 'node:fs';
@@ -26,6 +31,7 @@ import path from 'node:path';
 import { Chess } from '../src/vendor/chess.js';
 import { importDump, DEFAULTS } from './explorerdb/importer.mjs';
 import { openIndex, explorerAnswer } from './explorerdb/store.mjs';
+import { createServer, indexInfo } from './explorerdb/server.mjs';
 import { RATING_GROUPS } from './explorerdb/games.mjs';
 import { inPath, outPath } from './repgen/paths.mjs';
 
@@ -43,8 +49,11 @@ var USAGE = [
   '      --tmp <dir>         temporary files (default <out>.tmp; a month needs 10-15 GB)',
   '      --keep-tmp          leave them there',
   '  node tools/explorerdb.mjs query <index> (--moves "1.e4 c5" | --fen "<fen>")',
-  '  node tools/explorerdb.mjs info <index>'
+  '  node tools/explorerdb.mjs info <index>',
+  '  node tools/explorerdb.mjs serve <index> [--port 9337] [--host 127.0.0.1]'
 ].join('\n');
+
+var DEFAULT_PORT = 9337;
 
 function indexPath(name, forWriting) {
   if (!/\.xdb$/i.test(name)) name += '.xdb';
@@ -169,11 +178,52 @@ function cmdInfo(argv) {
   return 0;
 }
 
+function cmdServe(argv) {
+  var name = null, port = DEFAULT_PORT, host = '127.0.0.1';
+  for (var i = 0; i < argv.length; i++) {
+    var a = argv[i];
+    if (a === '--port') port = num(argv[++i], '--port');
+    else if (a === '--host') host = argv[++i];
+    else if (!name && !/^--/.test(a)) name = a;
+    else throw new Error('Unexpected argument: ' + a + '\n' + USAGE);
+  }
+  if (!name) throw new Error('Which index?\n' + USAGE);
+  var db = openIndex(indexPath(name, false));
+  var info = indexInfo(db);
+  var t0 = Date.now(), last = 0;
+  var server = createServer(db, {
+    log: function (s) { console.log(s); },
+    onServed: function (n) {
+      // A line a minute at most while it's being used.
+      if (Date.now() - last > 60000) { last = Date.now(); console.log(fmt(n) + ' answers so far'); }
+    }
+  });
+  return new Promise(function (resolve, reject) {
+    server.on('error', function (e) {
+      reject(e.code === 'EADDRINUSE' ? new Error('Port ' + port + ' is taken; pick another with --port.') : e);
+    });
+    server.listen(port, host, function () {
+      console.log('Serving ' + info.source + ' (' + fmt(info.positions) + ' positions; ' +
+        info.filter.speeds.join(', ') + '; ratings ' + info.filter.ratings.join(', ') + ')');
+      console.log('at http://' + (host === '127.0.0.1' ? 'localhost' : host) + ':' + port +
+        '. Stop with Ctrl+C.');
+      process.on('SIGINT', function () {
+        console.log('\nStopped after ' + Math.round((Date.now() - t0) / 60000) + ' min.');
+        server.close();
+        server.closeAllConnections();
+        db.close();
+        resolve(0);
+      });
+    });
+  });
+}
+
 async function main(argv) {
   var cmd = argv[0];
   if (cmd === 'import') return cmdImport(argv.slice(1));
   if (cmd === 'query') return cmdQuery(argv.slice(1));
   if (cmd === 'info') return cmdInfo(argv.slice(1));
+  if (cmd === 'serve') return cmdServe(argv.slice(1));
   console.log(USAGE);
   return cmd === '--help' || cmd === '-h' ? 0 : 1;
 }

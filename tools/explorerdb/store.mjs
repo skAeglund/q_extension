@@ -14,20 +14,21 @@
  * Index file:
  *   "QXXDB001", u32 length of the JSON header, the JSON header, then records of 22 bytes
  *   sorted by hash, then move: hash u64, move u16, white u32, draws u32, black u32.
- *   A position's own totals are the sum of its records; move 0 counts the games that
- *   ended there or reached the ply limit. Only positions reached by at least `minGames`
- *   games are kept, with all their moves.
+ *   A position's records are its moves, plus ENDED and CUT (games.mjs) for the games that
+ *   stopped there. Only positions reached by at least `minGames` games are kept, with all
+ *   their moves. Format 2: format 1 (before CUT) counted both as ENDED.
  * All little-endian.
  */
 
 import fs from 'node:fs';
 import { Chess } from '../../src/vendor/chess.js';
-import { codeParts, fullFen, keyOf, HASH_NAME } from './games.mjs';
+import { codeParts, fullFen, keyOf, HASH_NAME, CUT } from './games.mjs';
 
 export var SHARDS = 256;
 export var SPILL = 16;
 export var REC = 22;
 var MAGIC = 'QXXDB001';
+export var FORMAT = 2;
 
 // Positions reached by at least this many games: the report's rows.
 export var THRESHOLDS = [1, 2, 3, 5, 10, 20, 50, 100, 1000];
@@ -161,6 +162,11 @@ export function openIndex(file) {
   var json = Buffer.alloc(len);
   fs.readSync(fd, json, 0, len, 12);
   var meta = JSON.parse(json.toString('utf8'));
+  if (meta.format !== FORMAT) {
+    fs.closeSync(fd);
+    throw new Error(file + ' is an index of format ' + meta.format + '; this reader needs ' + FORMAT +
+      '. Import the dump again.');
+  }
   if (meta.hash !== HASH_NAME) {
     fs.closeSync(fd);
     throw new Error(file + ' was made with ' + meta.hash + ', this reader uses ' + HASH_NAME + '.');
@@ -200,17 +206,20 @@ export function openIndex(file) {
 /*
  * A position in the Lichess explorer's JSON shape, the parts compactExplorer()
  * (src/pe/providers.js) reads: totals, and moves with uci, san and counts, most played
- * first. Castling is written king-takes-rook (e1h1), as the explorer does. A position that
- * isn't in the index answers with zeros, like the explorer's answer for an unknown one;
- * `indexed` tells the two apart.
+ * first (at most `limit`). Castling is written king-takes-rook (e1h1), as the explorer
+ * does. The totals leave out the games the ply limit cut off here: their next move isn't
+ * in the index, and the search reads the moves as shares of the total. So a position
+ * only reached at the limit answers with zeros, as one that isn't in the index does
+ * (a position with fewer games than the index keeps); `indexed` and `cut` tell them apart.
  */
-export function explorerAnswer(db, fen) {
+export function explorerAnswer(db, fen, limit) {
   var recs = db.records(keyOf(fen));
   var c = new Chess(fullFen(fen));
   var legal = c.moves({ verbose: true });
   var res = { white: 0, draws: 0, black: 0, moves: [], topGames: [], recentGames: [],
-    opening: null, indexed: recs.length > 0 };
+    opening: null, indexed: recs.length > 0, cut: 0 };
   recs.forEach(function (r) {
+    if (r.code === CUT) { res.cut += r.white + r.draws + r.black; return; }
     res.white += r.white; res.draws += r.draws; res.black += r.black;
     if (!r.code) return;
     var p = codeParts(r.code);
@@ -226,5 +235,6 @@ export function explorerAnswer(db, fen) {
   res.moves.sort(function (a, b) {
     return (b.white + b.draws + b.black) - (a.white + a.draws + a.black);
   });
+  if (limit >= 0 && res.moves.length > limit) res.moves.length = limit;
   return res;
 }
