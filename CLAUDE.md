@@ -20,12 +20,13 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 467 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 481 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
                               # and test/pgnclean.js (PGN tree, cleaning, transpositions)
                               # and test/cdbexplore.js (target picking, ChessDB search)
+                              # and test/explorerdb.js (dump filter, fast replay, import)
 node --check src/main-world.js
 python icons/make_icons.py    # regenerate PNGs (stdlib only, no Pillow)
 ```
@@ -259,6 +260,18 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
   so the search's mate-in-1 is ChessDB's 29999. The deadline (`--minutes`, `--hours`) is enforced inside a depth: past it, nothing
   new is asked or waited for and the unfinished depth is dropped. The first live run showed
   why: one depth waited 16 minutes on newly queued positions.
+- `tools/explorerdb.mjs` builds a local explorer index from a Lichess monthly dump
+  (`explorerdb/`). Speed is its constraint: a month is about 25 M games after the filter, a
+  billion plies. chess.js's `move()` manages 15 k/s, so `games.mjs` matches SAN against
+  `_moves({legal: false})` and plays with `_makeMove` (400 k/s), keyed by chess.js's own
+  Zobrist `_hash`; test/explorerdb.js checks it against `move()` and `fen()`, so a chess.js
+  upgrade that changes those internals fails there. chess.js's hash keeps an en-passant
+  square whenever a pawn stands beside the one that moved, but `fen()` only when the capture
+  is legal. `legalEp()` normalises both sides to the latter. Map updates with BigInt keys run at
+  about 1 M/s, so counting is external: workers spill 16-byte records to 256 shard files,
+  and each shard is counted by a typed-array sort. The first 12 plies are the exception.
+  They are counted in memory, keyed by the move string, or the start position alone would be
+  25 M records in one shard.
 
 ## Status
 
@@ -638,6 +651,22 @@ badge before the label, in its colour; the narrow panel shows a dot instead. A r
 rows whose Maia value is missing or unfinished too (`peNeeds`). The header's look was checked
 by applying the CSS on the live page (1.15.0 was loaded; the extension itself wasn't
 reloaded). The rest is covered by the harness only.
+
+**Local explorer (`tools/explorerdb.mjs`)**, built 2026-09-29. Why: the user asked about
+using a second Lichess account to double the explorer rate. That was declined: it gets round
+Lichess's per-account limit, and the only second token at hand is Qchess's. Building the
+counts from Lichess's own monthly dumps has no limit. `import` reads one dump with a filter
+fixed at import time (default: the extension's own, blitz/rapid/classical at an average of
+1600+, 40 plies). It keeps the positions reached by `--min-games` (10) games and reports what
+each threshold from 1 to 1000 would keep, so one month can be projected to the whole archive.
+`query` answers in the explorer's JSON shape (castling as e1h1), but nothing reads the index
+yet: providers.js and repgen still ask Lichess.
+Measured in this container on a synthetic dump of 200 k games in the dumps' layout (clocks
+in comments, about 2 kB a game): the main thread reads and filters about 89 k games/s, and
+replay runs at about 275 k plies/s per worker. So a real month (about 100 M games, about
+25 M kept) should be bound by reading, at 20–40 minutes on a machine with several cores.
+database.lichess.org is blocked from the container (proxy 403), so no real dump has been
+imported. The sizes and times for a real month are estimates until the user runs one.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where
