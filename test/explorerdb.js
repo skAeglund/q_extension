@@ -366,6 +366,28 @@ module.exports = async function run(check) {
     });
     db3.close();
   }
+  // Seen on Windows with Node < 22.15 and no zstd program: the import "read 0 games" and
+  // wrote an empty index. Each of these must be an error, and leave no index behind.
+  await check('a missing zstd, a file with no games, or a filter nothing passes is an error', async () => {
+    const zstd = zlib.createZstdDecompress, envPath = process.env.PATH;
+    fs.writeFileSync(path.join(tmp, 'x.pgn.zst'), 'not really zstd');
+    delete zlib.createZstdDecompress;          // as on a Node before 22.15
+    process.env.PATH = '';                     // and no zstd program
+    try {
+      await assert.rejects(I.importDump({ input: path.join(tmp, 'x.pgn.zst'), out: path.join(tmp, 'z.xdb'),
+        workers: 1 }), /has no zstd built in .* zstd program was not found/);
+    } finally {
+      if (zstd) zlib.createZstdDecompress = zstd;
+      process.env.PATH = envPath;
+    }
+    fs.writeFileSync(path.join(tmp, 'x.pgn'), 'hello\n');
+    await assert.rejects(I.importDump({ input: path.join(tmp, 'x.pgn'), out: path.join(tmp, 'x.xdb'),
+      workers: 1 }), /No games in x\.pgn/);
+    await assert.rejects(I.importDump({ input: dumpFile, out: path.join(tmp, 'u.xdb'), workers: 1,
+      speeds: ['ultraBullet'], ratings: [2500] }), /None of the 403 games passed the filter/);
+    ['z.xdb', 'x.xdb', 'u.xdb', 'z.xdb.tmp', 'u.xdb.tmp'].forEach(f =>
+      assert.ok(!fs.existsSync(path.join(tmp, f)), f + ' left behind'));
+  });
   const m10 = await I.importDump({ input: dumpFile, out: path.join(tmp, 'ten.xdb'), maxGames: 10,
     workers: 1 });
   await check('--max-games stops reading early', () =>

@@ -26,21 +26,39 @@ export var DEFAULTS = {
   batch: 2000
 };
 
-// The dump as text. Node 22.15+ has zstd built in; before that, the zstd program.
+/*
+ * The dump as text. Node 22.15+ has zstd built in; before that, the zstd program.
+ * `finished` settles when the decompressor is done: a stream that merely ends is not
+ * proof of success, because a zstd program that failed to start, or quit on an error,
+ * still ends its output. That is how a missing zstd once imported "0 games" without a word.
+ */
+var NO_ZSTD = 'This Node (' + process.version + ') has no zstd built in (22.15 and later do), ' +
+  'and the zstd program was not found. Update Node, install zstd, or decompress the dump ' +
+  'first and import the .pgn.';
+
 function openText(file, onBytes) {
   var raw = fs.createReadStream(file, { highWaterMark: 1 << 20 });
   raw.on('data', function (b) { onBytes(b.length); });
-  if (!/\.zst$/i.test(file)) return { stream: raw, raw: raw };
+  var none = function () {};
+  if (!/\.zst$/i.test(file)) return { stream: raw, raw: raw, finished: Promise.resolve(), stop: none };
   if (typeof zlib.createZstdDecompress === 'function') {
-    return { stream: raw.pipe(zlib.createZstdDecompress()), raw: raw };
+    return { stream: raw.pipe(zlib.createZstdDecompress()), raw: raw, finished: Promise.resolve(),
+      stop: none };
   }
-  var p = spawn('zstd', ['-dc'], { stdio: ['pipe', 'pipe', 'inherit'] });
-  p.on('error', function () {
-    raw.destroy(new Error('This Node has no zstd (22.15+ does), and the zstd program was not ' +
-      'found. Update Node, install zstd, or decompress the dump first.'));
+  var p = spawn('zstd', ['-dc'], { stdio: ['pipe', 'pipe', 'pipe'] });
+  var stderr = '';
+  p.stderr.on('data', function (b) { stderr += b; });
+  p.stdin.on('error', none);        // EPIPE once zstd has stopped reading
+  var finished = new Promise(function (resolve, reject) {
+    p.on('error', function (e) { reject(e && e.code === 'ENOENT' ? new Error(NO_ZSTD) : e); });
+    p.on('close', function (code) {
+      if (code === 0) resolve();
+      else reject(new Error('zstd failed (exit ' + code + ')' + (stderr.trim() ? ': ' + stderr.trim() : '')));
+    });
   });
+  finished.catch(none);
   raw.pipe(p.stdin);
-  return { stream: p.stdout, raw: raw };
+  return { stream: p.stdout, raw: raw, finished: finished, stop: function () { p.kill(); } };
 }
 
 function createPool(n, data) {
@@ -109,6 +127,7 @@ export async function importDump(o) {
         done = ended = true;
         src.raw.destroy();          // an open stream would keep the process alive
         text.destroy();
+        src.stop();
         reject(e);
       };
 
@@ -159,6 +178,7 @@ export async function importDump(o) {
         progress(true);
         src.raw.destroy();
         text.destroy();
+        src.stop();
         finishIfDone();
       }
 
@@ -175,13 +195,26 @@ export async function importDump(o) {
         progress(false);
       });
       text.on('end', function () {
-        if (!ended && carry.trim()) take(carry);
-        stop();
+        if (ended) return;
+        src.finished.then(function () {
+          if (!ended && carry.trim()) take(carry);
+          stop();
+        }, failed);
       });
       text.on('error', function (e) { if (!ended) failed(e); });
       src.raw.on('error', function (e) { if (!ended) failed(e); });
     });
 
+    // An index of nothing is never what was meant: say why instead of writing one.
+    if (!n.read || n.read === why.broken) {
+      throw new Error('No games in ' + path.basename(o.input) + ' (' + mb(n.bytes) + ' read). ' +
+        'Is it a Lichess PGN dump, .pgn or .pgn.zst?');
+    }
+    if (!n.kept) {
+      throw new Error('None of the ' + n.read + ' games passed the filter (skipped for speed ' +
+        why.speed + ', rating ' + why.rating + ', variant or set-up ' + why.variant + ', no result ' +
+        why.result + ').');
+    }
     await Promise.all(pool.map(function (slot) { return ask(slot, { type: 'finish' }); }));
     var tRead = Date.now();
     log('replayed ' + fmt(n.replayed) + ' games (' + fmt(n.plies) + ' plies) in ' + mins(tRead - t0) +

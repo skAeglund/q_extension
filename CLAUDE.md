@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 487 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 488 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -684,6 +684,14 @@ index ran a search from the start position with no token and 0 Lichess requests 
 requests in 1m48s, at repgen's ChessDB pace), adopting the index's filter. The extension's
 use of it is covered by the harness only. Not loaded in Chrome yet, which also leaves the new
 host permissions and the popup field untried.
+
+**Empty import on Windows (2026-09-29).** The user's first real import (2016-02, 908 MB) said
+"read 0 games" and wrote an empty index. Reproduced by removing `zlib.createZstdDecompress`
+with no zstd program installed. The spawn failed (ENOENT) and the child's stdout simply ended.
+`end` then called `stop()`, which set `ended`, and the error arriving afterwards was ignored
+because of `if (!ended)`. Now `openText` returns `finished`, which settles on the child's exit
+code, and `end` waits for it. An import with no games, or with none passing the filter, is an
+error rather than an empty index.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

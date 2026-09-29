@@ -606,8 +606,9 @@ few, as it does for rare positions on Lichess. So do positions only reached at t
 their games went on, but the index doesn't know with which moves.
 
 What it needs:
-- **Node 22.15 or later** reads `.zst` itself. An older Node needs the `zstd` program, or a
-  dump you've decompressed first.
+- **Node 22.15 or later** reads `.zst` itself (`node --version` tells you which you have).
+  An older Node needs the `zstd` program on the PATH, or a dump you've decompressed first.
+  Updating Node to the current LTS is simplest, on Windows too.
 - **Temporary space**, about 16 bytes per counted ply past the 12th: 10–15 GB for a month.
   It goes in `<out>.xdb.tmp`, or wherever `--tmp` says, and is deleted at the end.
 - **Time.** The replay runs on `--workers` threads (default: one fewer than your cores, at
