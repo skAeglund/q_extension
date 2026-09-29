@@ -163,12 +163,22 @@ export function createRootSearch(o) {
 
   function add(sans) {
     (sans || []).forEach(function (san) {
-      if (bySan.has(san)) return;
+      // A row asked for again is left alone, unless it failed: then this is the cell's
+      // "Click to retry", and it starts afresh.
+      var old = bySan.get(san);
+      if (old && !old.failed) return;
+      if (old) remove(san);
       var row = { san: san, results: {}, depth: 0, chain: Promise.resolve() };
       bySan.set(san, row);
       order.push(row);
       added++;
-      if (finished !== null) {
+      if (finished === '' && loop) {
+        // Stopped only because every row was complete: a newcomer can still go deeper,
+        // so the rounds start again from the table's depth, which it catches up to.
+        finished = null;
+        var from = Math.max(common, 1);
+        loop = loop.then(function () { return round(from); });
+      } else if (finished !== null) {
         // The table has stopped: bring the newcomer to the table's depth, then finish it.
         tails.push(upTo(row, Math.max(common, 1)).then(function () {
           var d = lastAtOrBelow(row, common || 1);
@@ -180,7 +190,11 @@ export function createRootSearch(o) {
         }));
       }
     });
-    if (!loop) loop = round(1);
+    // Not before there is a row: rounds over no rows would "finish" at once, and every
+    // row added after that would stop at depth 1. A new position's first request is
+    // empty when its table has no evals or games yet (a rare line), and the rows follow
+    // with the next render.
+    if (!loop && order.length) loop = round(1);
   }
 
   /*
@@ -210,59 +224,34 @@ export function createRootSearch(o) {
 /*
  * The Lichess search with a Maia preview beside it: a second search of the same rows with
  * Maia's predictions in place of games (opts.maiaOnly). It asks ChessDB and Maia only,
- * so it deepens in seconds where the explorer's rate limit takes minutes, and the table
- * shows it until the Lichess value is `previewUntil` plies deep.
+ * so it deepens in seconds where the explorer's rate limit takes minutes. The table
+ * shows one of the two, and the user switches between them (the Prac header), so both
+ * run to their own end: neither stops because the other got somewhere.
  *
- * A row's preview stops as soon as the table no longer needs it: once its Lichess value
- * reaches that depth, is final (complete, stopped, few games, no eval) or fails. The two
- * searches share rows otherwise: a row added goes to both, a row removed (right-click)
- * leaves both, and adding it back starts both afresh.
+ * The two share rows: a row added goes to both, a row removed (right-click) leaves both,
+ * and adding it back starts both afresh.
  *
  * o = as for createRootSearch, plus
  *   preview: { makeProvider, onResult, onError } or null for no preview
- *   previewUntil: 3
  */
 export function createPreviewedSearch(o) {
-  var until = o.previewUntil || 3;
-  var retired = new Set();
-  var preview = null;
-
-  function retire(san) {
-    if (!preview || retired.has(san)) return;
-    retired.add(san);
-    preview.remove(san);
-  }
-
-  var real = createRootSearch(Object.assign({}, o, {
-    onResult: function (san, res) {
-      o.onResult(san, res);
-      if (!(res.state === 'value' && res.final === false && res.depth < until)) retire(san);
-    },
-    onError: function (san, e) {
-      o.onError(san, e);
-      retire(san);
-    }
-  }));
-
-  if (o.preview) {
-    preview = createRootSearch({
-      rootFen: o.rootFen,
-      // No prepared split: it is measured by game results, and the preview has none.
-      opts: Object.assign({}, o.opts, { maiaOnly: true, prep: false }),
-      makeProvider: o.preview.makeProvider,
-      isStale: o.isStale,
-      onResult: o.preview.onResult,
-      onError: o.preview.onError
-    });
-  }
+  var real = createRootSearch(o);
+  var preview = !o.preview ? null : createRootSearch({
+    rootFen: o.rootFen,
+    // No prepared split: it is measured by game results, and the preview has none.
+    opts: Object.assign({}, o.opts, { maiaOnly: true, prep: false }),
+    makeProvider: o.preview.makeProvider,
+    isStale: o.isStale,
+    onResult: o.preview.onResult,
+    onError: o.preview.onError
+  });
 
   return {
     add: function (sans) {
       real.add(sans);
-      if (preview) preview.add((sans || []).filter(function (s) { return !retired.has(s); }));
+      if (preview) preview.add(sans);
     },
     remove: function (san) {
-      retired.delete(san);
       if (preview) preview.remove(san);
       return real.remove(san);
     },

@@ -752,7 +752,9 @@ const optText = o => o.children.map(c => c.textContent).join(' | ');
   };
 
   global.databaseTurnedOn = true;
-  push({ enabled: true, sides: true, peEnabled: true });
+  // The Lichess values alone; the Maia preview has its own section below. With it on, a
+  // row with no Maia value would be sent again on every revisit.
+  push({ enabled: true, sides: true, peEnabled: true, peMaiaPreview: false });
   tick();                                        // hooks displayStatistics
   global.window.displayStatistics(STATS);
   await settle(250);
@@ -939,6 +941,10 @@ const optText = o => o.children.map(c => c.textContent).join(' | ');
     { detail: JSON.stringify({ type: 'update', pass: 'maia', root: ROOT_PV, san, result }) }));
   const pvVal = (value, depth, extra) => Object.assign({ state: 'value', value, engine: 50.5,
     depth, positions: depth * 3, games: 9000, final: false, replies: [] }, extra);
+  const peHead = () => dbHeader.querySelector('.qx-pe-h');
+  const viewEvents = [];
+  document.addEventListener('qx:pe:view', e => viewEvents.push(JSON.parse(e.detail)));
+  push({ peMaiaPreview: true });
   global.fen = FEN_PV;
   global.window.displayStatistics(STATS);
   await settle(250);
@@ -946,65 +952,123 @@ const optText = o => o.children.map(c => c.textContent).join(' | ');
     assert.strictEqual(peReqs[peReqs.length - 1].opts.maiaPreview, true));
   pvMaia('e4', pvVal(54.2, 1, { maia: 1, maiaElo: 2150,
     replies: [{ san: 'c5', share: 0.4, v: 56, maiaOnly: true }] }));
-  await check('before any Lichess value, the preview shows: ≈, purple italics', () => {
-    assert.strictEqual(cellOf('e4').textContent, '≈54');
+  await check('the column shows the Lichess values by default, Maia\'s never stand in', () => {
+    assert.strictEqual(peHead().textContent, 'Prac');
+    assert.strictEqual(cellOf('e4').textContent, '·');
+    assert.ok(!cellOf('e4')._classes.has('qx-mp'), cellOf('e4').className);
+  });
+  await check('  ...and the header flags Maia\'s deeper values: its depth, in purple', () => {
+    assert.strictEqual(peHead().getAttribute('data-alt'), '1');
+    assert.ok(peHead()._classes.has('qx-alt-m') && !peHead()._classes.has('qx-alt-l'),
+      peHead().className);
+    assert.ok(peHead().title.startsWith('Maia\'s values have reached depth 1 here. Click'),
+      peHead().title);
+    assert.ok(src.includes('.qx-pe-h[data-alt]::before{content:attr(data-alt);'), 'no badge rule');
+  });
+  pvLichess('e4', pvVal(52, 1));
+  await check('  ...only while they are deeper than the ones shown', () => {
+    assert.strictEqual(peHead().getAttribute('data-alt'), null);
+    assert.ok(!peHead()._classes.has('qx-alt-m'), peHead().className);
+    assert.strictEqual(cellOf('e4').textContent, '52');
+    assert.ok(cellOf('e4').title.includes('Maia preview: 54% at depth 1'), cellOf('e4').title);
+  });
+
+  await check('clicking the header switches to Maia\'s values, and is not passed on', () => {
+    assert.ok(peHead()._classes.has('qx-pe-sw'), 'header not marked clickable');
+    assert.ok(fireClick(peHead()), 'the click reached the page');
+    assert.strictEqual(peHead().textContent, 'Maia');
+    assert.ok(peHead()._classes.has('qx-pe-hm'), peHead().className);
+    assert.deepStrictEqual(viewEvents, ['maia']);
+  });
+  await check('  ...shown like a Lichess value, in purple italics, with its depth marker', () => {
+    assert.strictEqual(cellOf('e4').textContent, '54');
+    assert.strictEqual(cellOf('e4').getAttribute('data-d'), 'd1');
     assert.ok(cellOf('e4')._classes.has('qx-mp') && cellOf('e4')._classes.has('qx-maia'),
       cellOf('e4').className);
-    assert.strictEqual(cellOf('e4').getAttribute('data-d'), null);
     assert.ok(src.includes('.qx-pe.qx-mp{font-style:italic}'), 'no italic rule');
   });
   await check('  ...its tooltip says what it is and how far Lichess has got', () => {
     const t = cellOf('e4').title;
-    assert.ok(t.startsWith('Maia preview 54% · engine 51% (+4)'), t);
+    assert.ok(t.startsWith('Maia 54% · engine 51% (+4)'), t);
     assert.ok(t.includes('Maia\'s predictions (rating 2150)'), t);
     assert.ok(t.includes('c5  40% → 56%') && !t.includes('56%  Maia'), t);
-    assert.ok(t.includes('Depth 1') && t.includes('Lichess: computing…'), t);
+    assert.ok(t.includes('Depth 1') && t.includes('Lichess: 52% at depth 1, searching…'), t);
   });
-  await check('  ...and clicking it plays the move, like any value', () =>
+  await check('  ...a row without one yet waits, and one never asked for can be clicked', () => {
+    assert.strictEqual(cellOf('d4').textContent, '·');
+    assert.ok(cellOf('g3')._classes.has('qx-od'), cellOf('g3').className);
+  });
+  await check('  ...and clicking a value plays the move, like any value', () =>
     assert.ok(!fireClick(cellOf('e4')), 'the click was swallowed'));
-  await check('the header explains the ≈', () =>
-    assert.ok(dbHeader.querySelector('.qx-pe-h').title.includes('≈ in purple italics'),
-      dbHeader.querySelector('.qx-pe-h').title));
-  pvLichess('e4', pvVal(52, 1));
-  await check('a Lichess value as deep as the preview takes over', () => {
-    assert.strictEqual(cellOf('e4').textContent, '52');
-    assert.strictEqual(cellOf('e4').getAttribute('data-d'), 'd1');
-    assert.ok(!cellOf('e4')._classes.has('qx-mp'), cellOf('e4').className);
-    assert.ok(cellOf('e4').title.includes('Maia preview: 54% at depth 1'), cellOf('e4').title);
-  });
+
   pvMaia('e4', pvVal(56.4, 3, { maia: 1, maiaElo: 2150 }));
   pvMaia('d4', pvVal(53.1, 3, { maia: 1, maiaElo: 2150 }));
   pvLichess('d4', pvVal(51, 1));
   pvMaia('Nf3', pvVal(60, 1, { maia: 1, maiaElo: 2150 }));
-  await check('a deeper preview stands in for a shallower Lichess value', () => {
-    assert.deepStrictEqual([cellOf('e4').textContent, cellOf('d4').textContent], ['≈56', '≈53']);
-    assert.ok(cellOf('e4').title.includes('Lichess so far: 52% at depth 1'), cellOf('e4').title);
-  });
-  await check('  ...the best preview at one depth is green, a preview at another sits out', () => {
+  await check('the best Maia value at one depth is green, one at another depth sits out', () => {
+    assert.deepStrictEqual([cellOf('e4').textContent, cellOf('d4').textContent,
+      cellOf('Nf3').textContent], ['56', '53', '60']);
     assert.ok(cellOf('e4')._classes.has('qx-best'), cellOf('e4').className);
     assert.ok(!cellOf('d4')._classes.has('qx-best'), cellOf('d4').className);
-    assert.strictEqual(cellOf('Nf3').textContent, '≈60');
-    assert.ok(!cellOf('Nf3')._classes.has('qx-best'), 'a depth-1 preview beat depth 3');
+    assert.ok(!cellOf('Nf3')._classes.has('qx-best'), 'a depth-1 value beat depth 3');
   });
-  push({ peMaiaPreview: false });
-  await check('switched off, the Lichess values show', () =>
-    assert.deepStrictEqual([cellOf('e4').textContent, cellOf('d4').textContent,
-      cellOf('Nf3').textContent], ['52', '51', '·']));
-  push({ peMaiaPreview: true });
   pvLichess('e4', pvVal(55, 3));
-  pvLichess('d4', pvVal(57, 3));
-  await check('at depth 3 the Lichess values take over, with their own green', () => {
-    assert.deepStrictEqual([cellOf('e4').textContent, cellOf('d4').textContent], ['55', '57']);
-    assert.ok(cellOf('d4')._classes.has('qx-best'), cellOf('d4').className);
-    assert.ok(!cellOf('e4')._classes.has('qx-best'), cellOf('e4').className);
+  pvLichess('d4', pvVal(57, 5, { final: true, stopped: 'maxPly' }));
+  await check('Lichess values deeper than Maia\'s are flagged too, in the Lichess colour', () => {
+    assert.strictEqual(peHead().getAttribute('data-alt'), '5');
+    assert.ok(peHead()._classes.has('qx-alt-l') && !peHead()._classes.has('qx-alt-m'),
+      peHead().className);
+    assert.ok(peHead().title.startsWith('The Lichess values have reached depth 5 here, '
+      + 'these depth 3.'), peHead().title);
   });
-  pvMaia('c4', pvVal(58, 5, { maia: 1, maiaElo: 2150 }));
-  pvLichess('c4', { state: 'few', games: 12, engine: 52 });
+  pvMaia('d4', { state: 'error', reason: 'ChessDB unreachable: x', final: true });
+  await check('a failed Maia value shows ? and can be retried', () => {
+    assert.strictEqual(cellOf('d4').textContent, '?');
+    assert.ok(cellOf('d4')._classes.has('qx-od'), cellOf('d4').className);
+    const n0 = peReqs.length;
+    assert.ok(fireClick(cellOf('d4')), 'the click reached the row');
+    assert.deepStrictEqual(peReqs.slice(n0).map(r => r.rows), [['d4']]);
+  });
+  pvMaia('d4', pvVal(53.1, 3, { maia: 1, maiaElo: 2150 }));
+
+  fireClick(peHead());
+  await check('clicking again goes back to the Lichess values, with their own green', () => {
+    assert.strictEqual(peHead().textContent, 'Prac');
+    assert.deepStrictEqual(viewEvents, ['maia', 'lichess']);
+    assert.deepStrictEqual([cellOf('e4').textContent, cellOf('d4').textContent], ['55', '57%']);
+    assert.ok(!cellOf('e4')._classes.has('qx-mp'), cellOf('e4').className);
+    assert.strictEqual(peHead().getAttribute('data-alt'), null);
+  });
+
+  push({ peView: 'maia' });
+  push({ peMaiaPreview: false });
+  await check('with the preview off: the Lichess values, and the header is only a label', () => {
+    assert.strictEqual(peHead().textContent, 'Prac');
+    assert.ok(!peHead()._classes.has('qx-pe-sw'), peHead().className);
+    assert.strictEqual(cellOf('e4').textContent, '55');
+    assert.ok(!fireClick(peHead()), 'the click was taken');
+    assert.strictEqual(viewEvents.length, 2);
+  });
+  push({ peMaiaPreview: true });
+  await check('the view chosen persists as a setting', () =>
+    assert.strictEqual(peHead().textContent, 'Maia'));
+
+  // Leaving with e4's and d4's Maia values unfinished: coming back resumes them. A row
+  // whose two values are both done isn't sent again.
   pvLichess('Nf3', pvVal(50, 1, { final: true, complete: true }));
-  await check('  ...and a final Lichess result takes over at any depth, a dash included', () => {
-    assert.strictEqual(cellOf('Nf3').textContent, '50%');
-    assert.strictEqual(cellOf('c4').textContent, '–');
+  pvMaia('Nf3', pvVal(60, 1, { maia: 1, maiaElo: 2150, final: true, complete: true }));
+  global.fen = START;
+  global.window.displayStatistics(STATS);
+  await settle(250);
+  global.fen = FEN_PV;
+  global.window.displayStatistics(STATS);
+  await settle(250);
+  await check('coming back resumes rows whose Maia value is unfinished', () => {
+    const rows = peReqs[peReqs.length - 1].rows;
+    assert.ok(rows.includes('e4') && rows.includes('d4'), rows.join(','));
+    assert.ok(!rows.includes('Nf3'), rows.join(','));
   });
+  push({ peView: 'lichess', peMaiaPreview: false });
   global.fen = START;
   global.window.displayStatistics(STATS);
   await settle(250);

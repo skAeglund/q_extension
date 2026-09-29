@@ -44,6 +44,7 @@
     peRequestBudget: 60,
     peMaia: true,
     peMaiaPreview: true,
+    peView: 'lichess',
     maiaUntil: 100,
     maiaOnlyBelow: 10,
     maiaWeight: 20,
@@ -182,6 +183,13 @@
     var on;
     try { on = JSON.parse(e.detail); } catch (err) { return; }
     try { chrome.storage.sync.set({ prepBar: !!on }); } catch (err) {}
+  });
+
+  // Likewise the Prac header's switch between the Lichess values and Maia's.
+  document.addEventListener('qx:pe:view', function (e) {
+    var v;
+    try { v = JSON.parse(e.detail); } catch (err) { return; }
+    try { chrome.storage.sync.set({ peView: v === 'maia' ? 'maia' : 'lichess' }); } catch (err) {}
   });
 
   function sendExcluded() {

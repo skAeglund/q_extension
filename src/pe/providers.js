@@ -20,6 +20,8 @@ import { fenKey } from './search.js';
 
 export var EXPLORER_URL = 'https://explorer.lichess.org/lichess';
 export var CHESSDB_URL = 'https://www.chessdb.cn/cdb.php';
+var CDB_RETRIES = 2;         // a lookup that fails on the network is tried twice more,
+var CDB_RETRY_MS = 1500;     // after 1.5 s and then 3 s
 
 /*
  * Lichess's explorer limit, measured with tools/lichess-rate.mjs on 2026-09-27 (it sends
@@ -287,6 +289,7 @@ export function createProviders(o) {
   var lichess = createRateLimiter({ now: o.now, sleep: o.sleep,
     ratePerMin: o.ratePerMin, burst: o.burst });
   var cdbLane = createLimiter(2);
+  var sleep = o.sleep || function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
   var inflight = new Map();   // identical concurrent requests share one fetch
   var asking = new Map();     // analysis requests on their way
 
@@ -393,20 +396,43 @@ export function createProviders(o) {
         joined.job.priority = priority;
       }
       return once('c' + key, function () {
-        return cdbLane(function () {
-          stats.chessdbRequests = (stats.chessdbRequests || 0) + 1;
-          var url = CHESSDB_URL + '?action=queryall&json=1&board=' + encodeURIComponent(fen);
-          return o.fetch(url).then(function (res) {
-            if (!res.ok) throw HttpError(res.status);
-            return res.json();
-          }).then(function (j) {
-            var v = compactChessdb(j);
-            v.t = now();
-            return o.cache.put('chessdb', key, v).then(function () { return v; });
+        var out = { job: null };
+        function attempt(tries) {
+          var p = cdbLane(function () {
+            stats.chessdbRequests = (stats.chessdbRequests || 0) + 1;
+            var url = CHESSDB_URL + '?action=queryall&json=1&board=' + encodeURIComponent(fen);
+            return o.fetch(url).then(function (res) {
+              if (!res.ok) throw HttpError(res.status);
+              return res.json();
+            }).then(function (j) {
+              var v = compactChessdb(j);
+              v.t = now();
+              return o.cache.put('chessdb', key, v).then(function () { return v; });
+            });
+          }, isStale, out.job ? out.job.priority : priority);
+          out.job = p.job;
+          return p.catch(function (e) {
+            if (!cdbRetryable(e) || tries >= CDB_RETRIES || (isStale && isStale())) throw e;
+            return sleep(CDB_RETRY_MS * (tries + 1)).then(function () { return attempt(tries + 1); });
           });
-        }, isStale, priority);
+        }
+        var p = attempt(0);
+        // chessdb() raises a joined request's priority through p.job: the one waiting now.
+        Object.defineProperty(p, 'job', { get: function () { return out.job; } });
+        return p;
       });
     });
+  }
+
+  /*
+   * A dropped connection is retried, not passed on: one failed lookup in a deeper round
+   * stops the whole table ('error'). Seen live on 2026-09-28, the page's own ChessDB
+   * fetch failing with ERR_CONNECTION_CLOSED once, while 150 lookups at 3 in flight (450 a
+   * minute) all went through: a passing network fault, not a limit. HTTP errors other
+   * than 5xx are ChessDB's answer and final.
+   */
+  function cdbRetryable(e) {
+    return !!e && !e.cancelled && (!e.status || e.status >= 500);
   }
 
   /*

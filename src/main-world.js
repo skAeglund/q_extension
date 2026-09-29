@@ -67,6 +67,9 @@
     peRequestBudget: 60,
     peMaia: true,
     peMaiaPreview: true,
+    // Which of the two the Prac column shows, switched by clicking its header: 'lichess'
+    // or 'maia' (the preview). UI only, like prepBar.
+    peView: 'lichess',
     maiaUntil: 100,
     maiaOnlyBelow: 10,
     maiaWeight: 20,
@@ -199,6 +202,22 @@
       // The Maia preview (≈, and qx-maia's purple): italic, so it never reads as a Lichess
       // value that happens to rest mostly on Maia.
       '#database-trees .qx-pe.qx-mp{font-style:italic}',
+      // The header switches the column between the Lichess values and Maia's (qx-pe-sw);
+      // showing Maia's, it reads "Maia" in the preview's purple italics. When the hidden
+      // one is deeper here, its depth sits before the label as a small badge in that
+      // one's colour, pulsing when it appears.
+      '#db-column-header .qx-pe-h.qx-pe-sw{cursor:pointer}',
+      '#db-column-header .qx-pe-h.qx-pe-sw:hover{color:#ddd}',
+      '#db-column-header .qx-pe-h.qx-pe-hm{color:#b392f0;font-style:italic;letter-spacing:0}',
+      '#db-column-header .qx-pe-h.qx-alt-m{--qx-alt:#b392f0}',
+      '#db-column-header .qx-pe-h.qx-alt-l{--qx-alt:#c9d1d9}',
+      '#db-column-header .qx-pe-h[data-alt]::before{content:attr(data-alt);',
+      'display:inline-block;margin-right:1px;padding:0 2px;border-radius:6px;',
+      'font-size:8px;line-height:11px;font-style:normal;font-weight:700;letter-spacing:0;',
+      'vertical-align:1px;color:#0d1117;background:var(--qx-alt);',
+      'animation:qx-pulse 1.1s ease-out 2}',
+      '@keyframes qx-pulse{0%{box-shadow:0 0 0 0 var(--qx-alt)}',
+      '100%{box-shadow:0 0 0 5px rgba(0,0,0,0)}}',
       '#database-trees .qx-pe.qx-q{opacity:.45}',
       '#database-trees .qx-pe.qx-x{opacity:.35}',
       // While deeper iterations run, the % sign gives way to a small depth marker.
@@ -222,6 +241,10 @@
       // all; shrink the cell rather than hide anything of the site's.
       '#db-column-header.qx-pe-narrow .qx-pe-h,#database-trees.qx-pe-narrow .qx-pe{',
       'width:28px;min-width:28px;margin-right:4px;font-size:10px}',
+      '#db-column-header.qx-pe-narrow .qx-pe-h{letter-spacing:0}',
+      // No room for the depth there: a dot says the same, the title says which depth.
+      '#db-column-header.qx-pe-narrow .qx-pe-h[data-alt]::before{content:"";width:5px;',
+      'height:5px;padding:0;border-radius:50%;vertical-align:1px}',
 
       // Prepared score. The page gives the Score label pointer-events:none and width:0,
       // its text overflowing into .move-percentages - a later flex sibling, painted on
@@ -602,6 +625,16 @@
       return;
     }
 
+    // The Prac header switches the column between the Lichess values and Maia's. Not a
+    // header of the site's, so nothing sorts on it; stopped anyway, like the others.
+    var peHead = t.closest('.qx-pe-h');
+    if (peHead && pePreviewOn()) {
+      e.preventDefault();
+      e.stopPropagation();
+      peViewToggle();
+      return;
+    }
+
     // A Practical cell waiting to be computed (or retried). Its row carries the site's
     // handler that plays the move, so this has to be stopped here, like the badges.
     // Cells showing a value are left alone: clicking them plays the move as usual.
@@ -950,6 +983,17 @@
     return true;
   }
 
+  // A row to send for a position just entered: its Lichess value is missing or worth
+  // resuming, or its Maia value is (with the preview on, the column can show either).
+  // Sending a row runs both; the one already done comes back from the cache.
+  function peNeeds(key) {
+    var r = pe.results.get(key);
+    if (!r || peResume(key, r)) return true;
+    if (!pePreviewOn()) return false;
+    var m = pe.maia.get(key);
+    return !m || peUnfinished(m);
+  }
+
   // Maia stands in for the games of the filter's players, so it plays at their rating:
   // the mean of the rating buckets' midpoints (2500 is 2500+), clamped to Maia's range.
   var MAIA_MID = { 0: 800, 1000: 1100, 1200: 1300, 1400: 1500, 1600: 1700, 1800: 1900,
@@ -1016,14 +1060,11 @@
       });
       var need = [];
       if (mine) {
-        need = peAutoRows().filter(function (san) {
-          var r = pe.results.get(root + '|' + san);
-          return !r || peResume(root + '|' + san, r);
-        });
+        need = peAutoRows().filter(function (san) { return peNeeds(root + '|' + san); });
         // Rows computed by a click, and left before they finished, resume too.
         pe.results.forEach(function (v, k) {
           if (k.indexOf(root + '|') !== 0 || pe.excluded.has(k)) return;
-          if (need.indexOf(k.slice(root.length + 1)) >= 0 || !peResume(k, v)) return;
+          if (need.indexOf(k.slice(root.length + 1)) >= 0 || !peNeeds(k)) return;
           var san = k.slice(root.length + 1);
           if (need.indexOf(san) < 0) need.push(san);
         });
@@ -1120,45 +1161,88 @@
   /*
    * The Maia preview (src/pe/rounds.js, createPreviewedSearch): the same search with
    * Maia's predictions in place of Lichess games. It needs ChessDB and Maia only, so it
-   * reaches depth 3 and 5 while the Lichess search is still at depth 1. It stands in for a
-   * row's Lichess value until that value is PE_PREVIEW_UNTIL deep or final (the worker
-   * stops the preview there too), and only while the preview is the deeper of the two.
-   * Before any Lichess value, any preview value shows.
+   * reaches depth 3 and 5 while the Lichess search is still at depth 1. The column shows
+   * one of the two, the user's choice (settings.peView, switched by clicking the header),
+   * and the header flags the other one when it is deeper (peAltDepth).
    */
-  var PE_PREVIEW_UNTIL = 3;
-  function pePreview(key, r) {
-    if (settings.peMaia === false || settings.peMaiaPreview === false) return null;
-    var m = pe.maia.get(key);
-    if (!m || m.state !== 'value' || m.value == null) return null;
-    if (r && r.state !== 'queued') {
-      if (r.state !== 'value' || r.final !== false || r.depth >= PE_PREVIEW_UNTIL) return null;
-      if (m.depth <= r.depth) return null;
-    }
-    return m;
+  function pePreviewOn() {
+    return settings.peMaia !== false && settings.peMaiaPreview !== false;
+  }
+
+  function peViewMaia() {
+    return pePreviewOn() && settings.peView === 'maia';
+  }
+
+  function peViewToggle() {
+    if (!pePreviewOn()) return;
+    settings.peView = peViewMaia() ? 'lichess' : 'maia';
+    // Saved through the bridge like prepBar, so it persists across page loads.
+    document.dispatchEvent(new CustomEvent('qx:pe:view', {
+      detail: JSON.stringify(settings.peView) }));
+    pePaint();
+  }
+
+  // The deepest value `map` holds for the rows the table shows at this position.
+  function peDepthOf(map, root, sans) {
+    var d = 0;
+    sans.forEach(function (san) {
+      var key = san && root + '|' + san;
+      if (!key || pe.excluded.has(key)) return;
+      var r = map.get(key);
+      if (r && r.state === 'value' && r.depth > d) d = r.depth;
+    });
+    return d;
   }
 
   function pePreviewTooltip(m, r) {
-    var lines = [peValueLine('Maia preview ' + Math.round(m.value) + '%', m)];
+    var lines = [peValueLine('Maia ' + Math.round(m.value) + '%', m)];
     lines.push('Replies weighted by Maia\'s predictions (rating ' + m.maiaElo + '), not by '
-      + 'Lichess games. The Lichess value replaces it at depth ' + PE_PREVIEW_UNTIL + '.');
+      + 'Lichess games.');
     peReplyLines(m, lines, false);
     peSwitchLines(m, lines);
     lines.push(peDepthLine(m));
     lines.push(r && r.state === 'value'
-      ? 'Lichess so far: ' + Math.round(r.value) + '% at depth ' + r.depth + ', searching…'
-      : 'Lichess: computing…');
+      ? 'Lichess: ' + Math.round(r.value) + '% at depth ' + r.depth
+        + (r.final === false ? ', searching…' : '')
+      : r && r.state !== 'queued' ? 'Lichess: no value' : 'Lichess: computing…');
     return lines.join('\n');
   }
 
-  // The preview's cell: "≈54", purple italics. Green like any value when it is the best
-  // of the previews shown at one depth. Clicking it plays the move, as a value does.
-  function peRenderPreview(cell, m, r, best) {
+  // A cell in Maia's view: its value in purple italics, with the same depth marker as a
+  // Lichess value. r: the row's Lichess result, for the tooltip.
+  function peRenderMaia(cell, m, r, mine, best) {
     var cls = ['qx-pe', 'qx-maia', 'qx-mp'];
-    if (best != null && Math.round(m.value) === best) cls.push('qx-best');
+    var text = '', title = '', depth = '';
+    if (!mine) {
+      cls = ['qx-pe'];
+      title = 'Practical: computed on your moves only.';
+    } else if (!m) {
+      if (r) {
+        cls.push('qx-q');
+        text = '·';
+        title = 'Computing…';
+      } else {
+        cls = ['qx-pe', 'qx-od'];
+        title = 'Click to compute the practical score for this move.';
+      }
+    } else if (m.state === 'value') {
+      text = Math.round(m.value) + (m.final === false ? '' : '%');
+      if (m.final === false) depth = 'd' + m.depth;
+      if (best != null && Math.round(m.value) === best) cls.push('qx-best');
+      title = pePreviewTooltip(m, r);
+    } else if (m.state === 'error') {
+      cls = ['qx-pe', 'qx-od'];
+      text = '?';
+      title = m.reason + '\nClick to retry.';
+    } else {
+      text = '–';
+      title = m.state === 'none' ? 'ChessDB has no eval for this position.'
+        : m.maiaMissing ? PE_MAIA_MISSING : 'No value from Maia here.';
+    }
     cell.className = cls.join(' ');
-    cell.textContent = '≈' + Math.round(m.value);
-    cell.removeAttribute('data-d');
-    cell.title = pePreviewTooltip(m, r);
+    cell.textContent = text;
+    if (depth) cell.setAttribute('data-d', depth); else cell.removeAttribute('data-d');
+    cell.title = title;
   }
 
   /*
@@ -1232,6 +1316,55 @@
     prepPaint(null);
   }
 
+  /*
+   * The header: "Prac" or, showing Maia's values, "Maia". `depths` ({lichess, maia}, the
+   * deepest value each has here; null off your turn) puts the hidden one's depth before
+   * the label when it is deeper than the one shown: worth a click to see.
+   */
+  function peHeader(h, filter, viewMaia, depths) {
+    var sw = pePreviewOn();
+    h.textContent = viewMaia ? 'Maia' : 'Prac';
+    h.classList[sw ? 'add' : 'remove']('qx-pe-sw');
+    h.classList[viewMaia ? 'add' : 'remove']('qx-pe-hm');
+    var shownD = depths ? (viewMaia ? depths.maia : depths.lichess) : 0;
+    var hiddenD = depths && sw ? (viewMaia ? depths.lichess : depths.maia) : 0;
+    var alt = hiddenD > shownD ? String(hiddenD) : null;
+    h.classList[alt && !viewMaia ? 'add' : 'remove']('qx-alt-m');
+    h.classList[alt && viewMaia ? 'add' : 'remove']('qx-alt-l');
+    if (alt) {
+      if (h.getAttribute('data-alt') !== alt) h.setAttribute('data-alt', alt);
+    } else {
+      h.removeAttribute('data-alt');
+    }
+
+    var notes = [];
+    if (alt) {
+      notes.push((viewMaia ? 'The Lichess values' : 'Maia\'s values') + ' have reached depth '
+        + hiddenD + ' here' + (shownD ? ', these depth ' + shownD : '') + '. Click to see them.');
+    }
+    if (G.selectedDB !== 'Lichess') notes.push('Practical: Lichess data');
+    if (viewMaia) {
+      notes.push('Maia: your expected score when each opponent reply is weighted by Maia\'s '
+        + 'predictions at the filter\'s rating instead of by Lichess games. ChessDB and Maia '
+        + 'only, so it deepens in seconds. Green: the highest among rows searched to the '
+        + 'same depth. A small d3 after a number: still searching, 3 plies deep so far.');
+    } else {
+      notes.push('Your expected score when each opponent reply is weighted by how often '
+        + 'Lichess players (' + filterLabel(filter) + ') play it. Green: the highest '
+        + 'practical score among rows searched to the same depth. A small d3 after a number: '
+        + 'still searching, 3 plies deep so far; all rows finish a depth before any goes '
+        + 'deeper.'
+        + (settings.peMaia !== false ? ' Purple: mostly Maia\'s predictions, where there are '
+          + 'under ' + num(settings.maiaUntil, 100) + ' games.' : ''));
+    }
+    if (sw) {
+      notes.push('Click to show ' + (viewMaia ? 'the Lichess values.'
+        : 'Maia\'s values: its predictions in place of Lichess games, much faster.'));
+    }
+    if (filter.player) notes.push('The panel\'s player filter is not applied here.');
+    h.title = notes.join('\n');
+  }
+
   function pePaint() {
     var header = document.getElementById('db-column-header');
     var trees = document.getElementById('database-trees');
@@ -1243,23 +1376,6 @@
     trees.classList[narrow ? 'add' : 'remove']('qx-pe-narrow');
 
     var filter = peFilter();
-    var h = peEnsureCell(header, 'qx-pe-h');
-    h.textContent = 'Prac';
-    var notes = [];
-    if (G.selectedDB !== 'Lichess') notes.push('Practical: Lichess data');
-    notes.push('Your expected score when each opponent reply is weighted by how often '
-      + 'Lichess players (' + filterLabel(filter) + ') play it. Green: the highest '
-      + 'practical score among rows searched to the same depth. A small d3 after a number: '
-      + 'still searching, 3 plies deep so far; all rows finish a depth before any goes '
-      + 'deeper.'
-      + (settings.peMaia !== false ? ' Purple: mostly Maia\'s predictions, where there are '
-        + 'under ' + num(settings.maiaUntil, 100) + ' games.' : '')
-      + (settings.peMaia !== false && settings.peMaiaPreview !== false ? ' ≈ in purple '
-        + 'italics: Maia\'s quick preview, with its predictions in place of games, shown '
-        + 'until the Lichess value is ' + PE_PREVIEW_UNTIL + ' plies deep.' : ''));
-    if (filter.player) notes.push('The panel\'s player filter is not applied here.');
-    h.title = notes.join('\n');
-
     var f = G.fen;
     var root = stripFen(f);
     var mine = peMyTurn(f);
@@ -1269,23 +1385,22 @@
       var nm = rows[i].classList.contains('total-row') ? null : rows[i].querySelector('.move-name');
       sans.push(nm ? String(nm.textContent || '').trim() : null);
     }
-    // What each row shows: its Lichess value, or the Maia preview standing in for it.
-    // The best practical move gets the colour (peBestOf), Lichess values and previews each
-    // compared among themselves: they are different measures.
-    var vals = [], shownReal = [], shownPrev = [], prev = [];
-    sans.forEach(function (san, j) {
+    var viewMaia = peViewMaia();
+    peHeader(peEnsureCell(header, 'qx-pe-h'), filter, viewMaia, mine ? {
+      lichess: peDepthOf(pe.results, root, sans), maia: peDepthOf(pe.maia, root, sans) } : null);
+
+    // The view's values, compared among themselves for the green (peBestOf). The
+    // prepared bars rest on the Lichess values whichever view is on.
+    var vals = [], shown = [];
+    sans.forEach(function (san) {
       var key = san && root + '|' + san;
       if (!key || pe.excluded.has(key)) return;
-      var r = pe.results.get(key);
-      prev[j] = mine ? pePreview(key, r) : null;
-      if (prev[j]) shownPrev.push(prev[j]);
-      if (r && r.state === 'value') {
-        vals.push(r);
-        if (!prev[j]) shownReal.push(r);
-      }
+      var r = pe.results.get(key), m = pe.maia.get(key);
+      if (r && r.state === 'value') vals.push(r);
+      var v = viewMaia ? m : r;
+      if (v && v.state === 'value') shown.push(v);
     });
-    var bestReal = peBestOf(shownReal), bestPrev = peBestOf(shownPrev);
-    // The prepared bars have no preview: their green compares every Lichess value.
+    var best = peBestOf(shown);
     var cmp = peBestOf(vals).cmp;
     for (i = 0; i < rows.length; i++) {
       var row = rows[i];
@@ -1304,13 +1419,12 @@
         cell.title = 'Excluded from Practical. Right-click to include it again.';
         continue;
       }
-      var res = pe.results.get(root + '|' + san);
-      if (prev[i]) {
-        peRenderPreview(cell, prev[i], res, bestPrev.cmp.has(prev[i]) ? bestPrev.best : null);
-        continue;
+      var res = pe.results.get(root + '|' + san), mres = pe.maia.get(root + '|' + san);
+      if (viewMaia) {
+        peRenderMaia(cell, mres, res, mine, best.cmp.has(mres) ? best.best : null);
+      } else {
+        peRenderCell(cell, res, mine, filter, best.cmp.has(res) ? best.best : null, mres);
       }
-      peRenderCell(cell, res, mine, filter, bestReal.cmp.has(res) ? bestReal.best : null,
-        pe.maia.get(root + '|' + san));
     }
     prepPaint({ rows: rows, sans: sans, root: root, mine: mine, cmp: cmp, filter: filter });
   }

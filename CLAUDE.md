@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 457 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 467 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -611,6 +611,33 @@ the v1.14 limits a Lichess d3 fits in the burst when the bucket is full, and tak
 minute when it's empty (browsing). A side effect: with the preview on, the tab's Maia
 instance now starts on every position of yours, not only in thin ones. Its load time and
 memory in the browser are unmeasured. Harness only; not yet seen live.
+
+**Prac/Maia switch and consistency fixes (v1.16.0).** Reported 2026-09-28: the column
+seemed inconsistent. Watched live the same day (event log on `qx:pe:update`/`request`):
+- After 8.h4 g6 in the test study's line (a position the Elite DB has no games or evals
+  for) the first request went out with **no rows**, and the rows followed a second later with
+  the ChessDB render. `createRootSearch` had started its rounds on the empty add, "finished"
+  at once (`stop('')`), and treated every later row as a newcomer to a stopped table: all
+  three stopped at depth 1, shown as final with no reason. This is the v1.10.0 note's
+  unexplained case. Now the rounds start with the first row, and a row added after every row
+  was complete restarts them from the table's depth.
+- The page's own ChessDB fetch failed once with `ERR_CONNECTION_CLOSED`. ChessDB took 150
+  lookups at 3 in flight (450 a minute) without an error the same day, so it was a network
+  fault, not a limit. The page recovers (`cdbNeed` asks again). But a failed lookup in a
+  deeper round stopped the whole table (`stopped: 'error'`), so `providers.chessdb` now retries
+  network errors and 5xx twice (1.5 s, 3 s). HTTP 4xx stays final.
+- An error cell's "Click to retry" did nothing: `add` ignored a row it already had. A failed
+  row now starts afresh.
+- 1.Nf3 d5 2.c4 d4 from the cache: d1 and d3 within 0.4 s, d5 (uncached) 84 s later.
+
+The Maia preview is no longer a stand-in until Lichess is 3 plies deep. Both searches run to
+their own end, and the column shows one of them (`settings.peView`, saved through the bridge
+like `prepBar`). A click on the header (`.qx-pe-h`, "Prac" or, in purple italics, "Maia")
+switches the view. When the hidden one is deeper at this position, its depth appears as a
+badge before the label, in its colour; the narrow panel shows a dot instead. A revisit resends
+rows whose Maia value is missing or unfinished too (`peNeeds`). The header's look was checked
+by applying the CSS on the live page (1.15.0 was loaded; the extension itself wasn't
+reloaded). The rest is covered by the harness only.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

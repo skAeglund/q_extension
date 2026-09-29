@@ -265,6 +265,61 @@ module.exports = async function run(check) {
     assert.deepStrictEqual(run.of('S').map(p => [p.depth, p.final, p.stopped]),
       [[1, false, undefined], [1, true, 'budget']]));
 
+  // A new position's first request is empty when its table has nothing to pick rows
+  // from yet; the rows follow with the next render. Seen live on 2026-09-28: the rows
+  // stopped at depth 1, shown as final with no reason.
+  run = await (async () => {
+    const pubs = [];
+    const search = R.createRootSearch({ rootFen: 'root w - -', opts: {},
+      makeProvider: () => fakeProvider(switchTree(-100)),
+      onResult: (san, r) => pubs.push([san, r.depth, r.final, r.stopped || '']),
+      onError: () => {} });
+    search.add([]);
+    await search.done();
+    search.add(['R']);
+    await search.done();
+    return pubs;
+  })();
+  await check('rows arriving after an empty first request deepen as usual', () =>
+    assert.deepStrictEqual(run, [['R', 1, false, ''], ['R', 3, false, ''], ['R', 5, true, 'maxPly']]));
+
+  run = await runRoot({ tree: Object.assign({}, switchTree(-100), {
+    'root w - -': { next: { R: 'row b - -', S: 'srow b - -', T: 'trow b - -' } },
+    // Three replies of a third each, all under the reach floor: complete at depth 1.
+    'trow b - -': { ex: ex(900, [['t1', 300], ['t2', 300], ['t3', 300]]),
+      cdb: cdb([['t1', 0], ['t2', 0], ['t3', 0]]) }
+  }), rows: ['T'], later: ['R'], opts: { reachFloor: 0.5 } });
+  await check('a row added after every row was complete deepens past them', () => {
+    assert.deepStrictEqual(run.of('T').map(p => [p.depth, p.final, p.complete]), [[1, true, true]]);
+    assert.deepStrictEqual(run.of('R').map(p => [p.depth, p.final]), [[1, false], [3, false], [5, true]]);
+  });
+
+  let failOnce = true;
+  const retried = await (async () => {
+    const pubs = [], errs = [];
+    const search = R.createRootSearch({ rootFen: 'root w - -', opts: {},
+      makeProvider: () => {
+        const p = fakeProvider(switchTree(-100));
+        const inner = p.explorer;
+        p.explorer = (fen, info) => {
+          if (failOnce) { failOnce = false; return Promise.reject(Object.assign(new Error('x'), { status: 500 })); }
+          return inner(fen, info);
+        };
+        return p;
+      },
+      onResult: (san, r) => pubs.push([san, r.depth]),
+      onError: san => errs.push(san) });
+    search.add(['R']);
+    await search.done();
+    search.add(['R']);
+    await search.done();
+    return { pubs, errs };
+  })();
+  await check('a row that failed starts afresh when asked for again (Click to retry)', () => {
+    assert.deepStrictEqual(retried.errs, ['R']);
+    assert.deepStrictEqual(retried.pubs, [['R', 1], ['R', 3], ['R', 5]]);
+  });
+
   // Removing a row mid-round (a right-click): the round stops waiting for it.
   const pubsR = [];
   const cancelled = () => Object.assign(new Error('c'), { cancelled: true });
@@ -398,8 +453,8 @@ module.exports = async function run(check) {
   await tickMs(20);
   pg.open();
   await pr.search.done();
-  await check('once the Lichess value is 3 plies deep, that row\'s preview stops', () => {
-    assert.deepStrictEqual([pr.depths('maia', 'R'), pr.depths('maia', 'S')], [[1, 3], [1, 3]]);
+  await check('both run to their own end: the column can show either', () => {
+    assert.deepStrictEqual([pr.depths('maia', 'R'), pr.depths('maia', 'S')], [[1, 3, 5], [1, 3, 5]]);
     assert.deepStrictEqual(pr.depths('lichess', 'R'), [1, 3, 5]);
   });
   let n0 = pr.pubs.length;
@@ -419,9 +474,9 @@ module.exports = async function run(check) {
   await tickMs(20);
   pg.open();
   await tickMs(20);
-  await check('a row whose Lichess search fails loses its preview too; the others go on', () => {
+  await check('a row whose Lichess search fails keeps its Maia values', () => {
     assert.ok(pr.pubs.some(p => p.pass === 'lichess' && p.san === 'R' && p.error), 'no error');
-    assert.deepStrictEqual(pr.depths('maia', 'R'), [1]);
+    assert.deepStrictEqual(pr.depths('maia', 'R'), [1, 3, 5]);
     assert.deepStrictEqual(pr.depths('maia', 'S'), [1, 3, 5]);
   });
   rg.open();
@@ -1251,6 +1306,31 @@ module.exports = async function run(check) {
   await Promise.all(looks);
   await check('  ...and a lookup the preview queued moves up when the Lichess search joins it', () =>
     assert.deepStrictEqual(boards, [pos(1), pos(2), pos(4), pos(3)]));
+  // A dropped connection is tried again; ChessDB's own HTTP answers are not.
+  const flaky = [];
+  const rprov = P.createProviders({ fetch: url => {
+    flaky.push(url);
+    if (flaky.length <= 2) return Promise.reject(new TypeError('Failed to fetch'));
+    if (url.includes('7P%2F')) return Promise.resolve({ ok: false, status: 400 });
+    return Promise.resolve({ ok: true, status: 200, headers: new Map(),
+      json: () => Promise.resolve({ status: 'ok', moves: [] }) });
+  }, cache: C.createMemoryCache(now), getToken: () => Promise.resolve('tok'), stats: {}, now, sleep });
+  const t0 = t;
+  const gotBack = await rprov.chessdb(pos(5), null, 1);
+  await check('a ChessDB lookup that fails on the network is tried again, after a pause', () => {
+    assert.strictEqual(gotBack.status, 'ok');
+    assert.strictEqual(flaky.length, 3);
+    assert.ok(t - t0 >= 4500, 'waited ' + (t - t0));
+  });
+  flaky.length = 2;
+  let cdbRefused = null;
+  await rprov.chessdb('rnbqkbnr/pppppppp/8/8/8/7P/PPPPPPP1/RNBQKBNR b KQkq - 0 1', null, 1)
+    .catch(e => { cdbRefused = e; });
+  await check('  ...but an HTTP error from ChessDB is final', () => {
+    assert.strictEqual(cdbRefused && cdbRefused.status, 400);
+    assert.strictEqual(flaky.length, 3);
+  });
+
   // Asking ChessDB to analyse what it doesn't know.
   t = 0;
   const cdbLog = [];

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Qchess Transpositions",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "description": "Marks transposing moves in a Qchess chapter, and adds a Practical column: your expected score against real Lichess replies.",
   "icons": {
     "16": "icons/icon16.png",
