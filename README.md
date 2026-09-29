@@ -558,6 +558,42 @@ works on any PGN, including one you've edited or exported from Qchess. It reads 
 repertoire's side from repgen's `White`/`Black` headers; give `--side white|black` for any
 other PGN, and `--out` to choose the output file.
 
+### A local explorer (explorerdb)
+
+`tools/explorerdb.mjs` builds an opening explorer of your own from Lichess's monthly game
+dumps ([database.lichess.org](https://database.lichess.org)), so the counts don't have to come
+through the explorer's rate limit. It imports one dump at a time:
+
+```bash
+node tools/explorerdb.mjs import lichess_db_standard_rated_2026-08.pgn.zst --out aug26
+node tools/explorerdb.mjs query aug26 --moves "1.e4 c5"
+node tools/explorerdb.mjs info aug26
+```
+
+`import` keeps the games that pass the filter, which is fixed at import time. By default it
+is what the extension asks Lichess for: blitz, rapid and classical, with the players' average
+rating 1600 and up (`--speeds`, `--ratings`, in the explorer's own terms). It counts each
+game's first 40 plies (`--plies`), and writes `aug26.xdb` holding every position reached by
+at least 10 of those games (`--min-games`), with all the moves played there. The report shows
+how many positions each threshold from 1 to 1000 would keep, and how big the index would be,
+so one month tells you what the whole archive would cost.
+
+`query` prints a position the way the Lichess explorer answers it (totals, then each move's
+uci, SAN and results, most played first). Nothing reads the index yet: the search and repgen
+still ask Lichess.
+
+What it needs:
+- **Node 22.15 or later** reads `.zst` itself. An older Node needs the `zstd` program, or a
+  dump you've decompressed first.
+- **Temporary space**, about 16 bytes per counted ply past the 12th: 10–15 GB for a month.
+  It goes in `<out>.xdb.tmp`, or wherever `--tmp` says, and is deleted at the end.
+- **Time.** The replay runs on `--workers` threads (default: one fewer than your cores, at
+  most 8). Reading and filtering the dump runs on one more. `--max-games 1000000` stops
+  early, for a quick trial.
+
+Positions are keyed by chess.js's 64-bit Zobrist hash, so an index is only readable with the
+same chess.js (1.4.0, `src/vendor/`). The index says which hash it was made with.
+
 ## How it works
 
 Qchess is a vanilla-JS app with no build step, and it keeps its analysis state in
@@ -673,10 +709,14 @@ test/pe.js          the Practical eval's pure tests, run by the harness
 test/repgen.js      the repertoire generator's tests, run by the harness
 test/pgnclean.js    pgnclean's tests, run by the harness
 test/cdbexplore.js  cdbexplore's tests, run by the harness
+test/explorerdb.js  explorerdb's tests, run by the harness
 tools/repgen.mjs    the repertoire generator (Node; not part of the extension)
 tools/pgnclean.mjs  finishes a repgen PGN: comments and transpositions
 tools/cdbexplore.mjs deepens ChessDB's evals below a PGN's line ends and close decisions
+tools/explorerdb.mjs builds a local opening explorer from a Lichess monthly dump
 tools/repgen/       their plan, PGN reader/writers, file cache, root search adapter,
                     ChessDB exploration (explore.mjs) and Maia 3 (maia.mjs)
+tools/explorerdb/   the dump reader and fast replay (games.mjs), shard counting and the
+                    index file (store.mjs), the importer and its worker threads
 tools/package.json  onnxruntime-node, for repgen --maia only
 ```

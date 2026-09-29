@@ -6,6 +6,9 @@ repertoires/repgen-cache.jsonl
 # repgen --maia's model (46 MB), downloaded on first use
 repertoires/*.onnx
 repertoires/*.onnx.part
+# explorerdb's indexes (GBs, rebuilt from Lichess's dumps) and their temporary files
+repertoires/*.xdb
+repertoires/*.xdb.tmp/
 
 # Scratch copies of the site fetched while investigating (see CLAUDE.md)
 ShowGame.css
