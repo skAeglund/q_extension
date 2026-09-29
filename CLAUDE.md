@@ -221,12 +221,13 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
 - When you change `src/main-world.js`, update `test/harness.js` in the same pass. The stub DOM
   is minimal — if new code needs a DOM API the stub lacks, add it to the stub rather than
   weakening the test.
-- `test/`, `tools/`, `repertoires/` and `icons/make_icons.py` are excluded when packaging
+- `test/`, `tools/`, `repertoires/`, `explorer/` and `icons/make_icons.py` are excluded when packaging
   for distribution; everything else ships.
 - `repertoires/` holds the repertoire tools' runs, their shared `repgen-cache.jsonl` and
   cleaned PGNs. Bare names go there (`tools/repgen/paths.mjs`): repgen's and pgnclean's
   `--out`, and input files that aren't in the current directory. A name with a directory is
-  used as given.
+  used as given. `explorer/` is the same for explorerdb: its indexes, and the dumps if you
+  put them there (both gitignored).
 - `tools/repgen.mjs` is a Node CLI that imports `src/pe/*.js` and `src/vendor/chess.js`
   directly, so those files must stay free of `chrome.*` and browser-only globals. Its own
   modules (`tools/repgen/*.mjs`) follow the same `var`/`function` style.

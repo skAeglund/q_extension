@@ -18,7 +18,8 @@
  *   node tools/explorerdb.mjs info aug26
  *
  * `query` prints a position the way the Lichess explorer answers (the parts the search
- * reads). Bare names are looked up in and written to repertoires/ (repgen/paths.mjs).
+ * reads). Bare index names are looked up in and written to explorer/ (repgen/paths.mjs),
+ * and a bare dump name not in the current directory is looked for there too.
  *
  *   node tools/explorerdb.mjs serve aug26 [--port 9337]
  *
@@ -33,7 +34,7 @@ import { importDump, DEFAULTS } from './explorerdb/importer.mjs';
 import { openIndex, explorerAnswer } from './explorerdb/store.mjs';
 import { createServer, indexInfo } from './explorerdb/server.mjs';
 import { RATING_GROUPS } from './explorerdb/games.mjs';
-import { inPath, outPath } from './repgen/paths.mjs';
+import { inPath, outPath, EXPLORER } from './repgen/paths.mjs';
 
 var SPEEDS = ['ultraBullet', 'bullet', 'blitz', 'rapid', 'classical', 'correspondence'];
 
@@ -57,7 +58,7 @@ var DEFAULT_PORT = 9337;
 
 function indexPath(name, forWriting) {
   if (!/\.xdb$/i.test(name)) name += '.xdb';
-  return forWriting ? outPath(name) : inPath(name);
+  return forWriting ? outPath(name, EXPLORER) : inPath(name, EXPLORER);
 }
 
 function list(s, what) {
@@ -127,6 +128,7 @@ async function cmdImport(argv) {
     if (RATING_GROUPS.indexOf(r) < 0) throw new Error('Rating groups are ' + RATING_GROUPS.join(', '));
   });
   if (o.minGames < 1) o.minGames = 1;
+  input = inPath(input, EXPLORER);
   if (!fs.existsSync(input)) throw new Error('No such file: ' + input);
   o.input = input;
   o.out = indexPath(out, true);

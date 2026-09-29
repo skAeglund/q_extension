@@ -573,10 +573,14 @@ node tools/explorerdb.mjs query aug26 --moves "1.e4 c5"
 node tools/explorerdb.mjs info aug26
 ```
 
+Indexes live in the `explorer/` folder of the project: a bare name like `aug26` means
+`explorer/aug26.xdb`, and a name with a directory is used as given. A dump given by bare name
+is looked for in the current directory, then in `explorer/`, so you can keep dumps there too.
+
 `import` keeps the games that pass the filter, which is fixed at import time. By default it
 is what the extension asks Lichess for: blitz, rapid and classical, with the players' average
 rating 1600 and up (`--speeds`, `--ratings`, in the explorer's own terms). It counts each
-game's first 40 plies (`--plies`), and writes `aug26.xdb` holding every position reached by
+game's first 40 plies (`--plies`), and writes `explorer/aug26.xdb` holding every position reached by
 at least 10 of those games (`--min-games`), with all the moves played there. The report shows
 how many positions each threshold from 1 to 1000 would keep, and how big the index would be,
 so one month tells you what the whole archive would cost.
