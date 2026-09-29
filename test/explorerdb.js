@@ -351,7 +351,44 @@ module.exports = async function run(check) {
   db.close();
 
   if (typeof zlib.zstdCompressSync === 'function') {
-    fs.writeFileSync(dumpFile + '.zst', zlib.zstdCompressSync(fs.readFileSync(dumpFile)));
+    // As Lichess's dumps are written (pzstd): frames, each behind a skippable frame whose
+    // 4-byte payload is its size. Node's decoder alone read 0 games from the real one, and
+    // loses every frame after the first when one write holds two.
+    const text = fs.readFileSync(dumpFile), third = Math.ceil(text.length / 3);
+    const frames = [0, 1, 2].map(i => zlib.zstdCompressSync(text.subarray(i * third, (i + 1) * third),
+      { params: { [zlib.constants.ZSTD_c_checksumFlag]: i % 2 } }));
+    const pz = Buffer.concat(frames.flatMap(f => {
+      const skip = Buffer.alloc(12);
+      skip.writeUInt32LE(0x184D2A50, 0); skip.writeUInt32LE(4, 4); skip.writeUInt32LE(f.length, 8);
+      return [skip, f];
+    }));
+    await check('skippable frames are dropped, and no chunk passed on spans two frames', async () => {
+      const ends = frames.map((f, i) => frames.slice(0, i + 1).reduce((n, g) => n + g.length, 0));
+      for (const step of [1, 7, 4096, pz.length]) {
+        const out = [], t = I.zstdFrames();
+        t.on('data', b => out.push(b));
+        for (let i = 0; i < pz.length; i += step) t.write(pz.subarray(i, i + step));
+        await new Promise(r => t.end(r));
+        assert.ok(Buffer.concat(out).equals(Buffer.concat(frames)), 'chunks of ' + step);
+        let n = 0;
+        for (const b of out) {
+          assert.ok(!ends.some(e => n < e && n + b.length > e), 'a chunk spans a frame end');
+          n += b.length;
+        }
+      }
+    });
+    await check('a dump that goes bad after a good frame, or stops inside one, is an error', async () => {
+      const first = pz.subarray(0, 12 + frames[0].length);
+      for (const [name, bytes, why] of [
+        ['bad', Buffer.concat([first, Buffer.from('garbage, not a frame')]), /Not a zstd frame at byte/],
+        ['cut', pz.subarray(0, pz.length - 5), /ends inside a zstd frame/]]) {
+        fs.writeFileSync(path.join(tmp, name + '.pgn.zst'), bytes);
+        await assert.rejects(I.importDump({ input: path.join(tmp, name + '.pgn.zst'),
+          out: path.join(tmp, name + '.xdb'), workers: 1 }), why);
+        assert.ok(!fs.existsSync(path.join(tmp, name + '.xdb')), name + '.xdb written');
+      }
+    });
+    fs.writeFileSync(dumpFile + '.zst', pz);
     const small = path.join(tmp, 'min3.xdb');
     const m3 = await I.importDump({ input: dumpFile + '.zst', out: small, plies: PLIES, minGames: 3,
       workers: 1 });

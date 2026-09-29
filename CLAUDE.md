@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 488 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 490 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -672,10 +672,9 @@ each threshold from 1 to 1000 would keep, so one month can be projected to the w
 puts that answer behind HTTP for providers.js and repgen.
 Measured in this container on a synthetic dump of 200 k games in the dumps' layout (clocks
 in comments, about 2 kB a game): the main thread reads and filters about 89 k games/s, and
-replay runs at about 275 k plies/s per worker. So a real month (about 100 M games, about
-25 M kept) should be bound by reading, at 20–40 minutes on a machine with several cores.
-database.lichess.org is blocked from the container (proxy 403), so no real dump has been
-imported. The sizes and times for a real month are estimates until the user runs one.
+replay runs at about 275 k plies/s per worker. The estimate made from that (a recent month,
+about 100 M games, in 20–40 minutes) was wrong: the first real import ran at 15 k games/s
+(below), which puts such a month at about 2 hours.
 
 **Local explorer server (v1.17.0)**, the same day: `serve`, the popup's Local explorer field
 (address, Save, Test → `qx:pe:testLocal`), repgen `--explorer`, and `localhost`/`127.0.0.1`
@@ -691,7 +690,49 @@ with no zstd program installed. The spawn failed (ENOENT) and the child's stdout
 `end` then called `stop()`, which set `ended`, and the error arriving afterwards was ignored
 because of `if (!ended)`. Now `openText` returns `finished`, which settles on the child's exit
 code, and `end` waits for it. An import with no games, or with none passing the filter, is an
-error rather than an empty index.
+error rather than an empty index. That was a real hole, but not the user's: their Node
+(24.14.1) has zstd built in. See the next entry for the actual cause.
+
+**First real import (2026-09-29)**, on the user's machine: Windows 11, Node 24.14.1, i7-1065G7
+(4 cores, 8 threads), 16 GB RAM. The harness passed on Windows (488 checks, 490 with the two
+below).
+- It first failed with "No games (1.0 MB read)". Lichess's dumps are written by pzstd: a
+  skippable frame before each frame of about 6.4 MB. Node's built-in decoder ends its output
+  quietly at a skippable frame. It also drops every frame after the first when one write holds
+  a frame's end and the next one's start, or fails, depending on the split. And it emits `end`
+  before `error`, so the built-in path's `finished` (always resolved) hid that too.
+  `zstdFrames()` in `importer.mjs` now walks the frame headers, drops skippable frames, never
+  passes on a chunk that spans two frames, and fails on bytes that aren't a frame or a file
+  cut off inside one. `finished` settles on the decoder's `close`.
+- 2016-02 (908 MB, 4.75 GB of text) imported in 6m10s: 5,015,361 games read, 2,102,924 kept
+  (41.9%; skipped for speed 1,676,431, rating 1,236,006), 79.7 M plies replayed, 66.5 M
+  records. Reading ran at 15 k games/s. Decompression alone does about 69 k games/s, so the
+  limit is the main thread's split and filter or the replay, not zstd; which one wasn't
+  measured. The node processes peaked at 2.6 GB. The temp directory reached about 0.9 GB
+  (sampled every 15 s; 66.5 M records × 16 B is 1.06 GB) and was removed afterwards.
+- The index (N ≥ 10) is 29.5 MB. The report's table:
+
+  | N | positions | moves+ends | size |
+  | ---: | ---: | ---: | ---: |
+  | 1 | 53,457,246 | 56,492,732 | 1.24 GB |
+  | 2 | 2,310,689 | 5,346,175 | 117.6 MB |
+  | 3 | 1,132,360 | 3,495,624 | 76.9 MB |
+  | 5 | 558,411 | 2,278,942 | 50.1 MB |
+  | 10 | 243,920 | 1,342,611 | 29.5 MB |
+  | 20 | 113,765 | 797,864 | 17.6 MB |
+  | 50 | 43,080 | 394,684 | 8.7 MB |
+  | 100 | 20,924 | 227,991 | 5.0 MB |
+  | 1000 | 1,895 | 32,559 | 716.3 kB |
+
+- Against Lichess's explorer for the same month and filter (3 requests), local / Lichess:
+  start 1.0047, after 1.e4 c5 1.0025, after 1.d4 d5 2.c4 1.0008. The top 8 moves came in the
+  same order, each within 0.2%. The excess is games that end in the position itself (9,184 at
+  the start, nearly all Black wins, i.e. abandoned before White's first move): after 1.e4 c5,
+  Lichess's total (305,071) equals the index's sum over moves (305,072). So Lichess's
+  explorer leaves such games out of its totals and the index counts them. Left as is.
+- `serve feb16` answered `/info`, and repgen `--explorer localhost:9337 --max-searches 2`
+  ran without a token: d4 at the start (Prac 53.6, d5), then Nf3 after 1.d4 d5, "0 Lichess
+  and 521 ChessDB requests in 8m41s". The ChessDB pace sets that time.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

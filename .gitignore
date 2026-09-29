@@ -7,8 +7,11 @@ repertoires/repgen-cache.jsonl
 repertoires/*.onnx
 repertoires/*.onnx.part
 # explorerdb's indexes (GBs, rebuilt from Lichess's dumps) and their temporary files
-repertoires/*.xdb
-repertoires/*.xdb.tmp/
+*.xdb
+*.xdb.tmp/
+# Lichess's monthly dumps, read by explorerdb import
+*.pgn.zst
+/*.pgn
 
 # Scratch copies of the site fetched while investigating (see CLAUDE.md)
 ShowGame.css

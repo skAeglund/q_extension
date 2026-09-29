@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
+import { Transform } from 'node:stream';
 import { spawn } from 'node:child_process';
 import { Worker } from 'node:worker_threads';
 import { makeFilter, HASH_NAME } from './games.mjs';
@@ -36,14 +37,74 @@ var NO_ZSTD = 'This Node (' + process.version + ') has no zstd built in (22.15 a
   'and the zstd program was not found. Update Node, install zstd, or decompress the dump ' +
   'first and import the .pgn.';
 
+/**
+ * Lichess's dumps are written by pzstd: a skippable frame (4 bytes of payload, the next
+ * frame's size) before every frame of about 6 MB. Node's zstd decoder (24.14.1) gets both
+ * wrong without a word:
+ * - a skippable frame ends its output there (at byte 0 of a dump: "no games");
+ * - a write holding the end of one frame and the start of the next ends it too, or fails,
+ *   depending on where the write splits.
+ * So this walks the frames by their headers (frame header, 3-byte block headers up to the
+ * last block, the optional checksum), drops the skippable ones, and never passes on a chunk
+ * that crosses from one frame into the next. Bytes that aren't a frame, or a file that ends
+ * inside one, are an error here, since the decoder can't be trusted to say so.
+ */
+var ZSTD_MAGIC = 0xFD2FB528;
+export function zstdFrames() {
+  var left = null, copy = 0, skip = 0, inFrame = false, sum = 0, at = 0;
+  return new Transform({
+    transform: function (chunk, enc, cb) {
+      var b = left ? Buffer.concat([left, chunk]) : chunk, i = 0;
+      left = null;
+      while (i < b.length) {
+        if (copy || skip) {
+          var c = Math.min(copy || skip, b.length - i);
+          if (copy) { this.push(b.subarray(i, i + c)); copy -= c; } else skip -= c;
+          i += c; at += c;
+          continue;
+        }
+        var have = b.length - i;
+        if (inFrame) {
+          if (have < 3) break;
+          var h = b[i] | (b[i + 1] << 8) | (b[i + 2] << 16);
+          copy = 3 + (((h >> 1) & 3) === 1 ? 1 : h >>> 3);     // an RLE block holds 1 byte
+          if (h & 1) { copy += sum; inFrame = false; }
+          continue;
+        }
+        if (have < 8) break;
+        var magic = b.readUInt32LE(i);
+        if ((magic & 0xFFFFFFF0) === 0x184D2A50) { skip = 8 + b.readUInt32LE(i + 4); continue; }
+        if (magic !== ZSTD_MAGIC) return cb(new Error('Not a zstd frame at byte ' + at + ' of the dump'));
+        var fhd = b[i + 4], single = (fhd >> 5) & 1;
+        copy = 5 + (single ? 0 : 1) + [0, 1, 2, 4][fhd & 3] + [single ? 1 : 0, 2, 4, 8][fhd >> 6];
+        sum = (fhd >> 2) & 1 ? 4 : 0;
+        inFrame = true;
+      }
+      if (i < b.length) left = Buffer.from(b.subarray(i));
+      cb();
+    },
+    flush: function (cb) {
+      cb(left || copy || inFrame ? new Error('The dump ends inside a zstd frame (byte ' + at + ')') : null);
+    }
+  });
+}
+
 function openText(file, onBytes) {
   var raw = fs.createReadStream(file, { highWaterMark: 1 << 20 });
   raw.on('data', function (b) { onBytes(b.length); });
   var none = function () {};
   if (!/\.zst$/i.test(file)) return { stream: raw, raw: raw, finished: Promise.resolve(), stop: none };
   if (typeof zlib.createZstdDecompress === 'function') {
-    return { stream: raw.pipe(zlib.createZstdDecompress()), raw: raw, finished: Promise.resolve(),
-      stop: none };
+    // Node's decoder emits 'end' before its 'error', so only 'close' says it is done.
+    var z = zlib.createZstdDecompress();
+    var zDone = new Promise(function (resolve, reject) {
+      z.on('error', reject);
+      z.on('close', resolve);
+    });
+    zDone.catch(none);
+    var frames = zstdFrames();
+    frames.on('error', function (e) { z.destroy(e); });
+    return { stream: raw.pipe(frames).pipe(z), raw: raw, finished: zDone, stop: none };
   }
   var p = spawn('zstd', ['-dc'], { stdio: ['pipe', 'pipe', 'pipe'] });
   var stderr = '';
