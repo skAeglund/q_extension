@@ -1,0 +1,11 @@
+13:38:18 repgen: Black from rnbqkbnr/pp1p1ppp/8/2P1p3/8/8/PPP1PPPP/RNBQKBNR w KQkq - 0 3 (d4 c5 dxc5 e5); Lichess blitz,rapid,classical / 1800,2000,2200.
+13:38:18 Options: {"weights":[0.33,0,0.67],"riskAversion":0.05,"replyThreshold":0.05}
+13:38:18 Opp  [100.00%] (start): Nf3 22%, Nc3 19%, e4 18%, b4 13%, Be3 6%, e3 6%, c4 5%, Qd5 3% of 392196 games
+13:38:18 Me   [22.14%] 3.Nf3: Nc6 (Prac 52.4 d5, prep 54.0, blend 52.1; Nf6 49.4 (Prac 51.2), Qc7 46.7 (Prac 48.1), Bxc5 49.1 (Prac 50.9); 0m00s, 0 requests)
+13:38:18 Opp  [22.14%] 3.Nf3 Nc6: e4 34%, e3 15%, Nc3 13%, Bg5 11%, g3 7%, Be3 6% of 101500 games
+13:38:28 Me   [18.63%] 3.Nc3: Bxc5 (Prac 53.9 d7, prep 55.6, blend 53.6, close call: d5→d7 Bxc5/Nf6; Nc6 52.0 (Prac 51.9) d5, a5 42.6 (Prac 42.3) d5, Nf6 53.2 (Prac 54.7); 0m10s, 5 requests)
+13:38:28 Opp  [18.63%] 3.Nc3 Bxc5: e4 31%, Nf3 27%, Ne4 24% of 64827 games
+13:38:28 Me   [17.92%] 3.e4: Bxc5 (Prac 54.1 d5, prep 56.8, blend 54.6; Nf6 52.2 (Prac 53.4), Nc6 46.3 (Prac 46.3); 0m00s, 0 requests)
+13:38:28 Opp  [17.92%] 3.e4 Bxc5: Nf3 63%, Nc3 16%, Bc4 10% of 63494 games
+13:38:28 Me   [12.94%] 3.b4: a5 (Prac 54.3 d5, prep 56.6, blend 54.4; Nf6 53.3 (Prac 54.2), d5 49.4 (Prac 50.7), Ne7 42.4 (Prac 35.4), Be7 46.9 (Prac 43.0), Nc6 49.3 (Prac 52.2); 0m00s, 0 requests)
+13:38:28 Opp  [12.94%] 3.b4 a5: c3 81% of 26688 games
