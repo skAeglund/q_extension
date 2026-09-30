@@ -4,3 +4,9 @@
 13:43:18 Note: changing the Lichess filter mid-run mixes two player pools in one repertoire.
 13:43:18 repgen: Black from rnbqkbnr/pp1p1ppp/8/2P1p3/8/8/PPP1PPPP/RNBQKBNR w KQkq - 0 3 (d4 c5 dxc5 e5); Lichess blitz,rapid,classical / 1600,1800,2000,2200,2500.
 13:43:18 Options: {"weights":[0.33,0,0.67],"riskAversion":0.05,"replyThreshold":0.05}
+13:44:32 Me   [21.61%] 3.Nf3: Nf6?! (Prac 55.4 d5, prep 59.7, blend 53.5; Nc6 52.2 (Prac 52.9), e4 46.9 (Prac 49.2), Bxc5 51.0 (Prac 52.0); 1m14s, 28 requests)
+13:44:32 Opp  [21.61%] 3.Nf3 Nf6: Nxe5 44%, Nc3 11%, Bg5 11%, e3 11%, b4 6% of 8447 games
+13:47:11 Me   [18.19%] 3.e4: Bxc5 (Prac 54.5 d5, prep 57.0, blend 54.7; Nf6 52.4 (Prac 53.5), Qf6 38.6 (Prac 29.0), h6 41.7 (Prac 42.7); 2m39s, 44 requests)
+13:47:11 Opp  [18.19%] 3.e4 Bxc5: Nf3 61%, Nc3 17%, Bc4 10% of 124578 games
+14:16:04 repgen: Black from rnbqkbnr/pp1p1ppp/8/2P1p3/8/8/PPP1PPPP/RNBQKBNR w KQkq - 0 3 (d4 c5 dxc5 e5); Lichess blitz,rapid,classical / 1600,1800,2000,2200,2500.
+14:16:04 Options: {"weights":[0.33,0,0.67],"riskAversion":0.05,"replyThreshold":0.05}
