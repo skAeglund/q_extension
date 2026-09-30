@@ -107,3 +107,6 @@
 17:08:45 Opp  [1.30%] 3.Nc3 Bxc5 4.Nf3 Nc6 5.Bg5 Qb6: e3 56% of 2205 games
 17:15:33 Me   [1.30%] 3.Nc3 Bxc5 4.Nf3 Nc6 5.e3: Nf6 (Prac 60.9 d5, prep 61.4, blend 58.1; a6 55.1 (Prac 57.0), Nge7 53.9 (Prac 55.3), a5 51.0 (Prac 50.8), Qb6 49.0 (Prac 49.2), Be7 52.5 (Prac 50.2); 6m43s, 101 requests)
 17:15:33 Time is up: 54 searches this run (54 in all), 106 positions done, 0 ended, 40 left; 1815 Lichess and 1361 ChessDB requests in 119m57s.
+17:15:54 repgen: Black from rnbqkbnr/pp1p1ppp/8/2P1p3/8/8/PPP1PPPP/RNBQKBNR w KQkq - 0 3 (d4 c5 dxc5 e5); Lichess blitz,rapid,classical / 1600,1800,2000,2200,2500.
+17:15:54 Options: {"weights":[0.33,0,0.67],"maxLoss":5,"riskAversion":0.05,"replyThreshold":0.05}
+17:15:54 Opp  [1.30%] 3.Nc3 Bxc5 4.Nf3 Nc6 5.e3 Nf6: Bb5 30% of 20558 games
