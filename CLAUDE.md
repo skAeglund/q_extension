@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 514 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 518 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -768,10 +768,18 @@ it is the plain mean. It is applied at every opponent node, so it also picks my 
 against the upward drift but keeps "compare at one depth" as it is. The Maia share and
 the prepared split stay linear. Every value carries `vm`, the plain mean along the same
 choices, which reaches the page as `mean` and the tooltip as `(mean N%)`. Rejected: engine
-+ γ·(mean − engine), which shrinks the trap row and the sound one about equally. repgen
-keeps 0 (`SEARCH_DEFAULTS`), so older runs check the way they were made;
-`--risk-aversion 0.05` turns it on. Settings changes don't clear values already shown this
-page load, as for the other search settings. Harness only; not yet seen live.
++ γ·(mean − engine), which shrinks the trap row and the sound one about equally. Settings
+changes don't clear values already shown this page load, as for the other search settings.
+Harness only; not yet seen live.
+
+repgen has it too (the user asked the same day), `SEARCH_DEFAULTS.riskAversion` 0.05. Like
+`weights`, a new run saves it in `state.search` at creation, and a run without it is from
+before and gets 0 with a note. Practical picks save `risk` (absent = 0); `--check` searches
+again a practical pick with more than one valued row whose `risk` differs from the run's.
+For the runs in `repertoires/` that is 161 of 168 picks in `a6_test`, 164 of 199 in
+`anti_benko_black`, 103 of 117 in `reti_accepted_e4`, 99 of 117 in `scandi_gambit`. The
+note on an old run, and the one on a changed value, were checked on a copy of `a6_test`
+with `--max-searches 0`.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

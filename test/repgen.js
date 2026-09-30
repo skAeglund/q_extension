@@ -823,9 +823,9 @@ module.exports = async function run(check) {
     const r = rp.results.get('Nf3');
     assert.ok(r.prep && Math.abs(r.prep.w + r.prep.d + r.prep.b - 1) < 1e-9, JSON.stringify(r.prep));
     assert.ok(r.prior > 0 && r.prior < 1, r.prior);
-    // repgen keeps the plain mean (riskAversion 0), so runs check the way they were made.
-    assert.strictEqual(G.SEARCH_DEFAULTS.riskAversion, 0);
-    assert.strictEqual(r.value, r.mean);
+    // repgen is risk-averse like the column.
+    assert.strictEqual(G.SEARCH_DEFAULTS.riskAversion, 0.05);
+    assert.ok(r.value < r.mean, r.value + ' vs ' + r.mean);
   });
   await check('  ...with the row\'s share as request priority and the budget passed on', () => {
     assert.ok(ctxs.some(c => c.priority === 10 + 0.6 && c.exempt === true), JSON.stringify(ctxs));
@@ -1015,5 +1015,34 @@ module.exports = async function run(check) {
     assert.ok(!/Maia/.test(reasons(fn, G.SEARCH_DEFAULTS)), reasons(fn, G.SEARCH_DEFAULTS));
     assert.ok(!/Maia/.test(reasons(Object.assign({}, fn, { maiaElo: 2100 }), mopts)));
     assert.ok(!/Maia/.test(reasons(Object.assign({}, N['S w - -']), mopts)));
+  });
+
+  console.log('\nrepertoire generator: risk aversion');
+  const rn = sn.nodes['S w - -'];                 // e4 and d4 valued, searched by default
+  const lin = Object.assign({}, G.SEARCH_DEFAULTS, { riskAversion: 0 });
+  const plain = Object.assign({}, rn);
+  delete plain.risk;
+  const rreasons = (n, so) => CK.assess(n, wn['S w - - 0 1'].ex, wn['S w - - 0 1'].cdb, D, so).reasons.join('; ');
+  await check('a run searches risk-averse by default, and its nodes say with what', () => {
+    assert.strictEqual(rn.risk, 0.05);
+    assert.strictEqual(dp.log.roots[0].opts.riskAversion, 0.05);
+  });
+  await check('  ...and a search with plain means saves none', async () => {
+    const s0 = G.newState('S w - - 0 1', 'w');
+    await drain(pracGen({ state: s0, deps: deps(wn), now: () => 0, search: { riskAversion: 0 } }), { t: 0 });
+    assert.strictEqual(s0.nodes['S w - -'].risk, undefined);
+  });
+  await check('a check searches again where the run\'s risk aversion differs from the search\'s', () => {
+    assert.ok(/searched with risk aversion 0, the run now uses 0.05/.test(rreasons(plain, G.SEARCH_DEFAULTS)),
+      rreasons(plain, G.SEARCH_DEFAULTS));
+    assert.ok(/searched with risk aversion 0.05, the run now uses 0$/.test(rreasons(rn, lin)), rreasons(rn, lin));
+    assert.strictEqual(CK.assess(plain, wn['S w - - 0 1'].ex, wn['S w - - 0 1'].cdb, D, G.SEARCH_DEFAULTS).action,
+      'recheck');
+  });
+  await check('  ...but not where they agree, nor with a single valued row', () => {
+    assert.ok(!/risk/.test(rreasons(rn, G.SEARCH_DEFAULTS)), rreasons(rn, G.SEARCH_DEFAULTS));
+    assert.ok(!/risk/.test(rreasons(plain, lin)), rreasons(plain, lin));
+    const one = Object.assign({}, plain, { rows: plain.rows.filter(r => r.san === rn.move) });
+    assert.ok(!/risk/.test(rreasons(one, G.SEARCH_DEFAULTS)), rreasons(one, G.SEARCH_DEFAULTS));
   });
 };

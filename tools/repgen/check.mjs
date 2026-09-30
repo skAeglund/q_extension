@@ -18,9 +18,10 @@
  *     pick: a move ChessDB now rates close enough to be a candidate, my move no longer
  *     being one, positions the last search found without an eval, or ChessDB's best
  *     changing where its best was played. With Maia now on for the run, a search made
- *     without it where a move had fewer games than Maia starts at. With the prepared
- *     score weighed in the choice, a search from before rows saved it. With `all`, every
- *     searched position.
+ *     without it where a move had fewer games than Maia starts at. With another risk
+ *     aversion than the search had, a practical pick among more than one valued row. With
+ *     the prepared score weighed in the choice, a search from before rows saved it. With
+ *     `all`, every searched position.
  *   - Back in the queue when it ended for want of an eval that ChessDB now has, or
  *     because the last try failed.
  */
@@ -151,6 +152,12 @@ export function assess(n, ex, cdb, cfg, sopts, all) {
     if (missing) {
       out.reasons.push(missing + ' position' + (missing === 1 ? '' : 's') +
         ' had no ChessDB eval in the last search');
+    }
+    // Risk aversion changed for the run (or turned on for one from before it): the values
+    // are all different, and where there was more than one to choose from, so can the pick.
+    var risk = sopts.riskAversion || 0;
+    if (n.pickedBy === 'practical' && valued.length > 1 && (n.risk || 0) !== risk) {
+      out.reasons.push('searched with risk aversion ' + (n.risk || 0) + ', the run now uses ' + risk);
     }
     // Maia turned on for a run searched without it: where a move had fewer games than
     // Maia starts at, its value was a leaf's (or ChessDB's alone) and is now a blend.

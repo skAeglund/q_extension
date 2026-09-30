@@ -217,7 +217,8 @@ function run(args, local) {
     // The weights are saved even at their defaults, so a later change of the defaults
     // doesn't change how this run chooses.
     state.config = { weights: REPGEN_DEFAULTS.weights.slice() };
-    state.search = {};
+    // The same for risk aversion: a later change of its default leaves this run alone.
+    state.search = { riskAversion: SEARCH_DEFAULTS.riskAversion };
     state.created = new Date().toISOString();
   }
   // Runs from before the blend chose by Practical value alone, and keep doing so.
@@ -242,8 +243,20 @@ function run(args, local) {
     if (args.speeds) state.filter.speeds = String(args.speeds).split(',').filter(Boolean);
     if (args.ratings) state.filter.ratings = String(args.ratings).split(',').filter(Boolean).map(Number);
   }
+  // Runs from before risk aversion were searched with plain means, and keep them.
+  if (state.search.riskAversion == null) {
+    state.search.riskAversion = 0;
+    if (!args.pgnOnly && args.riskAversion == null) log('Note: this run was searched with plain means ' +
+      'at the opponent\'s moves and keeps them. --risk-aversion ' + SEARCH_DEFAULTS.riskAversion +
+      ' --check searches again those of my positions whose choice it could change.');
+  }
+  var riskWas = state.search.riskAversion;
   Object.assign(state.config, pick(args, REPGEN_DEFAULTS));
   Object.assign(state.search, pick(args, SEARCH_DEFAULTS));
+  if (riskWas !== state.search.riskAversion && state.searches > 0 && !checking) {
+    log('Note: the positions searched so far keep the values they had with risk aversion ' +
+      riskWas + '. --check searches them again.');
+  }
   if (args.maia != null) {
     var maiaWas = !!state.search.maia;
     state.search.maia = onOff(args.maia);

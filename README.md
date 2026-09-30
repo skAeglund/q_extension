@@ -375,6 +375,10 @@ groups (`--speeds`, `--ratings`). A run keeps the filter it started with.
   covered what matters most. A position reached by two move orders is searched once.
 - **Maia** is off unless you turn it on (`--maia`, [below](#maia)). Without it, positions
   under 50 games count as leaves, as they do with Maia switched off in the column.
+- **Risk aversion** is the column's, 0.05 (`--risk-aversion`, 0 for plain averages): a
+  line whose value rests on the opponent's blunders counts for less. A run keeps the value
+  it was started with. Runs from before it keep plain averages, and `--risk-aversion 0.05
+  --check` searches again the positions of yours where the choice could change.
 
 **Output files** (for `--out sicilian`) go into the `repertoires/` folder of the project.
 An `--out` with a directory (`--out D:/chess/sicilian`) is used as given instead. The other
