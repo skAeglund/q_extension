@@ -12,3 +12,5 @@
 14:16:04 Options: {"weights":[0.33,0,0.67],"riskAversion":0.05,"replyThreshold":0.05}
 14:21:00 Me   [16.93%] 3.Nc3: Bxc5 (Prac 54.7 d7, prep 55.8, blend 53.8, close call: d5→d7 Bxc5/Nf6; Nc6 52.0 (Prac 52.1) d5, h6 45.8 (Prac 42.0), a5 42.6 (Prac 43.6) d5, Nf6 53.3 (Prac 54.9); 4m56s, 90 requests)
 14:21:00 Opp  [16.93%] 3.Nc3 Bxc5: Nf3 33%, e4 30%, Ne4 17%, e3 12% of 114464 games
+14:26:00 repgen: Black from rnbqkbnr/pp1p1ppp/8/2P1p3/8/8/PPP1PPPP/RNBQKBNR w KQkq - 0 3 (d4 c5 dxc5 e5); Lichess blitz,rapid,classical / 1600,1800,2000,2200,2500.
+14:26:00 Options: {"weights":[0.33,0,0.67],"riskAversion":0.05,"replyThreshold":0.05}
