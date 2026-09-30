@@ -94,7 +94,8 @@ module.exports = async function run(check) {
   const R = await load('tools/repgen/root.mjs');
   // Most of what follows is about choosing by Practical value alone, as runs from before
   // the blend do (repgen.mjs saves [0, 1, 0] into them). The blend has its own section.
-  const PRAC = { weights: [0, 1, 0] };
+  // Runs from before the loss limit have none (repgen.mjs saves 0 into them).
+  const PRAC = { weights: [0, 1, 0], maxLoss: 0 };
   const D = Object.assign({}, G.REPGEN_DEFAULTS, PRAC);
   // A generator the way repgen.mjs makes one: the run's saved config, Practical alone
   // unless the state says otherwise.
@@ -382,6 +383,47 @@ module.exports = async function run(check) {
   await drain(g6, { t: 0 });
   await check('a position whose games are spread thin over replies ends the line', () =>
     assert.strictEqual(g6.state.nodes['D b - -'].reason, 'thin'));
+
+  console.log('\nrepertoire generator: the loss limit');
+  await check('a move ChessDB puts more than maxLoss under its best never competes', () => {
+    // The trap: far better in practice, 7.6 under ChessDB's best.
+    const rows = [{ san: 'Nc6', res: val(52.9, 5) }, { san: 'Nf6', res: val(55.4, 5) }];
+    const o = { weights: [0, 1, 0], wins: { Nc6: 48.3, Nf6: 40.7 }, best: 48.3 };
+    assert.strictEqual(G.choose(rows, {}, o).san, 'Nf6', 'without the limit');
+    assert.strictEqual(G.choose(rows, {}, Object.assign({ maxLoss: 5 }, o)).san, 'Nc6');
+    assert.strictEqual(G.choose(rows, {}, Object.assign({ maxLoss: 8 }, o)).san, 'Nf6', 'inside a wider one');
+  });
+  await check('  ...a move without a ChessDB eval can\'t be judged and competes', () => {
+    const rows = [{ san: 'a', res: val(52, 5) }, { san: 'b', res: val(55, 5) }];
+    assert.strictEqual(G.choose(rows, {}, { weights: [0, 1, 0], wins: { a: 50 }, best: 50, maxLoss: 5 }).san, 'b');
+  });
+  await check('  ...and it keeps a close call from deepening a move it excludes', () => {
+    const rows = [{ san: 'a', res: val(55, 5) }, { san: 'b', res: val(55.5, 5) }, { san: 'c', res: val(54.8, 5) }];
+    assert.deepStrictEqual(G.closeBand(rows, {}, { weights: [0, 1, 0], wins: { a: 50, b: 40, c: 49 },
+      best: 50, maxLoss: 5, within: 1 }), ['a', 'c']);
+  });
+  {
+    const wl = world();
+    wl['S w - - 0 1'].cdb = cdb([['e4', 30], ['d4', -150]]);
+    const sl = G.newState('S w - - 0 1', 'w');
+    await G.createGenerator({ state: sl, deps: deps(wl), now: () => 0,
+      config: { weights: [0, 1, 0], maxLoss: 5 } }).step();
+    await check('  ...so the run plays the sound move over the practical trap', () => {
+      assert.strictEqual(sl.nodes['S w - -'].move, 'e4');
+      assert.strictEqual(sl.nodes['S w - -'].pickedBy, 'practical');
+    });
+    wl['S w - - 0 1'].cdb = cdb([['e4', -150], ['d4', -150], ['c4', 30]]);
+    wl['S w - - 0 1'].next.c4 = 'X w - - 0 3';
+    const sl2 = G.newState('S w - - 0 1', 'w');
+    await G.createGenerator({ state: sl2, deps: deps(wl), now: () => 0,
+      config: { weights: [0, 1, 0], maxLoss: 5, maxRows: 2 } }).step();
+    await check('  ...and ChessDB\'s best when every move with a value is over the limit', () => {
+      const n = sl2.nodes['S w - -'];
+      assert.strictEqual(n.pickedBy, 'engine');
+      assert.strictEqual(n.why, 'max-loss');
+      assert.strictEqual(n.move, 'c4');
+    });
+  }
 
   console.log('\nrepertoire generator: close calls go deeper');
   await check('the close rows are those within deeperWithin of the best, at the table\'s depth', () => {
@@ -807,7 +849,7 @@ module.exports = async function run(check) {
     assert.ok(Math.abs(n.prep - 60) < 1e-9, n.prep);
     assert.ok(Math.abs(n.rows.find(r => r.san === 'c5').prep - 30) < 1e-9);
   });
-  const WD = Object.assign({}, G.REPGEN_DEFAULTS, { weights: W });
+  const WD = Object.assign({}, G.REPGEN_DEFAULTS, { weights: W, maxLoss: 0 });
   await check('a check with the same evals leaves a blended pick alone', () => {
     const r = CK.assess(Object.assign({}, nb), wb['S w - - 0 1'].ex, wb['S w - - 0 1'].cdb, WD, G.SEARCH_DEFAULTS);
     assert.strictEqual(r.action, null, r.reasons.join());
@@ -820,6 +862,13 @@ module.exports = async function run(check) {
     assert.ok(/d4 now leads the blend: 55\.\d vs e4 53\.\d/.test(r.reasons.join()), r.reasons.join());
     assert.ok(Math.abs(r.engine.blend - r.engine.rows.find(x => x.san === 'e4').blend) < 1e-9,
       'the pick\'s blend follows the new eval');
+  });
+  await check('  ...and with the loss limit, a check says the pick now loses too much', () => {
+    const r = CK.assess(Object.assign({}, nb), wb['S w - - 0 1'].ex, cdb([['e4', -300], ['d4', 25]]),
+      Object.assign({}, WD, { maxLoss: 5 }), G.SEARCH_DEFAULTS);
+    assert.strictEqual(r.action, 'recheck');
+    assert.ok(/e4 is 2\d\.\d under ChessDB's best d4, more than the limit of 5\.0/.test(r.reasons.join()),
+      r.reasons.join());
   });
   await check('a run from before rows saved prepared scores is searched again once they count', () => {
     const n = Object.assign({}, N['S w - -']);

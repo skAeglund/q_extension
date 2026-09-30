@@ -172,7 +172,8 @@ export function toPgn(state, o) {
       bits.push(s);
     } else {
       bits.push('engine move' + (n.engine != null ? ' ' + win(n.engine) : '') +
-        (n.why === 'few-games' ? ', few games' : ', no practical value'));
+        (n.why === 'few-games' ? ', few games'
+          : n.why === 'max-loss' ? ', the practical moves lose too much' : ', no practical value'));
     }
     var c = e.child && nodes[e.child];
     if (e.child && home[e.child] !== e.id) {

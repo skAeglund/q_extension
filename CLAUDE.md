@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 527 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 533 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -794,6 +794,17 @@ saves `deeper: [{from, to, rows}]` and the log says `close call: d3→d5 a6/Be6`
 day repgen's default rating filter widened to 1600–2500 (1600,1800,2000,2200,2500, the
 explorer panel's default), speeds unchanged; a run keeps the filter it was made with. `closeBand()`
 in `generator.mjs`; covered by the harness. On by default, also for resumed runs.
+
+**Repgen: a loss limit (2026-09-30).** Risk aversion 0.05 still let a trap through: after
+1.d4 c5 2.dxc5 e5 3.Nf3 the `_wide` run chose 3...Nf6?! (ChessDB 40.7 win% for Black,
+−1.02, against Nc6's 48.3, −0.18; Prac 55.4) for 4.Nxe5 d6 5.cxd6 Qa5+, where a White who
+doesn't fall for it is about +1.37. Now `maxLoss` (5 win% points) is a hard limit: a move
+ChessDB puts more than that under its best move in the position never competes in
+`choose()` or `closeBand()` (`withinLoss()`); a move with no ChessDB eval passes. With no
+valued move inside it, ChessDB's best is played (`why: 'max-loss'`, PGN "the practical moves
+lose too much"). Like `weights`, it is saved at creation, and a run without it keeps 0 with a
+note. `--check` passes the fresh best to `choose()` and says when a pick is over the limit.
+Harness only.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

@@ -216,7 +216,7 @@ function run(args, local) {
     };
     // The weights are saved even at their defaults, so a later change of the defaults
     // doesn't change how this run chooses.
-    state.config = { weights: REPGEN_DEFAULTS.weights.slice() };
+    state.config = { weights: REPGEN_DEFAULTS.weights.slice(), maxLoss: REPGEN_DEFAULTS.maxLoss };
     // The same for risk aversion: a later change of its default leaves this run alone.
     state.search = { riskAversion: SEARCH_DEFAULTS.riskAversion };
     state.created = new Date().toISOString();
@@ -227,6 +227,13 @@ function run(args, local) {
     if (!args.pgnOnly && args.weights == null) log('Note: this run was made choosing by Practical value alone and keeps doing so. ' +
       '--weights ' + REPGEN_DEFAULTS.weights + ' --check chooses again with ChessDB and the prepared ' +
       'score weighed in (a search again for each of my positions with more than one candidate).');
+  }
+  // Runs from before the loss limit had none, and keep none.
+  if (state.config.maxLoss == null) {
+    state.config.maxLoss = 0;
+    if (!args.pgnOnly && args.maxLoss == null) log('Note: this run was made with no limit on how far ' +
+      'under ChessDB\'s best my move may be, and keeps none. --max-loss ' + REPGEN_DEFAULTS.maxLoss +
+      ' --check sets one.');
   }
   if (args.weights != null) {
     var wWas = state.config.weights.join();

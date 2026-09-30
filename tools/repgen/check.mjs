@@ -98,7 +98,7 @@ export function assess(n, ex, cdb, cfg, sopts, all) {
   out.markFrom = markFor(engineLoss(n), cfg);
   out.markTo = markFor(engineLoss(Object.assign({}, n, out.engine)), cfg);
 
-  if (n.pickedBy === 'practical' || n.why === 'no-value') {
+  if (n.pickedBy === 'practical' || n.why === 'no-value' || n.why === 'max-loss') {
     var had = new Set((n.rows || []).map(function (r) { return moveKey(r.san); }));
     c.rows.filter(function (san) { return !had.has(moveKey(san)); }).forEach(function (san) {
       out.reasons.push('new candidate ' + san + ' (engine ' + win(c.wins[san]) + ')');
@@ -131,9 +131,13 @@ export function assess(n, ex, cdb, cfg, sopts, all) {
       return { san: r.san, res: { state: r.state, value: r.value, depth: r.depth,
         complete: r.complete } };
     }), (n.rows || []).reduce(function (m, r) { m[r.san] = r.share || 0; return m; }, {}),
-    { weights: w, wins: wins, preps: preps, cps: cps, within: cfg.closeWithin, cp: cfg.closeCp });
+    { weights: w, wins: wins, preps: preps, cps: cps, within: cfg.closeWithin, cp: cfg.closeCp,
+      best: best.win, maxLoss: cfg.maxLoss });
     if (again && moveKey(again.san) !== moveKey(n.move)) {
-      if (again.res.state === 'few') {
+      if (wins[n.move] != null && cfg.maxLoss > 0 && best.win - wins[n.move] > cfg.maxLoss) {
+        out.reasons.push(n.move + ' is ' + win(best.win - wins[n.move]) + ' under ChessDB\'s best ' +
+          best.san + ', more than the limit of ' + win(cfg.maxLoss));
+      } else if (again.res.state === 'few') {
         out.reasons.push(again.san + ' has too few games for a Practical value, but its engine ' +
           win(again.res.value) + ' beats ' + n.move + '\'s ' + win(n.value));
       } else if (again.over) {

@@ -85,7 +85,12 @@ export var REPGEN_DEFAULTS = {
   // the top one wins when ChessDB rates it at least closeCp centipawns higher. Only while
   // ChessDB has no weight of its own in the choice. 0 turns it off.
   closeWithin: 1,
-  closeCp: 5
+  closeCp: 5,
+  // A hard limit on top of risk aversion: a move ChessDB puts more than maxLoss win%
+  // points under its best move here is never chosen, however well it scores in practice
+  // (a trap whose refutation leaves you clearly worse). With no move inside the limit,
+  // ChessDB's best is played. 0 turns it off.
+  maxLoss: 5
 };
 
 // The Practical column's defaults as they were when repgen was built. The column's later
@@ -222,6 +227,16 @@ export function blendScore(w, engine, value, prep) {
 }
 
 /*
+ * Whether a move is inside the maxLoss limit: ChessDB puts it at most `maxLoss` win%
+ * points under `best`, its best move in the position. A move without a ChessDB eval can't
+ * be judged and passes, as it does the near-tie rule.
+ */
+export function withinLoss(san, o) {
+  if (!(o.maxLoss > 0) || o.best == null || !o.wins || o.wins[san] == null) return true;
+  return o.best - o.wins[san] <= o.maxLoss + 1e-9;
+}
+
+/*
  * The column's green, as a choice: the best row among rows at the table's depth.
  * A row that can't go deeper (`complete`) is exact at every depth and always competes.
  * So does a row with too few games for a Practical value (`few`, under minGames without
@@ -246,13 +261,16 @@ export function blendScore(w, engine, value, prep) {
  * an engine reply people don't find). A row without a ChessDB eval never takes over and
  * is never taken over. The pick then carries `over`: the top row it beat.
  *
+ * Rows ChessDB puts more than `maxLoss` under `best` never compete (withinLoss()).
+ *
  * Returns a copy of the picked row with `score` (what it was ranked by), or null.
  */
 export function choose(rows, shares, o) {
   o = o || {};
   var w = o.weights;
   var vals = rows.filter(function (r) {
-    return r.res && (r.res.state === 'value' || r.res.state === 'few') && r.res.value != null;
+    return r.res && (r.res.state === 'value' || r.res.state === 'few') && r.res.value != null &&
+      withinLoss(r.san, o);
   });
   function any(res) { return res.complete || res.state === 'few'; }
   var top = 0;
@@ -289,7 +307,8 @@ export function closeBand(rows, shares, o) {
   if (!(o.within > 0)) return [];
   var w = o.weights;
   var vals = rows.filter(function (r) {
-    return r.res && (r.res.state === 'value' || r.res.state === 'few') && r.res.value != null;
+    return r.res && (r.res.state === 'value' || r.res.state === 'few') && r.res.value != null &&
+      withinLoss(r.san, o);
   });
   function any(res) { return res.complete || res.state === 'few'; }
   var top = 0;
@@ -501,7 +520,7 @@ export function createGenerator(o) {
       function deepen(rows, maxPly) {
         if (maxPly + 2 > cfg.deeperMaxPly) return Promise.resolve(rows);
         var band = closeBand(rows, c.shares, { weights: w, wins: c.wins, preps: prepsOf(rows),
-          within: cfg.deeperWithin });
+          within: cfg.deeperWithin, best: c.best.win, maxLoss: cfg.maxLoss });
         if (!band.length) return Promise.resolve(rows);
         var o2 = Object.assign({}, opts, { maxPly: maxPly + 2 });
         return Promise.resolve(d.runRoot(n.fen, band, {
@@ -543,7 +562,10 @@ export function createGenerator(o) {
       }).then(function (rows) {
         var preps = prepsOf(rows);
         var pick = choose(rows, c.shares, { weights: w, wins: c.wins, preps: preps,
-          cps: c.cps, within: cfg.closeWithin, cp: cfg.closeCp });
+          cps: c.cps, within: cfg.closeWithin, cp: cfg.closeCp,
+          best: c.best.win, maxLoss: cfg.maxLoss });
+        // Moves with values, all over the limit: ChessDB's best is played.
+        var overLimit = !pick && choose(rows, c.shares, { weights: w, wins: c.wins, preps: preps });
         state.searches++;
         var summary = rows.filter(function (r) { return r.res && r.res.state !== 'error'; })
           .map(function (r) {
@@ -571,7 +593,7 @@ export function createGenerator(o) {
         var san = pick ? pick.san : c.best.san;
         settle(n, d.play(n.fen, san), {
           pickedBy: pick ? 'practical' : 'engine',
-          why: pick ? undefined : 'no-value',
+          why: pick ? undefined : overLimit ? 'max-loss' : 'no-value',
           // Won on ChessDB's eval, a floor for the Practical value it has too few games for.
           few: pick && pick.res.state === 'few' ? true : undefined,
           // A near-tie that ChessDB decided: the top row it beat, and its score.
