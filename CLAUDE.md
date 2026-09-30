@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 518 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 527 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -780,6 +780,18 @@ For the runs in `repertoires/` that is 161 of 168 picks in `a6_test`, 164 of 199
 `anti_benko_black`, 103 of 117 in `reti_accepted_e4`, 99 of 117 in `scandi_gambit`. The
 note on an old run, and the one on a changed value, were checked on a copy of `a6_test`
 with `--max-searches 0`.
+
+**Repgen: close calls go deeper (2026-09-30).** Requested after a run picked 7...a6 over
+Be6 by 0.3 blend points at depth 3 (1.d4 c5 2.dxc5 e5 3.Nf3 Nc6 4.e4 Bxc5 5.Bc4 Nf6 6.Nc3
+d6 7.O-O), where the column at depth 5 ranked them the other way. Now, after a position's
+search, the rows whose score (the blend, or Practical alone) is within `deeperWithin` (1)
+of the best are searched again two plies deeper, the close rows alone, until the call is
+no longer close or `deeperMaxPly` (8, depth 7) is reached: d3 → d5 → d7, d5 → d7. Each
+deepening has its own budget, `budgetDeeper` (300). The other rows stay at their depth,
+which keeps them out of the comparison, as "compare at one depth" requires. If a close row
+doesn't reach the new depth (budget, error), the shallower comparison stands. The node
+saves `deeper: [{from, to, rows}]` and the log says `close call: d3→d5 a6/Be6`. `closeBand()`
+in `generator.mjs`; covered by the harness. On by default, also for resumed runs.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

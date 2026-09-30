@@ -383,6 +383,89 @@ module.exports = async function run(check) {
   await check('a position whose games are spread thin over replies ends the line', () =>
     assert.strictEqual(g6.state.nodes['D b - -'].reason, 'thin'));
 
+  console.log('\nrepertoire generator: close calls go deeper');
+  await check('the close rows are those within deeperWithin of the best, at the table\'s depth', () => {
+    const rows = [{ san: 'A', res: val(56, 3) }, { san: 'B', res: val(55.2, 3) },
+      { san: 'C', res: val(50, 3) }, { san: 'D', res: val(70, 1) }];
+    assert.deepStrictEqual(G.closeBand(rows, {}, { weights: [0, 1, 0], within: 1 }), ['A', 'B']);
+    assert.deepStrictEqual(G.closeBand(rows, {}, { weights: [0, 1, 0], within: 0 }), []);
+  });
+  await check('  ...by the blend when the choice is by the blend', () => {
+    const rows = [{ san: 'A', res: val(56, 3) }, { san: 'B', res: val(50, 3) }];
+    assert.deepStrictEqual(G.closeBand(rows, {}, { weights: [0, 0, 1], preps: { A: 55, B: 55.5 },
+      within: 1 }), ['A', 'B']);
+  });
+  await check('  ...none when only one row is close, or all close rows are complete', () => {
+    assert.deepStrictEqual(G.closeBand([{ san: 'A', res: val(56, 3) }, { san: 'B', res: val(53, 3) }],
+      {}, { weights: [0, 1, 0], within: 1 }), []);
+    assert.deepStrictEqual(G.closeBand([{ san: 'A', res: val(56, 3, { complete: true }) },
+      { san: 'B', res: val(56, 1, { complete: true }) }], {}, { weights: [0, 1, 0], within: 1 }), []);
+  });
+  await check('  ...and a row with too few games isn\'t one to deepen', () => {
+    const rows = [{ san: 'A', res: val(56, 3) }, { san: 'B', res: val(55.5, 3) },
+      { san: 'F', res: { state: 'few', value: 56, final: true } }];
+    assert.deepStrictEqual(G.closeBand(rows, {}, { weights: [0, 1, 0], wins: { F: 56 }, within: 1 }), ['A', 'B']);
+  });
+
+  // S: e4 and d4 are close at depth 5; at depth 7 e4 pulls ahead.
+  const deepWorld = byPly => {
+    const wd = world();
+    const dd = deps(wd);
+    dd.runRoot = (fen, rows, x) => {
+      dd.log.roots.push({ fen, rows, opts: x.opts, budget: x.budget });
+      const r = fen.startsWith('S ') ? byPly(x.opts.maxPly) : wd[fen].root;
+      return Promise.resolve({ results: new Map(rows.filter(s => r[s]).map(s => [s, r[s]])), spent: 7 });
+    };
+    return dd;
+  };
+  const runS = async (dd, config) => {
+    const st = G.newState('S w - - 0 1', 'w');
+    const g = pracGen({ state: st, deps: dd, now: () => 0, config: Object.assign({ deepPlies: 2 }, config) });
+    await g.step();
+    return st.nodes['S w - -'];
+  };
+  const dd1 = deepWorld(mp => mp === 6
+    ? { e4: val(57.5, 5), d4: val(58, 5), h4: val(40, 5) }
+    : { e4: val(60, 7), d4: val(58.5, 7) });
+  const s1 = await runS(dd1);
+  await check('a close call at depth 5 searches the close rows again at depth 7', () => {
+    const sr = dd1.log.roots.filter(r => r.fen.startsWith('S '));
+    assert.deepStrictEqual(sr.map(r => r.opts.maxPly), [6, 8]);
+    assert.deepStrictEqual(sr[1].rows.slice().sort(), ['d4', 'e4']);
+    assert.strictEqual(sr[1].budget, 300);
+  });
+  await check('  ...and chooses at the deeper depth', () => {
+    assert.strictEqual(s1.move, 'e4');
+    assert.strictEqual(s1.depth, 7);
+    assert.deepStrictEqual(s1.deeper, [{ from: 5, to: 7, rows: s1.deeper[0].rows }]);
+    assert.strictEqual(s1.spent, 14);
+    assert.strictEqual(s1.rows.find(r => r.san === 'd4').depth, 7);
+  });
+  await check('  ...and no deeper than deeperMaxPly', async () => {
+    const dd = deepWorld(mp => ({ e4: val(58, mp - 1), d4: val(58, mp - 1) }));
+    const n = await runS(dd);
+    assert.deepStrictEqual(dd.log.roots.filter(r => r.fen.startsWith('S ')).map(r => r.opts.maxPly), [6, 8]);
+    const dd2 = deepWorld(mp => ({ e4: val(58, mp - 1), d4: val(58, mp - 1) }));
+    await runS(dd2, { deepPlies: 0 });
+    assert.deepStrictEqual(dd2.log.roots.filter(r => r.fen.startsWith('S ')).map(r => r.opts.maxPly), [4, 6, 8],
+      'depth 3, then 5, then 7');
+    assert.deepStrictEqual(n.deeper.map(x => x.to), [7]);
+  });
+  await check('  ...keeping the shallower comparison if the deeper one fell short', async () => {
+    const dd = deepWorld(mp => mp === 6 ? { e4: val(57.5, 5), d4: val(58, 5) }
+      : { e4: val(60, 7), d4: val(55, 5, { stopped: 'budget' }) });
+    // Without the near-tie rule, which would give it to e4's better ChessDB eval.
+    const n = await runS(dd, { closeWithin: 0 });
+    assert.strictEqual(n.move, 'd4');
+    assert.strictEqual(n.depth, 5);
+    assert.ok(!n.deeper);
+  });
+  await check('  ...and deeperWithin 0 turns it off', async () => {
+    const dd = deepWorld(mp => ({ e4: val(57.5, mp - 1), d4: val(58, mp - 1) }));
+    await runS(dd, { deeperWithin: 0 });
+    assert.strictEqual(dd.log.roots.filter(r => r.fen.startsWith('S ')).length, 1);
+  });
+
   console.log('\nrepertoire generator: PGN');
   const pgn = PG.toPgn(state, { date: new Date(2026, 8, 25) });
   const body = pgn.split('\n\n')[1].replace(/\n/g, ' ');

@@ -50,6 +50,15 @@ export var REPGEN_DEFAULTS = {
   shallowMaxPly: 4,       // later ones to depth 3
   budgetDeep: 150,        // uncached explorer requests per deep search
   budget: 60,             // ...and per later one
+  // A close call is searched deeper: when rows at the table's depth are within
+  // deeperWithin points of the best by the choice's own score (the blend, or Practical
+  // alone), those rows alone are searched again two plies deeper, up to deeperMaxPly
+  // (8 is depth 7), with budgetDeeper uncached explorer requests each time. The rest
+  // lost by more than that and stay at their depth, which keeps them out of the
+  // comparison (see choose()). 0 turns it off.
+  deeperWithin: 1,
+  deeperMaxPly: 8,
+  budgetDeeper: 300,
   scoreRows: 3,           // my best scoring moves in the games are always candidates...
   scoreMinGames: 20,      // ...among those played at least this often
   rowShare: 0.05,         // my moves played this often are candidates too...
@@ -271,6 +280,34 @@ export function choose(rows, shares, o) {
   return pick === first ? first : Object.assign({}, pick, { over: first });
 }
 
+/*
+ * The rows of a close call: those choose() compares whose score is within `within` of
+ * the best one's. Only rows with a searched value (not `few`, which has none to deepen),
+ * and only when at least two are close and one of them can still go deeper. [] otherwise.
+ */
+export function closeBand(rows, shares, o) {
+  if (!(o.within > 0)) return [];
+  var w = o.weights;
+  var vals = rows.filter(function (r) {
+    return r.res && (r.res.state === 'value' || r.res.state === 'few') && r.res.value != null;
+  });
+  function any(res) { return res.complete || res.state === 'few'; }
+  var top = 0;
+  vals.forEach(function (r) { if (!any(r.res) && r.res.depth > top) top = r.res.depth; });
+  var cmp = vals.filter(function (r) { return any(r.res) || r.res.depth === top; })
+    .map(function (r) {
+      var b = blendScore(w, o.wins && o.wins[r.san], r.res.value, o.preps && o.preps[r.san]);
+      return { r: r, score: b == null ? r.res.value : b };
+    });
+  if (!cmp.length) return [];
+  var best = Math.max.apply(null, cmp.map(function (c) { return c.score; }));
+  var band = cmp.filter(function (c) {
+    return c.r.res.state === 'value' && best - c.score <= o.within;
+  }).map(function (c) { return c.r; });
+  if (band.length < 2 || band.every(function (r) { return r.res.complete; })) return [];
+  return band.map(function (r) { return r.san; });
+}
+
 export function isFatal(e) {
   return !!e && (e.message === 'no-token' || e.status === 401 || e.status === 403);
 }
@@ -435,25 +472,76 @@ export function createGenerator(o) {
       var deep = n.ply < cfg.deepPlies;
       var opts = Object.assign({}, sopts, { maxPly: deep ? cfg.deepMaxPly : cfg.shallowMaxPly });
       var started = now();
+      var spent = 0;
+      var deeper = [];
+      var side = sideToMove(n.fen);
+      var w = cfg.weights;
+      // The prepared score as win% for me, like the other two parts of the blend.
+      function prepOf(res) {
+        var e = res && res.prep ? expectedScore(res.prep, side) : null;
+        return e != null ? e * 100 : null;
+      }
+      function prepsOf(rows) {
+        var p = {};
+        rows.forEach(function (r) {
+          var e = prepOf(r.res);
+          if (e != null) p[r.san] = e;
+        });
+        return p;
+      }
+      function resultsOf(out, sans) {
+        var results = out && out.results;
+        return sans.map(function (san) {
+          return { san: san, res: results && (results.get ? results.get(san) : results[san]) };
+        });
+      }
+      // A close call goes two plies deeper, the close rows alone, until it isn't one or
+      // deeperMaxPly is reached. The deeper values replace the old ones only if every close
+      // row got one at the same, greater depth; otherwise the shallower comparison stands.
+      function deepen(rows, maxPly) {
+        if (maxPly + 2 > cfg.deeperMaxPly) return Promise.resolve(rows);
+        var band = closeBand(rows, c.shares, { weights: w, wins: c.wins, preps: prepsOf(rows),
+          within: cfg.deeperWithin });
+        if (!band.length) return Promise.resolve(rows);
+        var o2 = Object.assign({}, opts, { maxPly: maxPly + 2 });
+        return Promise.resolve(d.runRoot(n.fen, band, {
+          opts: o2, budget: cfg.budgetDeeper, shares: c.shares
+        })).then(function (out) {
+          spent += out && out.spent || 0;
+          var got = resultsOf(out, band);
+          var old = rows.filter(function (r) { return band.indexOf(r.san) >= 0; });
+          var from = old.reduce(function (m, r) { return Math.max(m, r.res.depth || 0); }, 0);
+          // A complete row is exact at any depth; the others must all be at the new one.
+          var to = got.reduce(function (m, g) {
+            return g.res && !g.res.complete ? Math.max(m, g.res.depth || 0) : m;
+          }, 0);
+          var ok = to > from && got.every(function (g) {
+            return g.res && g.res.state === 'value' && g.res.value != null &&
+              (g.res.depth === to || g.res.complete);
+          });
+          if (!ok) return rows;
+          deeper.push({ from: from, to: to, rows: band.slice() });
+          var byS = {};
+          got.forEach(function (g) { byS[g.san] = g.res; });
+          var next = rows.map(function (r) { return byS[r.san] ? { san: r.san, res: byS[r.san] } : r; });
+          return deepen(next, maxPly + 2);
+        }, function (e) {
+          if (isFatal(e)) throw e;
+          return rows;
+        });
+      }
       return Promise.resolve(d.runRoot(n.fen, c.rows, {
         opts: opts, budget: deep ? cfg.budgetDeep : cfg.budget, shares: c.shares
       })).then(function (out) {
-        var results = out && out.results;
-        var rows = c.rows.map(function (san) {
-          return { san: san, res: results && (results.get ? results.get(san) : results[san]) };
-        });
+        spent += out && out.spent || 0;
+        var rows = resultsOf(out, c.rows);
         var errs = rows.filter(function (r) { return !r.res || r.res.state === 'error'; });
         if (errs.length === rows.length) {
           throw (errs[0].res && errs[0].res.error) || new Error('no results');
         }
-        // The prepared score as win% for me, like the other two parts of the blend.
-        var side = sideToMove(n.fen);
-        var preps = {};
-        rows.forEach(function (r) {
-          var e = r.res && r.res.prep ? expectedScore(r.res.prep, side) : null;
-          if (e != null) preps[r.san] = e * 100;
-        });
-        var w = cfg.weights;
+        return deepen(rows, opts.maxPly);
+      }).then(function (rows) {
+        var preps = prepsOf(rows);
         var pick = choose(rows, c.shares, { weights: w, wins: c.wins, preps: preps,
           cps: c.cps, within: cfg.closeWithin, cp: cfg.closeCp });
         state.searches++;
@@ -506,8 +594,10 @@ export function createGenerator(o) {
           bestMove: c.best.san,
           bestEngine: c.best.win,
           rows: summary,
+          // Close calls searched deeper: from and to depth, and the rows that were.
+          deeper: deeper.length ? deeper : undefined,
           ms: now() - started,
-          spent: out && out.spent || 0
+          spent: spent
         });
         return { type: 'searched', node: n };
       });

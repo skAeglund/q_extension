@@ -484,7 +484,9 @@ function run(args, local) {
         var alts = (n.rows || []).filter(function (r) { return r.san !== n.move && r.value != null; })
           .map(function (r) {
             return r.san + ' ' + (blended && r.blend != null
-              ? r.blend.toFixed(1) + ' (Prac ' + r.value.toFixed(1) + ')' : r.value.toFixed(1));
+              ? r.blend.toFixed(1) + ' (Prac ' + r.value.toFixed(1) + ')' : r.value.toFixed(1)) +
+              // A row left at a shallower depth when a close call was searched deeper.
+              (n.deeper && r.state === 'value' && !r.complete && r.depth !== n.depth ? ' d' + r.depth : '');
           });
         var el = engineLoss(n);
         log('Me   ' + lineOf(n) + ': ' + n.move + markFor(el, state.config) +
@@ -493,6 +495,9 @@ function run(args, local) {
             (n.maia >= 0.005 ? ', ' + Math.round(n.maia * 100) + '% Maia' : '') +
             (blended ? (n.prep != null ? ', prep ' + n.prep.toFixed(1) : '') +
               ', blend ' + n.blend.toFixed(1) : '') +
+            (n.deeper ? ', close call: ' + n.deeper.map(function (x) {
+              return 'd' + x.from + '→d' + x.to + ' ' + x.rows.join('/');
+            }).join(', ') : '') +
             (alts.length ? '; ' + alts.join(', ') : '') +
             (n.ms != null ? '; ' + mmss(n.ms) + ', ' + n.spent + ' requests' : '') + ')'
           : ' (engine, ' + n.why + ')') +

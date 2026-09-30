@@ -171,3 +171,15 @@
 13:17:29 Opp  [0.60%] 3.Be3 Qc7 4.Nf3 Bxc5 5.Bxc5 Qxc5: Nc3 65% of 60 games
 13:18:37 Me   [0.63%] 3.Be3 Qc7 4.Nc3 Bxc5 5.Bxc5 Qxc5 6.Nf3: Nf6 (Prac 52.5 d3, prep 55.5, blend 53.2; Nc6 50.8 (Prac 51.2), Ne7 47.0 (Prac 44.0), d6 48.5 (Prac 49.3); 1m04s, 16 requests)
 13:18:37 Opp  [0.63%] 3.Be3 Qc7 4.Nc3 Bxc5 5.Bxc5 Qxc5 6.Nf3 Nf6: e3 49% of 170 games
+13:20:33 Me   [0.60%] 3.Nf3 Nc6 4.Bg5 Qa5+ 5.Nc3: Bxc5 (Prac 57.6 d5, prep 62.0, blend 57.2; h6 45.6 (Prac 47.3), Qxc5 43.1 (Prac 44.4); 1m52s, 28 requests)
+13:20:33 Opp  [0.60%] 3.Nf3 Nc6 4.Bg5 Qa5+ 5.Nc3 Bxc5: e3 51% of 606 games
+13:20:49 Me   [0.60%] 3.e4 Bxc5 4.Nf3 Nf6 5.Nc3 Qb6 6.Qe2 Nc6 7.Na4 Qb4+ 8.Nc3: Qb6?! (Prac 58.1 d3, prep 64.1, blend 59.1; Bd4 55.6 (Prac 57.9), O-O 54.3 (Prac 53.9), d6 54.9 (Prac 53.0), Nd4 58.5 (Prac 52.1); 0m12s, 3 requests)
+13:26:13 Me   [0.59%] 3.c4 Nf6 4.b4: a5 (Prac 68.6 d5, prep 70.1, blend 66.0; Be7 52.4 (Prac 52.6), b6 51.7 (Prac 54.6), Nc6 51.6 (Prac 52.4); 5m20s, 80 requests)
+13:26:13 Opp  [0.59%] 3.c4 Nf6 4.b4 a5: Bd2 42% of 1947 games
+13:32:29 Me   [0.57%] 3.Nf3 Nc6 4.e3 Bxc5 5.Bb5: e4 (Prac 63.3 d5, prep 64.3, blend 60.8; Qa5+ 56.6 (Prac 55.3), Nge7 55.4 (Prac 56.5), Qc7 55.4 (Prac 57.2), d6 55.5 (Prac 56.4), Nf6 54.4 (Prac 54.0); 6m12s, 93 requests)
+13:32:29 Opp  [0.57%] 3.Nf3 Nc6 4.e3 Bxc5 5.Bb5 e4: Bxc6 48% of 341 games
+13:34:17 Me   [0.56%] 3.Nc3 Bxc5 4.Nf3 Nc6 5.Bg5 Nf6 6.e3: Bb4 (Prac 52.4 d3, prep 56.5, blend 54.4; O-O 53.2 (Prac 51.6), d6 49.9 (Prac 51.3), Qa5 40.2 (Prac 32.8), a6 45.7 (Prac 46.8), h6 48.1 (Prac 51.4); 1m44s, 26 requests)
+13:34:17 Opp  [0.56%] 3.Nc3 Bxc5 4.Nf3 Nc6 5.Bg5 Nf6 6.e3 Bb4: Bc4 42% of 151 games
+13:34:29 Me   [0.55%] 3.b4 a5 4.c3 Nf6 5.Bb2 b6 6.cxb6 axb4 7.cxb4 Bxb4+ 8.Nd2 Qxb6 9.Bxe5: Ne4 (Prac 89.6 few games, prep 90.0, blend 89.9; Bxd2+ 86.4 (Prac 86.4); 0m08s, 2 requests)
+13:34:57 Me   [0.53%] 3.Nf3 Nc6 4.e4 Bxc5 5.Bb5 Qb6 6.Bxc6: Bxf2+ (Prac 77.1 d3, prep 75.0, blend 73.8; Qxc6 51.3 (Prac 50.0), bxc6 53.9 (Prac 53.4); 0m24s, 6 requests)
+13:34:57 Opp  [0.53%] 3.Nf3 Nc6 4.e4 Bxc5 5.Bb5 Qb6 6.Bxc6 Bxf2+: Kf1 87% of 1036 games
