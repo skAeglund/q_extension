@@ -99,12 +99,12 @@ function numberOpt(k, v) {
   return n;
 }
 
-// --weights 0.2,0.4,0.4: ChessDB, Practical, prepared. Kept as shares of 1.
+// --weights 0.1,0.2,0.7: ChessDB, Practical, prepared. Kept as shares of 1.
 function weightsOpt(v) {
   var w = String(v).split(',').map(Number);
   if (w.length !== 3 || w.some(function (x) { return !isFinite(x) || x < 0; }) ||
       !(w[0] + w[1] + w[2] > 0)) {
-    throw new Error('--weights is three numbers for ChessDB, Practical and prepared, e.g. 0.2,0.4,0.4; got ' + v);
+    throw new Error('--weights is three numbers for ChessDB, Practical and prepared, e.g. 0.1,0.2,0.7; got ' + v);
   }
   var t = w[0] + w[1] + w[2];
   return w.map(function (x) { return Math.round(x / t * 1e6) / 1e6; });

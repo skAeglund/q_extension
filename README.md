@@ -324,11 +324,11 @@ groups (`--speeds`, `--ratings`). A run keeps the filter it started with.
   after that. Rows are compared only at one depth, as the column's green is.
 - **Which of your moves wins.** Each candidate gets a blend of three numbers, all in win%
   for you:
-  - ChessDB's eval of the move (weight 0.2),
-  - its Practical value (0.4),
-  - and its [prepared score](#prepared-score-the-score-column) (0.4).
+  - ChessDB's eval of the move (weight 0.1),
+  - its Practical value (0.2),
+  - and its [prepared score](#prepared-score-the-score-column) (0.7).
 
-  The highest blend wins (`--weights 0.2,0.4,0.4`, in that order). Practical and prepared
+  The highest blend wins (`--weights 0.1,0.2,0.7`, in that order). Practical and prepared
   come from the same search and differ only at its ends: Practical values an end position by
   ChessDB's eval, prepared by what the games from there actually scored. So the prepared
   score sees what happens past the search's depth. That matters most for Black, where you
@@ -337,11 +337,11 @@ groups (`--speeds`, `--ratings`). A run keeps the filter it started with.
   is already pulled towards the Practical value, and 50 games there count as much as the
   Practical value (`--prep-prior-games 50`). So with thin data the blend leans on Practical
   by itself. The PGN shows the parts, as in
-  `{Prac 57.5 d5, prep 59.8, engine 54.1, blend 57.7; d4 56.9 (Prac 58.0)}`: the other moves
+  `{Prac 57.5 d5, prep 59.8, engine 54.1, blend 58.8; d4 56.9 (Prac 58.0)}`: the other moves
   by their blend, with their Practical value. `prep 59.8 (40% Prac)` means 40% of it rests
   on the Practical value (shown from 25%).
   A run keeps its weights. Runs from before the blend keep choosing by Practical value
-  alone (`0,1,0`); `--weights 0.2,0.4,0.4 --check` chooses again (see [below](#checking-a-run-later)).
+  alone (`0,1,0`); `--weights 0.1,0.2,0.7 --check` chooses again (see [below](#checking-a-run-later)).
   With `--weights 0,1,0`, the best Practical value wins. Then a near-tie goes to ChessDB:
   a move within 1 point of the top one wins when ChessDB rates it at least 0.05 higher
   (`--close-within`, in win% points, 0 turns it off; `--close-cp`, in centipawns). A lead
@@ -372,7 +372,7 @@ from the project folder.
 
 - `sicilian.pgn` is rewritten after every position, so it's always readable. Opponent
   replies are ordered most played first. Your moves carry comments like
-  `{Prac 58.2 d5, prep 57.0, engine 53.1, blend 56.7; Nf3 55.8 (Prac 56.0), c4 55.1 (Prac 55.4)}`, and replies carry `{34% of 12,345 games}`.
+  `{Prac 58.2 d5, prep 57.0, engine 53.1, blend 56.9; Nf3 55.8 (Prac 56.0), c4 55.1 (Prac 55.4)}`, and replies carry `{34% of 12,345 games}`.
   Comments also say where and why a line ends, or `transposes to …`.
   Your move is marked when ChessDB rates it under its own best move: `!?` from 3 win%
   points, `?!` from 7 and `??` from 15 (`--mark-interesting`, `--mark-dubious`,
@@ -529,7 +529,7 @@ something changed:
   moves competed passed them over), a near-tie that ChessDB's new evals decide differently
   (including runs from before near-ties went to ChessDB), a blend that ChessDB's new eval
   tips the other way, a search from before rows saved their prepared scores once the run
-  weighs them (`--weights 0.2,0.4,0.4 --check` on an older run: every position of yours with
+  weighs them (`--weights 0.1,0.2,0.7 --check` on an older run: every position of yours with
   more than one candidate), or, where
   ChessDB's best was played for want of games, ChessDB's best changing. With Maia turned on
   (`--check --maia`), a search made without it where one of your candidates had under 100

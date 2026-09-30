@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 507 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 508 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -736,8 +736,9 @@ below).
   and 521 ChessDB requests in 8m41s". The ChessDB pace sets that time.
 
 **Repgen: blended choice (2026-09-30).** Requested: choose my move by a weighted blend of
-ChessDB's eval, the Practical value and the prepared score (`weights`, default
-`[0.2, 0.4, 0.4]`, all in win% for me), since Practical sees only as deep as the search and
+ChessDB's eval, the Practical value and the prepared score (`weights`, all in win% for
+me; default `[0.1, 0.2, 0.7]`, first `[0.2, 0.4, 0.4]` and changed the same day at the user's
+request, as they care most about the prepared score), since Practical sees only as deep as the search and
 the prepared score's leaves carry what the games did after it: an objectively worse position
 with practical chances, often as Black. `choose()` ranks by `blendScore()`; a missing part
 spreads its weight over the others. No extra weighting by games: `leafSplit` already shrinks

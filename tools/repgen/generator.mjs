@@ -71,7 +71,7 @@ export var REPGEN_DEFAULTS = {
   // How my move is chosen (see choose()): a weighted mean of ChessDB's eval of the move,
   // its Practical value and its prepared score, all in win% for me. A run keeps the
   // weights it was made with; runs from before the blend have [0, 1, 0], Practical alone.
-  weights: [0.2, 0.4, 0.4],
+  weights: [0.1, 0.2, 0.7],
   // A near-tie goes to ChessDB (see choose()): a move within closeWithin win% points of
   // the top one wins when ChessDB rates it at least closeCp centipawns higher. Only while
   // ChessDB has no weight of its own in the choice. 0 turns it off.

@@ -254,8 +254,8 @@ module.exports = async function run(check) {
 
   console.log('\nrepertoire generator: the blend');
   const W = [0.2, 0.4, 0.4];
-  await check('the default choice blends ChessDB, Practical and prepared 0.2 / 0.4 / 0.4', () =>
-    assert.deepStrictEqual(G.REPGEN_DEFAULTS.weights, W));
+  await check('the default choice blends ChessDB, Practical and prepared 0.1 / 0.2 / 0.7', () =>
+    assert.deepStrictEqual(G.REPGEN_DEFAULTS.weights, [0.1, 0.2, 0.7]));
   await check('the blend is the weighted mean, and a missing part spreads its weight', () => {
     assert.ok(Math.abs(G.blendScore(W, 50, 60, 70) - 62) < 1e-9);
     // No prepared score: ChessDB 1/3, Practical 2/3.
@@ -682,9 +682,16 @@ module.exports = async function run(check) {
   wb['S w - - 0 1'].root = { e4: val(55, 3, { prep: sp(0.62, 0.06, 0.32), prior: 0.3 }),
     d4: val(58, 3, { prep: sp(0.55, 0, 0.45), prior: 0.1 }) };
   const sb = G.newState('S w - - 0 1', 'w');
-  await drain(G.createGenerator({ state: sb, deps: deps(wb), now: () => 0 }), { t: 0 });
+  await drain(G.createGenerator({ state: sb, deps: deps(wb), now: () => 0, config: { weights: W } }), { t: 0 });
   const nb = sb.nodes['S w - -'];
-  await check('with the default weights, the prepared score wins it for 1.e4', () => {
+  const sd = G.newState('S w - - 0 1', 'w');
+  await drain(G.createGenerator({ state: sd, deps: deps(wb), now: () => 0 }), { t: 0 });
+  await check('a run with the default weights blends 0.1 / 0.2 / 0.7', () => {
+    const n = sd.nodes['S w - -'];
+    assert.strictEqual(n.move, 'e4');
+    assert.ok(Math.abs(n.blend - (0.1 * n.engine + 0.2 * 55 + 0.7 * 65)) < 1e-9, n.blend);
+  });
+  await check('with weights 0.2 / 0.4 / 0.4, the prepared score wins it for 1.e4', () => {
     assert.strictEqual(nb.move, 'e4');
     assert.strictEqual(nb.value, 55);
     assert.ok(Math.abs(nb.prep - 65) < 1e-9, nb.prep);
@@ -717,7 +724,7 @@ module.exports = async function run(check) {
     assert.ok(Math.abs(n.prep - 60) < 1e-9, n.prep);
     assert.ok(Math.abs(n.rows.find(r => r.san === 'c5').prep - 30) < 1e-9);
   });
-  const WD = Object.assign({}, G.REPGEN_DEFAULTS);
+  const WD = Object.assign({}, G.REPGEN_DEFAULTS, { weights: W });
   await check('a check with the same evals leaves a blended pick alone', () => {
     const r = CK.assess(Object.assign({}, nb), wb['S w - - 0 1'].ex, wb['S w - - 0 1'].cdb, WD, G.SEARCH_DEFAULTS);
     assert.strictEqual(r.action, null, r.reasons.join());
