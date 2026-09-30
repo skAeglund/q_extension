@@ -10,6 +10,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const zlib = require('zlib');
+const crypto = require('crypto');
 const { pathToFileURL } = require('url');
 const assert = require('assert');
 
@@ -177,11 +178,12 @@ module.exports = async function run(check) {
   }
   const castle = ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5', 'O-O', 'Nf6'];
   for (let g = 0; g < 3; g++) dumpGames.push({ sans: castle, res: '1-0', we: 2000, be: 2000, tc: '300+0' });
-  const pgn = dumpGames.map((g, i) => [
+  const pgnGames = dumpGames.map((g, i) => [
     '[Event "Rated game"]', `[Site "https://lichess.org/g${i}"]`, `[Result "${g.res}"]`,
     `[WhiteElo "${g.we}"]`, `[BlackElo "${g.be}"]`, `[TimeControl "${g.tc}"]`, '',
     g.sans.map((m, j) => (j % 2 ? `${(j + 1) / 2 | 0}... ` : `${j / 2 + 1}. `) + m +
-      ' { [%clk 0:03:00] }').join(' ') + ' ' + g.res, '', ''].join('\n')).join('');
+      ' { [%clk 0:03:00] }').join(' ') + ' ' + g.res, '', ''].join('\n'));
+  const pgn = pgnGames.join('');
   const dumpFile = path.join(tmp, 'dump.pgn');
   fs.writeFileSync(dumpFile, pgn);
 
@@ -267,6 +269,306 @@ module.exports = async function run(check) {
     assert.strictEqual(t(3).positions, atLeast(3));
     assert.strictEqual(t(10).positions, atLeast(10));
     assert.strictEqual(t(1).bytes, db.count * S.REC);
+  });
+
+  console.log('\nexplorerdb: many months');
+  const M = await load('tools/explorerdb/merge.mjs');
+  const A = await load('tools/explorerdb/acc.mjs');
+  const AL = await load('tools/explorerdb/all.mjs');
+  // The same games as three "months" of uneven size, as Lichess names them.
+  const months = ['2013-01', '2013-02', '2013-03'];
+  const cuts = [0, 90, 250, pgnGames.length];
+  const monthFiles = months.map((m, i) => {
+    const f = path.join(tmp, `lichess_db_standard_rated_${m}.pgn`);
+    fs.writeFileSync(f, pgnGames.slice(cuts[i], cuts[i + 1]).join(''));
+    return f;
+  });
+  const recordsOf = file => { const d = S.openIndex(file); d.close(); return fs.readFileSync(file).subarray(d.start); };
+  const whole = recordsOf(index);
+  // The positions the whole import keeps at N: its records, filtered by total.
+  const keptAt = N => {
+    const out = [];
+    for (let i = 0; i < whole.length;) {
+      let j = i, tot = 0;
+      while (j < whole.length && whole.compare(whole, j, j + 8, i, i + 8) === 0) {
+        tot += whole.readUInt32LE(j + 10) + whole.readUInt32LE(j + 14) + whole.readUInt32LE(j + 18);
+        j += S.REC;
+      }
+      if (tot >= N) out.push(whole.subarray(i, j));
+      i = j;
+    }
+    return Buffer.concat(out);
+  };
+  const monthIdx = [];
+  for (let i = 0; i < 3; i++) {
+    const f = path.join(tmp, `m${i}.xdb`);
+    await I.importDump({ input: monthFiles[i], out: f, plies: PLIES, minGames: 1, workers: 2 });
+    monthIdx.push(f);
+  }
+  await check('merging three months at N >= 1 gives the whole import\'s records, byte for byte', () => {
+    const out = path.join(tmp, 'merged.xdb');
+    const mm = M.mergeIndexes(monthIdx, out, 1);
+    assert.ok(recordsOf(out).equals(whole));
+    assert.strictEqual(mm.report.games.kept, wantKept);
+    assert.strictEqual(mm.report.positions, want.size);
+    const m3 = M.mergeIndexes(monthIdx, path.join(tmp, 'merged3.xdb'), 3);
+    assert.ok(recordsOf(path.join(tmp, 'merged3.xdb')).equals(keptAt(3)));
+    assert.strictEqual(m3.report.thresholds.find(t => t.minGames === 3).positions, m3.report.positions);
+  });
+  await check('indexes with another filter or ply limit are not merged', () => {
+    const other = path.join(tmp, 'other.xdb');
+    return I.importDump({ input: monthFiles[0], out: other, plies: 20, minGames: 1, workers: 1 }).then(() =>
+      assert.throws(() => M.mergeIndexes([monthIdx[0], other], path.join(tmp, 'no.xdb'), 1), /ply limit/));
+  });
+
+  const accDir = path.join(tmp, 'a.acc');
+  const create = { filter: { speeds: I.DEFAULTS.speeds, ratings: I.DEFAULTS.ratings }, plies: PLIES };
+  await check('an accumulator of the three months writes the whole import\'s index, at 1 and at 3', async () => {
+    const acc = A.openAcc(accDir, { create });
+    for (const f of monthFiles) await A.addDump(acc, f, I.importDump, { workers: 2 });
+    await assert.rejects(A.addDump(acc, monthFiles[0], I.importDump, {}), /already/);
+    const m1 = A.writeIndex(acc, path.join(tmp, 'acc1.xdb'), 1);
+    assert.ok(recordsOf(path.join(tmp, 'acc1.xdb')).equals(whole));
+    assert.strictEqual(m1.report.games.kept, wantKept);
+    assert.deepStrictEqual(m1.report.dumps.length, 3);
+    assert.strictEqual(m1.source, '3 dumps, 2013-01..2013-03');
+    A.writeIndex(acc, path.join(tmp, 'acc3.xdb'), 3);
+    assert.ok(recordsOf(path.join(tmp, 'acc3.xdb')).equals(keptAt(3)));
+    // The index opens and answers like any other.
+    const d = S.openIndex(path.join(tmp, 'acc3.xdb'));
+    assert.strictEqual(S.explorerAnswer(d, new Chess().fen()).white, S.explorerAnswer(db, new Chess().fen()).white);
+    d.close();
+    acc.close();
+  });
+  await check('an accumulator is locked while open, and read-only opens don\'t lock', () => {
+    // Another process holding it: this one's parent, which is alive.
+    fs.writeFileSync(path.join(accDir, 'lock'), String(process.ppid));
+    assert.throws(() => A.openAcc(accDir), /in use by process/);
+    const ro = A.openAcc(accDir, { readOnly: true });
+    assert.strictEqual(ro.state.ops.length, 3);
+    // A lock whose process is gone is taken over.
+    fs.writeFileSync(path.join(accDir, 'lock'), '999999');
+    const a1 = A.openAcc(accDir);
+    assert.strictEqual(fs.readFileSync(path.join(accDir, 'lock'), 'utf8'), String(process.pid));
+    a1.close();
+    assert.ok(!fs.existsSync(path.join(accDir, 'lock')));
+  });
+  await check('an import cut off mid-merge is finished by adding the same dump again', async () => {
+    const dir = path.join(tmp, 'crash.acc');
+    const acc = A.openAcc(dir, { create });
+    await A.addDump(acc, monthFiles[0], I.importDump, { workers: 2 });
+    // Dies after 100 shards: those hold month 2, the rest don't.
+    let n = 0;
+    const dying = o => I.importDump(Object.assign({}, o, { intoShard: s => {
+      if (n++ === 100) throw new Error('power cut');
+      return o.intoShard(s);
+    } }));
+    await assert.rejects(A.addDump(acc, monthFiles[1], dying, { workers: 1 }), /power cut/);
+    acc.close();
+    // What a crash can also leave: a half-written shard, and an old generation beside a new one.
+    fs.writeFileSync(path.join(dir, 'a200.g2.bin.part'), 'half');
+    const g1 = acc.gens.findIndex(g => g === 2);
+    fs.copyFileSync(path.join(dir, `a${String(g1).padStart(3, '0')}.g2.bin`), path.join(dir, `a${String(g1).padStart(3, '0')}.g1.bin`));
+    const again = A.openAcc(dir);
+    assert.ok(!fs.existsSync(path.join(dir, 'a200.g2.bin.part')));
+    assert.ok(!fs.existsSync(path.join(dir, `a${String(g1).padStart(3, '0')}.g1.bin`)));
+    const atTwo = again.gens.filter(g => g === 2).length;
+    assert.ok(atTwo > 0 && atTwo < 256, String(atTwo));
+    await assert.rejects(A.addDump(again, monthFiles[2], I.importDump, {}), /Unfinished: adding .*2013-02/);
+    await A.addDump(again, monthFiles[1], I.importDump, { workers: 2 });
+    await A.addDump(again, monthFiles[2], I.importDump, { workers: 2 });
+    A.writeIndex(again, path.join(tmp, 'crash.xdb'), 1);
+    assert.ok(recordsOf(path.join(tmp, 'crash.xdb')).equals(whole));
+    again.close();
+  });
+  await check('a prune drops what is under its threshold so far, and says what that can cost', async () => {
+    const dir = path.join(tmp, 'pruned.acc');
+    const acc = A.openAcc(dir, { create });
+    await A.addDump(acc, monthFiles[0], I.importDump, { workers: 2 });
+    const before = acc.totals();
+    const op = A.prune(acc, 2);
+    const after = acc.totals();
+    assert.strictEqual(after.positions[0], before.positions[1]);   // all that had 2 or more
+    assert.strictEqual(after.bytes, before.records[1] * S.REC);
+    assert.ok(op.droppedGames > 0);
+    await A.addDump(acc, monthFiles[1], I.importDump, { workers: 2 });
+    await A.addDump(acc, monthFiles[2], I.importDump, { workers: 2 });
+    const mx = A.writeIndex(acc, path.join(tmp, 'pruned.xdb'), 1);
+    assert.strictEqual(mx.report.maxUndercount, 1);
+    assert.deepStrictEqual(mx.report.prunes, [2]);
+    const d = S.openIndex(path.join(tmp, 'pruned.xdb'));
+    // Every position is short by at most one game, and nothing with 2 or more is lost.
+    let short = 0;
+    for (const [k, e] of want) {
+      const n = e.tot[0] + e.tot[1] + e.tot[2];
+      const got = d.records(G.keyOf(k)).reduce((s, x) => s + x.white + x.draws + x.black, 0);
+      assert.ok(got <= n && got >= n - 1 && (n < 2 || got > 0), k + ': ' + got + ' of ' + n);
+      if (got < n) short++;
+    }
+    assert.ok(short > 0, 'the prune dropped nothing that came back');
+    d.close();
+    assert.strictEqual(A.pruneFor(after, after.bytes), 2);
+    assert.strictEqual(A.pruneFor(after, -1), 1000);
+    acc.close();
+  });
+
+  // The driver, with Lichess's list and the downloads replaced by the three files.
+  const fakeList = months.map((m, i) => ({ name: path.basename(monthFiles[i]), month: m,
+    size: fs.statSync(monthFiles[i]).size }));
+  const runDir = path.join(tmp, 'run');
+  const runOpts = extra => Object.assign({
+    acc: path.join(runDir, 'r.acc'), dumps: path.join(runDir, 'dumps'), out: path.join(runDir, 'r.xdb'),
+    minGames: 3, diskBytes: 1e12, reserveBytes: 0, prefetch: true, filter: create.filter, plies: PLIES,
+    workers: 1, list: fakeList, log: () => {},
+    fetchDump: (d, dest) => { fetched.push(d.month); fs.copyFileSync(monthFiles[months.indexOf(d.month)], dest); return Promise.resolve(dest); }
+  }, extra);
+  let fetched = [];
+  await check('the driver adds months newest first, deletes each dump, resumes, and writes the index', async () => {
+    await AL.runAll(runOpts({ from: '2013-02' }));
+    assert.deepStrictEqual(fetched, ['2013-03', '2013-02']);
+    assert.deepStrictEqual(fs.readdirSync(path.join(runDir, 'dumps')), []);
+    fetched = [];
+    // As if stopped between adding 2013-02 and deleting it.
+    fs.copyFileSync(monthFiles[1], path.join(runDir, 'dumps', fakeList[1].name));
+    const sum = await AL.runAll(runOpts({}));
+    assert.deepStrictEqual(fs.readdirSync(path.join(runDir, 'dumps')), []);
+    assert.deepStrictEqual(fetched, ['2013-01']);
+    assert.strictEqual(sum.dumps.length, 3);
+    assert.ok(recordsOf(path.join(runDir, 'r.xdb')).equals(keptAt(3)));
+    assert.ok(!fs.existsSync(path.join(runDir, 'r.acc', 'lock')));
+  });
+  await check('with too little disk the driver prunes, never above the index\'s threshold', async () => {
+    fetched = [];
+    const logs2 = [];
+    // Room for the first month and a bit at N >= 1: the others force prunes.
+    const full = A.openAcc(path.join(runDir, 'r.acc'), { readOnly: true });
+    const first = full.state.ops[0];
+    const dir = path.join(tmp, 'tight');
+    await AL.runAll(runOpts({ acc: path.join(dir, 't.acc'), dumps: path.join(dir, 'dumps'),
+      out: path.join(dir, 't.xdb'), marginBytes: 0, firstRatio: 0.3, log: s => logs2.push(s),
+      diskBytes: first.bytesAfter + Math.max(...fakeList.map(d => d.size)) + 30e3 }));
+    const acc = A.openAcc(path.join(dir, 't.acc'), { readOnly: true });
+    const prunes = A.summary(acc).prunes;
+    assert.ok(prunes.length > 0, logs2.join('\n'));
+    assert.ok(prunes.every(t => t >= 2 && t <= 3), prunes.join(','));
+    // Pruning at or under 3 can't change what an index at 3 keeps... except for a position
+    // a prune cut short: it can drop under 3 in the sum. So compare with the bound.
+    const d = S.openIndex(path.join(dir, 't.xdb'));
+    const bound = A.summary(acc).maxUndercount;
+    for (const [k, e] of want) {
+      const n = e.tot[0] + e.tot[1] + e.tot[2];
+      const got = d.records(G.keyOf(k)).reduce((s, x) => s + x.white + x.draws + x.black, 0);
+      assert.ok(got <= n && (got >= n - bound || got === 0), k);
+      if (n >= 3 + bound) assert.ok(got > 0, k + ' lost');
+    }
+    d.close();
+  });
+  await check('a download cut off resumes where it stopped, and a bad one is fetched again', async () => {
+    const http = require('http');
+    const body = crypto.randomBytes(300000);
+    let cut = true, corrupt = 0, ranges = [];
+    const server = http.createServer((req, res) => {
+      if (req.method === 'HEAD') { res.writeHead(200, { 'Content-Length': body.length }); return res.end(); }
+      const m = /bytes=(\d+)-/.exec(req.headers.range || '');
+      const from = m ? Number(m[1]) : 0;
+      ranges.push(from);
+      let data = body.subarray(from);
+      if (corrupt > 0) { corrupt--; data = Buffer.from(data); data[5] ^= 1; }
+      res.writeHead(m ? 206 : 200, { 'Content-Length': data.length });
+      if (cut) { cut = false; res.write(data.subarray(0, 100000)); setTimeout(() => res.destroy(), 50); return; }
+      res.end(data);
+    });
+    await new Promise(r => server.listen(0, '127.0.0.1', r));
+    try {
+      const url = 'http://127.0.0.1:' + server.address().port + '/x.pgn.zst';
+      const sum = crypto.createHash('sha256').update(body).digest('hex');
+      const dest = path.join(tmp, 'dl.pgn.zst');
+      await AL.download({ url, name: 'x.pgn.zst', sha256: sum }, dest, () => {}, { unitMs: 1 });
+      assert.ok(fs.readFileSync(dest).equals(body));
+      assert.strictEqual(ranges[0], 0);
+      assert.ok(ranges[1] >= 100000, String(ranges));
+      assert.ok(!fs.existsSync(dest + '.part'));
+      // A copy that fails its check is thrown away and fetched again; twice is an error.
+      ranges = []; corrupt = 1;
+      const d2 = path.join(tmp, 'dl2.pgn.zst');
+      await AL.download({ url, name: 'x.pgn.zst', sha256: sum }, d2, () => {}, { unitMs: 1 });
+      assert.ok(fs.readFileSync(d2).equals(body));
+      corrupt = 2;
+      await assert.rejects(AL.download({ url, name: 'x.pgn.zst', sha256: sum }, path.join(tmp, 'dl3.pgn.zst'),
+        () => {}, { unitMs: 1 }), /sha256 mismatch twice/);
+      assert.ok(!fs.existsSync(path.join(tmp, 'dl3.pgn.zst')));
+    } finally {
+      server.close();
+    }
+  });
+  await check('a download runs over two connections, each resumed where it stopped', async () => {
+    const http = require('http');
+    const body = crypto.randomBytes(1000000);
+    let cutAt = null, open = 0, most = 0, asked = [];
+    const server = http.createServer((req, res) => {
+      if (req.method === 'HEAD') { res.writeHead(200, { 'Content-Length': body.length }); return res.end(); }
+      const m = /bytes=(\d+)-(\d*)/.exec(req.headers.range || '');
+      const from = Number(m[1]), to = m[2] ? Number(m[2]) + 1 : body.length;
+      asked.push([from, to]);
+      open++; most = Math.max(most, open);
+      res.on('close', () => open--);
+      const data = body.subarray(from, to);
+      res.writeHead(206, { 'Content-Length': data.length, 'Content-Range': 'bytes ' + from + '-' + (to - 1) + '/' + body.length });
+      // The connection for the second half breaks off 100 kB in, once.
+      if (cutAt === from) {
+        cutAt = null;
+        res.write(data.subarray(0, 100000));
+        return setTimeout(() => res.destroy(), 100);
+      }
+      // Slowly enough for both to be open at once.
+      res.write(data.subarray(0, 1000));
+      setTimeout(() => res.end(data.subarray(1000)), 50);
+    });
+    await new Promise(r => server.listen(0, '127.0.0.1', r));
+    try {
+      const url = 'http://127.0.0.1:' + server.address().port + '/x.pgn.zst';
+      const sum = crypto.createHash('sha256').update(body).digest('hex');
+      const d = () => ({ url, name: 'x.pgn.zst', sha256: sum });
+      const o = { unitMs: 1, connections: 2, minSplit: 100000 };
+      const dest = path.join(tmp, 'two.pgn.zst');
+      cutAt = 500000;
+      await AL.download(d(), dest, () => {}, o);
+      assert.ok(fs.readFileSync(dest).equals(body));
+      assert.deepStrictEqual(asked.slice(0, 2).sort((a, b) => a[0] - b[0]), [[0, 500000], [500000, 1000000]]);
+      assert.strictEqual(most, 2);
+      // The cut half resumes from what was written; the other half isn't asked for again.
+      const again = asked.slice(2);
+      assert.ok(again.length >= 1 && again.every(r => r[0] >= 600000 && r[1] <= 1000000), JSON.stringify(asked));
+      assert.ok(!fs.existsSync(dest + '.part') && !fs.existsSync(dest + '.part.json'));
+
+      // A .part from a single-connection download, with no map: done up to its length,
+      // the rest split in two.
+      asked = [];
+      const d2 = path.join(tmp, 'two2.pgn.zst');
+      fs.writeFileSync(d2 + '.part', body.subarray(0, 200000));
+      await AL.download(d(), d2, () => {}, o);
+      assert.ok(fs.readFileSync(d2).equals(body));
+      assert.deepStrictEqual(asked.sort((a, b) => a[0] - b[0]), [[200000, 600000], [600000, 1000000]]);
+
+      // An unreadable map starts over rather than trusting a full-length .part.
+      asked = [];
+      const d3 = path.join(tmp, 'two3.pgn.zst');
+      fs.writeFileSync(d3 + '.part', Buffer.alloc(body.length));
+      fs.writeFileSync(d3 + '.part.json', '{"size":');
+      await AL.download(d(), d3, () => {}, o);
+      assert.ok(fs.readFileSync(d3).equals(body));
+      assert.deepStrictEqual(asked.sort((a, b) => a[0] - b[0]), [[0, 500000], [500000, 1000000]]);
+    } finally {
+      server.close();
+    }
+  });
+  await check('an unfinished month outside the range asked for stops the driver', async () => {
+    const dir = path.join(tmp, 'pend');
+    const acc = A.openAcc(path.join(dir, 'p.acc'), { create });
+    acc.begin({ type: 'dump', source: fakeList[0].name });
+    acc.close();
+    await assert.rejects(AL.runAll(runOpts({ acc: path.join(dir, 'p.acc'), dumps: path.join(dir, 'dumps'),
+      out: path.join(dir, 'p.xdb'), from: '2013-02' })), /was adding .*2013-01/);
   });
 
   console.log('\nexplorerdb: the server');

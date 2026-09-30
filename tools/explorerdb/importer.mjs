@@ -159,8 +159,13 @@ function mins(ms) {
 
 /*
  * o: { input, out, speeds, ratings, plies, minGames, combinePlies, workers, maxGames,
- *      tmp, keepTmp, log }
+ *      tmp, keepTmp, log, intoShard, shardMerged }
  * Resolves with the header written to the index (its `report` has the counts).
+ *
+ * With `intoShard(s)`, no index is written: each counted shard is merged into what
+ * intoShard returns ({ base, out }, see worker.mjs), or skipped if it returns null (a shard
+ * already holding this dump), and `shardMerged(s, merged)` is told. That is how a dump is
+ * added to an accumulator (acc.mjs) without its whole count ever being on disk.
  */
 export async function importDump(o) {
   o = Object.assign({}, DEFAULTS, o);
@@ -287,9 +292,15 @@ export async function importDump(o) {
       while (next < SHARDS) {
         var s = next++;
         var files = pool.map(function (_, w) { return shardFile(tmp, s, w); });
-        var m = await ask(slot, { type: 'aggregate', shard: s, files: files, minGames: o.minGames,
-          out: tmp + '/out' + String(s).padStart(3, '0') + '.bin' });
-        stats[s] = m.stats;
+        var into = o.intoShard ? o.intoShard(s) : undefined;
+        if (into === null) {
+          stats[s] = null;
+        } else {
+          var m = await ask(slot, { type: 'aggregate', shard: s, files: files, minGames: o.minGames,
+            out: tmp + '/out' + String(s).padStart(3, '0') + '.bin', merge: into });
+          stats[s] = m.stats;
+          if (into) o.shardMerged(s, m.merged);
+        }
         files.forEach(function (f) { if (!o.keepTmp) fs.rmSync(f, { force: true }); });
       }
     }));
@@ -310,6 +321,7 @@ export async function importDump(o) {
     seconds: 0
   };
   stats.forEach(function (st) {
+    if (!st) { report.partial = true; return; }     // merged before a crash, not counted again
     report.spilled += st.spilled;
     report.positions += st.kept;
     report.records += st.keptRecords;
@@ -331,6 +343,10 @@ export async function importDump(o) {
     created: new Date().toISOString(),
     report: report
   };
+  if (o.intoShard) {
+    if (!o.keepTmp) fs.rmSync(tmp, { recursive: true, force: true });
+    return meta;
+  }
   var fd = fs.openSync(o.out, 'w');
   try {
     writeHeader(fd, meta);

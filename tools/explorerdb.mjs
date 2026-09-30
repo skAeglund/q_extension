@@ -25,6 +25,13 @@
  *
  * answers the explorer's queries over HTTP (explorerdb/server.mjs), for the extension's
  * "Local explorer" setting and repgen's --explorer.
+ *
+ *   node tools/explorerdb.mjs all --into lichess --disk-gb 160
+ *
+ * imports every monthly dump Lichess has, unattended and resumable (explorerdb/all.mjs),
+ * into an accumulator that keeps single games until the disk budget says otherwise
+ * (explorerdb/acc.mjs), and writes lichess.xdb from it at the end. `add`, `prune` and
+ * `finish` are its steps by hand; `merge` joins finished indexes.
  */
 
 import fs from 'node:fs';
@@ -34,7 +41,11 @@ import { importDump, DEFAULTS } from './explorerdb/importer.mjs';
 import { openIndex, explorerAnswer } from './explorerdb/store.mjs';
 import { createServer, indexInfo } from './explorerdb/server.mjs';
 import { RATING_GROUPS } from './explorerdb/games.mjs';
+import { THRESHOLDS, REC } from './explorerdb/store.mjs';
 import { inPath, outPath, EXPLORER } from './repgen/paths.mjs';
+import { mergeIndexes } from './explorerdb/merge.mjs';
+import { openAcc, addDump, prune, writeIndex, summary } from './explorerdb/acc.mjs';
+import { runAll } from './explorerdb/all.mjs';
 
 var SPEEDS = ['ultraBullet', 'bullet', 'blitz', 'rapid', 'classical', 'correspondence'];
 
@@ -51,7 +62,27 @@ var USAGE = [
   '      --keep-tmp          leave them there',
   '  node tools/explorerdb.mjs query <index> (--moves "1.e4 c5" | --fen "<fen>")',
   '  node tools/explorerdb.mjs info <index>',
-  '  node tools/explorerdb.mjs serve <index> [--port 9337] [--host 127.0.0.1]'
+  '  node tools/explorerdb.mjs serve <index> [--port 9337] [--host 127.0.0.1]',
+  '  node tools/explorerdb.mjs merge <index> <index>... --out <name> [--min-games 10]',
+  '',
+  'Many months, into an accumulator (<name>.acc/, kept down to single games):',
+  '  node tools/explorerdb.mjs all --into <name> [options]',
+  '      --disk-gb 150       disk the run may use: accumulator, dumps, temporary files',
+  '      --reserve-gb 10     free space always left on the disk',
+  '      --from 2013-01 --to 2026-08   months (default: all that Lichess lists)',
+  '      --oldest-first      (default: newest first, so recent months are in soonest)',
+  '      --dumps <dir>       where dumps are downloaded (default explorer/dumps)',
+  '      --keep-dumps        keep a dump once it is added',
+  '      --no-prefetch       never download the next dump during an import',
+  '      --connections 1     connections per download (two measured no faster)',
+  '      --out <name>        the index written at the end (default: the --into name)',
+  '      --min-games 10      its threshold',
+  '      --snapshot-every N  also write it every N months',
+  '      --speeds, --ratings, --plies, --workers   as for import (a new accumulator only)',
+  '  node tools/explorerdb.mjs add <dump> --into <name>     one dump, by hand',
+  '  node tools/explorerdb.mjs prune <name> --min-games N',
+  '  node tools/explorerdb.mjs finish <name> [--out <name>] [--min-games 10]',
+  '  node tools/explorerdb.mjs info <name>                  an index, or an accumulator'
 ].join('\n');
 
 var DEFAULT_PORT = 9337;
@@ -60,6 +91,12 @@ function indexPath(name, forWriting) {
   if (!/\.xdb$/i.test(name)) name += '.xdb';
   return forWriting ? outPath(name, EXPLORER) : inPath(name, EXPLORER);
 }
+
+function accPath(name) {
+  if (!/\.acc$/i.test(name)) name += '.acc';
+  return outPath(name, EXPLORER);
+}
+function isAcc(name) { return fs.existsSync(path.join(accPath(name), 'state.json')); }
 
 function list(s, what) {
   return String(s || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
@@ -169,6 +206,7 @@ function cmdQuery(argv) {
 
 function cmdInfo(argv) {
   if (!argv[0]) throw new Error('Which index?\n' + USAGE);
+  if (!/\.xdb$/i.test(argv[0]) && isAcc(argv[0])) return accInfo(argv[0]);
   var db = openIndex(indexPath(argv[0], false));
   try {
     console.log(fmt(db.count) + ' records; made ' + db.meta.created + ', keeping N >= ' +
@@ -220,12 +258,196 @@ function cmdServe(argv) {
   });
 }
 
+// --speeds, --ratings, --plies, --workers into `o`; returns the other arguments.
+function filterArgs(argv, o) {
+  var rest = [];
+  for (var i = 0; i < argv.length; i++) {
+    var a = argv[i];
+    if (a === '--speeds') o.speeds = list(argv[++i]);
+    else if (a === '--ratings') o.ratings = list(argv[++i]).map(Number);
+    else if (a === '--plies') o.plies = num(argv[++i], '--plies');
+    else if (a === '--workers') o.workers = num(argv[++i], '--workers');
+    else rest.push(a);
+  }
+  (o.speeds || []).forEach(function (s) {
+    if (SPEEDS.indexOf(s) < 0) throw new Error('Unknown speed ' + s + ' (' + SPEEDS.join(', ') + ')');
+  });
+  (o.ratings || []).forEach(function (r) {
+    if (RATING_GROUPS.indexOf(r) < 0) throw new Error('Rating groups are ' + RATING_GROUPS.join(', '));
+  });
+  return rest;
+}
+
+function newAcc(o) {
+  return { filter: { speeds: o.speeds || DEFAULTS.speeds, ratings: o.ratings || DEFAULTS.ratings },
+    plies: o.plies || DEFAULTS.plies };
+}
+
+function stderr(s) { console.error(s); }
+
+function accInfo(name) {
+  var acc = openAcc(accPath(name), { readOnly: true });
+  var sum = summary(acc), t = acc.totals(), st = acc.state;
+  console.log('Accumulator ' + acc.dir + ' (' + st.filter.speeds.join(', ') + '; ratings ' +
+    st.filter.ratings.join(', ') + '; ' + st.plies + ' plies)');
+  var months = sum.dumps.map(function (d) { var m = /(\d{4}-\d{2})/.exec(d); return m ? m[1] : d; }).sort();
+  console.log('Dumps:    ' + months.length + (months.length ? ' (' + months.join(' ') + ')' : ''));
+  console.log('Games:    ' + fmt(sum.games.read) + ' read, ' + fmt(sum.games.kept) + ' kept');
+  console.log('Prunes:   ' + (sum.prunes.length ? 'at ' + sum.prunes.join(', ') + '; a position is missing at most ' +
+    sum.maxUndercount + (sum.maxUndercount === 1 ? ' game' : ' games') + ', and ' + fmt(sum.droppedGames) + ' position visits were dropped in all' : 'none'));
+  if (st.pending) {
+    console.log('Unfinished: ' + (st.pending.type === 'dump' ? 'adding ' + st.pending.source :
+      'pruning at ' + st.pending.minGames) + ' (run it again to finish)');
+  }
+  console.log('Holds:    ' + size(t.bytes) + '\n');
+  console.log('Positions reached by at least N games, and an index that kept them:');
+  console.log('       N    positions   moves+ends        size');
+  THRESHOLDS.forEach(function (n, i) {
+    console.log(String(n).padStart(8) + fmt(t.positions[i]).padStart(13) + fmt(t.records[i]).padStart(13) +
+      size(t.records[i] * REC).padStart(12));
+  });
+  return 0;
+}
+
+async function cmdAdd(argv) {
+  var o = {}, input = null, into = null;
+  var rest = filterArgs(argv, o);
+  for (var i = 0; i < rest.length; i++) {
+    if (rest[i] === '--into') into = rest[++i];
+    else if (!input && !/^--/.test(rest[i])) input = rest[i];
+    else throw new Error('Unexpected argument: ' + rest[i] + '\n' + USAGE);
+  }
+  if (!input || !into) throw new Error('add <dump> --into <name>\n' + USAGE);
+  input = inPath(input, EXPLORER);
+  if (!fs.existsSync(input)) throw new Error('No such file: ' + input);
+  var acc = openAcc(accPath(into), { create: newAcc(o) });
+  try {
+    var op = await addDump(acc, input, importDump, { workers: o.workers, log: stderr });
+    console.log('Added ' + op.source + ': ' + fmt(op.report.games.kept) + ' games kept; ' +
+      size(op.bytesBefore) + ' -> ' + size(op.bytesAfter));
+  } finally {
+    acc.close();
+  }
+  return 0;
+}
+
+function cmdPrune(argv) {
+  var name = null, n = null;
+  for (var i = 0; i < argv.length; i++) {
+    if (argv[i] === '--min-games') n = num(argv[++i], '--min-games');
+    else if (!name && !/^--/.test(argv[i])) name = argv[i];
+    else throw new Error('Unexpected argument: ' + argv[i] + '\n' + USAGE);
+  }
+  if (!name || !(n >= 2)) throw new Error('prune <name> --min-games N (2 or more)\n' + USAGE);
+  var acc = openAcc(accPath(name));
+  try {
+    var op = prune(acc, n, stderr);
+    console.log('Pruned at ' + n + ': ' + size(op.bytesBefore) + ' -> ' + size(op.bytesAfter));
+  } finally {
+    acc.close();
+  }
+  return 0;
+}
+
+function cmdFinish(argv) {
+  var name = null, out = null, n = DEFAULTS.minGames;
+  for (var i = 0; i < argv.length; i++) {
+    if (argv[i] === '--out') out = argv[++i];
+    else if (argv[i] === '--min-games') n = num(argv[++i], '--min-games');
+    else if (!name && !/^--/.test(argv[i])) name = argv[i];
+    else throw new Error('Unexpected argument: ' + argv[i] + '\n' + USAGE);
+  }
+  if (!name) throw new Error('finish <name> [--out <name>]\n' + USAGE);
+  var file = indexPath(out || name, true);
+  var acc = openAcc(accPath(name));
+  try {
+    var meta = writeIndex(acc, file, Math.max(1, n), stderr);
+    console.log('Wrote ' + file + ' (' + size(fs.statSync(file).size) + ')\n');
+    printReport(meta);
+  } finally {
+    acc.close();
+  }
+  return 0;
+}
+
+function cmdMerge(argv) {
+  var inputs = [], out = null, n = DEFAULTS.minGames;
+  for (var i = 0; i < argv.length; i++) {
+    if (argv[i] === '--out') out = argv[++i];
+    else if (argv[i] === '--min-games') n = num(argv[++i], '--min-games');
+    else if (!/^--/.test(argv[i])) inputs.push(indexPath(argv[i], false));
+    else throw new Error('Unexpected argument: ' + argv[i] + '\n' + USAGE);
+  }
+  if (inputs.length < 2 || !out) throw new Error('merge <index> <index>... --out <name>\n' + USAGE);
+  var file = indexPath(out, true);
+  var meta = mergeIndexes(inputs, file, Math.max(1, n));
+  console.log('Wrote ' + file + ' (' + size(fs.statSync(file).size) + ')\n');
+  printReport(meta);
+  return 0;
+}
+
+async function cmdAll(argv) {
+  var o = {}, into = null, out = null, n = DEFAULTS.minGames;
+  var run = { diskBytes: 150e9, reserveBytes: 10e9, prefetch: true, keepDumps: false, snapshotEvery: 0,
+    dumps: path.join(EXPLORER, 'dumps') };
+  var rest = filterArgs(argv, o);
+  for (var i = 0; i < rest.length; i++) {
+    var a = rest[i];
+    if (a === '--into') into = rest[++i];
+    else if (a === '--out') out = rest[++i];
+    else if (a === '--min-games') n = num(rest[++i], '--min-games');
+    else if (a === '--disk-gb') run.diskBytes = Number(rest[++i]) * 1e9;
+    else if (a === '--reserve-gb') run.reserveBytes = Number(rest[++i]) * 1e9;
+    else if (a === '--from') run.from = rest[++i];
+    else if (a === '--to') run.to = rest[++i];
+    else if (a === '--oldest-first') run.oldestFirst = true;
+    else if (a === '--dumps') run.dumps = path.resolve(rest[++i]);
+    else if (a === '--keep-dumps') run.keepDumps = true;
+    else if (a === '--no-prefetch') run.prefetch = false;
+    else if (a === '--connections') run.connections = num(rest[++i], '--connections');
+    else if (a === '--snapshot-every') run.snapshotEvery = num(rest[++i], '--snapshot-every');
+    else throw new Error('Unexpected argument: ' + a + '\n' + USAGE);
+  }
+  if (!into) throw new Error('all --into <name>\n' + USAGE);
+  [run.from, run.to].forEach(function (m) {
+    if (m && !/^\d{4}-\d{2}$/.test(m)) throw new Error('Months are written 2016-02');
+  });
+  if (!(run.diskBytes > 0) || !(run.reserveBytes >= 0)) throw new Error('--disk-gb and --reserve-gb are numbers');
+  var c = newAcc(o);
+  run.acc = accPath(into);
+  run.out = indexPath(out || into, true);
+  run.minGames = Math.max(1, n);
+  run.filter = c.filter;
+  run.plies = c.plies;
+  run.workers = o.workers;
+  fs.mkdirSync(run.acc, { recursive: true });
+  var logFile = path.join(run.acc, 'log.txt');
+  run.log = function (s) {
+    var line = new Date().toISOString().replace('T', ' ').slice(0, 19) + '  ' + s;
+    console.error(line);
+    fs.appendFileSync(logFile, line + '\n');
+  };
+  try {
+    await runAll(run);
+  } catch (e) {
+    run.log('stopped: ' + (e && e.message || e));
+    throw e;
+  }
+  run.log('done');
+  return 0;
+}
+
 async function main(argv) {
   var cmd = argv[0];
   if (cmd === 'import') return cmdImport(argv.slice(1));
   if (cmd === 'query') return cmdQuery(argv.slice(1));
   if (cmd === 'info') return cmdInfo(argv.slice(1));
   if (cmd === 'serve') return cmdServe(argv.slice(1));
+  if (cmd === 'merge') return cmdMerge(argv.slice(1));
+  if (cmd === 'add') return cmdAdd(argv.slice(1));
+  if (cmd === 'prune') return cmdPrune(argv.slice(1));
+  if (cmd === 'finish') return cmdFinish(argv.slice(1));
+  if (cmd === 'all') return cmdAll(argv.slice(1));
   console.log(USAGE);
   return cmd === '--help' || cmd === '-h' ? 0 : 1;
 }

@@ -1,7 +1,9 @@
 /*
  * explorerdb worker thread. Two jobs:
  *   replay:    { games: [{ moves, result }] } -> spills records to this worker's shard files
- *   aggregate: { shard, files, minGames, out } -> counts one shard (store.mjs)
+ *   aggregate: { shard, files, minGames, out, merge? } -> counts one shard (store.mjs), and
+ *              with `merge: { base, out }` adds it to `base` (an accumulator's shard, or
+ *              null for none yet) into merge.out, then deletes `out` (acc.mjs)
  * and `finish` flushes what the replay still holds.
  *
  * The first `combinePlies` plies are counted in memory before they are spilled: every
@@ -12,7 +14,9 @@
 
 import { parentPort, workerData } from 'node:worker_threads';
 import { createReplayer, movetextSans, ENDED, CUT } from './games.mjs';
+import fs from 'node:fs';
 import { aggregateShard, createSpill } from './store.mjs';
+import { mergeAccShard } from './acc.mjs';
 
 var o = workerData;
 var replay = createReplayer();
@@ -67,8 +71,12 @@ parentPort.on('message', function (msg) {
       if (spill) { flushEarly(); spill.flush(); }
       parentPort.postMessage({ type: 'finished', records: spill ? spill.records() : 0 });
     } else if (msg.type === 'aggregate') {
-      var stats = aggregateShard(msg.files, msg.minGames, msg.out);
-      parentPort.postMessage({ type: 'aggregated', shard: msg.shard, stats: stats });
+      var stats = aggregateShard(msg.files, msg.minGames, msg.out), merged = null;
+      if (msg.merge) {
+        merged = mergeAccShard(msg.merge, [msg.out], 1);
+        fs.rmSync(msg.out, { force: true });
+      }
+      parentPort.postMessage({ type: 'aggregated', shard: msg.shard, stats: stats, merged: merged });
     }
   } catch (e) {
     parentPort.postMessage({ type: 'error', message: e && e.stack || String(e) });

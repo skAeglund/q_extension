@@ -8,9 +8,12 @@ repertoires/*.onnx
 repertoires/*.onnx.part
 # explorerdb's indexes (explorer/; rebuilt from Lichess's dumps) and their temporary files
 *.xdb
+*.xdb.part
 *.xdb.tmp/
+*.acc/
 # Lichess's monthly dumps, read by explorerdb import
 *.pgn.zst
+*.pgn.zst.part
 /*.pgn
 
 # Scratch copies of the site fetched while investigating (see CLAUDE.md)

@@ -660,6 +660,62 @@ What it needs:
 Positions are keyed by chess.js's 64-bit Zobrist hash, so an index is only readable with the
 same chess.js (1.4.0, `src/vendor/`). The index says which hash it was made with.
 
+**The whole archive.** `all` downloads and imports every month Lichess has (165 months and
+8.1 billion games as of 2026-08, about 2 TB compressed), with nothing to watch:
+
+```bash
+node tools/explorerdb.mjs all --into lichess --disk-gb 160
+```
+
+For each month, newest first: download (a break resumes where it stopped; the file is
+checked against Lichess's `sha256sums.txt`), add it, delete the dump. When there's room, the
+next month downloads while one imports. At the end it writes `explorer/lichess.xdb` (N ≥ 10,
+`--min-games`), which `serve` serves like any other index. Progress also goes to
+`explorer/lichess.acc/log.txt`.
+
+- **Stopping is safe at any point**, a crash, a reboot or Ctrl+C included. Run the same
+  command again and it carries on. A month cut off mid-import is imported again, into the
+  parts of the store that don't have it yet.
+- **Why an accumulator, and not an index per month.** Each month's index would first drop
+  the positions it has too few games for, and a position with 15 games in the whole archive
+  has one or two in any single month. So `all` adds every month to one store,
+  `explorer/lichess.acc/`, **with every position down to single games**. Counts add up
+  across months before anything is dropped.
+- **Pruning, only when the disk says so.** The whole archive at N ≥ 1 would be about 2 TB
+  (650 bytes per kept game, measured on 2013), so it can't all be kept. When the next month
+  wouldn't fit in `--disk-gb` (the store, dumps and temporary files together), the store is
+  pruned at the lowest threshold that makes room. Usually that is 2, dropping positions that
+  have exactly one game so far; N ≥ 2 is under a tenth of the size. A prune at t costs a
+  position at most t − 1 games, and only if it hadn't reached t yet. It never goes above the
+  final index's threshold. `info lichess` lists the prunes, that bound, and how many position
+  visits they dropped. A recent month adds about 25 GB at N ≥ 1, so at 160 GB expect a prune
+  every two or three recent months, and none among the small early ones.
+- **Disk.** `--disk-gb` (default 150) is what the run may use, and it also stops short of
+  leaving under `--reserve-gb` (10) free on the disk. `--no-prefetch` gives the store the
+  room the next dump would take.
+- **Time.** A recent month imports in about 40 minutes (43 k games/s on an i7-1065G7), so
+  about 2 days for the whole archive. The downloads run alongside it.
+- **Download speed.** Lichess sent about 8 MB/s over one connection on cable, so a 30 GB
+  month takes about an hour, about as long as its import. Over a slower line (3.5 MB/s) the
+  download was the slow part, at about a week for the archive. `--connections N` splits
+  each download across N connections, but two measured no faster than one, either way.
+- **Keep the machine awake.** Set Windows to never sleep while plugged in (Settings → System
+  → Power), or run `powercfg /change standby-timeout-ac 0` in a terminal. Run it in its own
+  terminal window. For restarts after a reboot, a Task Scheduler task that runs the same
+  command at startup is safe to use, since the store is locked while in use and a rerun
+  resumes.
+- `--from 2020-01 --to 2026-08` limits the months. `--snapshot-every 12` also writes the
+  index every 12 months, so you can use it early: stop `serve` before the next snapshot
+  replaces the file. The filter (`--speeds`, `--ratings`, `--plies`) is set when the store
+  is made.
+- **Afterwards** the store can be kept, to add next month's dump with
+  `add lichess_db_standard_rated_2026-09.pgn.zst --into lichess` and write a new index with
+  `finish lichess`. It can also be deleted to free the disk: the index doesn't need it.
+
+By hand: `add <dump> --into <name>`, `prune <name> --min-games N`, `finish <name> [--out
+<name>] [--min-games 10]`, `info <name>`. `merge a b c --out abc` joins finished indexes, but
+each has already dropped its own rare positions: the store is the way to add months up.
+
 ## How it works
 
 Qchess is a vanilla-JS app with no build step, and it keeps its analysis state in
@@ -783,6 +839,8 @@ tools/explorerdb.mjs builds a local opening explorer from a Lichess monthly dump
 tools/repgen/       their plan, PGN reader/writers, file cache, root search adapter,
                     ChessDB exploration (explore.mjs) and Maia 3 (maia.mjs)
 tools/explorerdb/   the dump reader and fast replay (games.mjs), shard counting and the
-                    index file (store.mjs), the importer and its worker threads
+                    index file (store.mjs), the importer and its worker threads, the
+                    streaming merge (merge.mjs), the many-month store (acc.mjs) and
+                    the whole-archive driver (all.mjs)
 tools/package.json  onnxruntime-node, for repgen --maia only
 ```

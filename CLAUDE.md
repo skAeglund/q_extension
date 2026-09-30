@@ -27,7 +27,8 @@ node test/harness.js          # 533 checks: main-world.js on a stubbed DOM, plus
                               # and test/pgnclean.js (PGN tree, cleaning, transpositions)
                               # and test/cdbexplore.js (target picking, ChessDB search)
                               # and test/explorerdb.js (dump filter, fast replay, import,
-                              # the server and providers.js's local path)
+                              # merge, the accumulator and the all driver, the server
+                              # and providers.js's local path)
 node --check src/main-world.js
 python icons/make_icons.py    # regenerate PNGs (stdlib only, no Pillow)
 ```
@@ -282,6 +283,16 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
   index keeps games the ply limit cut off (`CUT`) apart from ended ones (`ENDED`). The answer's
   totals leave the cut games out, because the search reads moves as shares of the total and
   those games' next moves are unknown. Index format 2; format 1 files must be re-imported.
+- `explorerdb.mjs all` (`explorerdb/all.mjs`) runs the whole archive into an accumulator
+  (`explorerdb/acc.mjs`, `explorer/<name>.acc/`): every month at N >= 1, added shard by
+  shard in the import's own workers (`importDump`'s `intoShard`), so a month's full count is
+  never on disk whole. Pruning happens only when the disk budget forces it, at the lowest
+  threshold that fits, never above the final index's. Don't replace this with merging
+  per-month indexes: each would drop its rare positions first, which is the loss the user
+  asked to avoid. Crash safety rests on shard generations (`aNNN.gK.bin`, written via
+  `.part` and renamed) and `state.pending`; an op is re-run over the shards still at K.
+  The merge (`merge.mjs`) is a streaming k-way merge of sorted 22-byte records, about
+  5 M records/s per thread.
 
 ## Status
 
@@ -805,6 +816,41 @@ valued move inside it, ChessDB's best is played (`why: 'max-loss'`, PGN "the pra
 lose too much"). Like `weights`, it is saved at creation, and a run without it keeps 0 with a
 note. `--check` passes the fresh best to `choose()` and says when a pick is over the limit.
 Harness only.
+
+**Whole archive (`explorerdb all`, 2026-09-30).** Requested: all of Lichess's standard rated
+dumps (165 months, 8.13 B games, about 2 TB compressed; the newest, 2026-08, is 30.1 GB for
+92 M games) into one index within 150–175 GB, keeping single games until after the merge.
+Keeping every one exactly would take about 2 TB: 2013-01..03 at N >= 1 was 79.5 MB for
+121,817 kept games (650 B a game, 28 positions a game), and N >= 2 was 8.5% of that. So the
+accumulator prunes when the disk says so, as described above. Checked: the harness (merging
+and accumulating equal a single import byte for byte, a crash mid-merge, prunes and their
+bound, the driver's resume and disk limit, download resume and sha256), and one live `all`
+over 2013-01..03 on the user's machine (download, check, prefetch, add, delete, index), in
+45 s. Not yet run on a recent month, so the real growth per month (estimated 25 GB), the
+spill, and how often it prunes are unmeasured; the driver learns its disk estimate from
+the last three months.
+
+**Downloads (2026-09-30).** The first real `all` run showed the download as the limit:
+3.0–3.5 MB/s from database.lichess.org, about 2.4 hours for a 30 GB month, while the import
+took 60 minutes for 2026-08 (92 M games read, 28.8 M kept, accumulator 15.1 GB).
+- **Torrents were tried and dropped.** Every dump has a single-file `.torrent` with its URL
+  as a webseed, but aria2c found no seeders: 2026-05 came at 3 MiB/s from the webseed alone.
+  2026-06's torrent also predates a re-upload of its dump (28,225,942,769 vs 28,241,946,492
+  bytes), so it can't be used at all.
+- **Connections.** `download()` can split the remaining range across `--connections` Range
+  requests into one `.part`, with progress in `.part.json`. A `.part` with no `.json` is an
+  old single-connection download, done up to its length. The default went to 2 at the
+  user's request, then back to 1 the same evening. On cable (11 MB/s to OVH), one
+  connection to Lichess got 7.4–8.4 MB/s and two at once 3.5 + 3.6, so there's no gain, and
+  a download now takes about as long as an import.
+- **The user's line is the limit.** An earlier trial suggested Lichess capped each
+  connection: aria2c's webseed got 3.0 MiB/s beside the HTTP run's 2.8. Measured again
+  later: 2016-02 over two connections got 2.4 MB/s in all, while the run's own download
+  fell to about 0.5 MB/s. With that download running (about 2.7 MB/s), public test files
+  gave 2.0 MB/s (OVH) and 1.2 MB/s (Tele2). So the line itself carries about 4–5 MB/s, and
+  a second connection only helps when it has room to spare. The saved progress is written
+  from the data loop, not a `setInterval`: the harness replaces the global `setInterval`
+  (`harness.js`) for main-world.js.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

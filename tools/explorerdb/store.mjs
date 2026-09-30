@@ -140,14 +140,33 @@ export function aggregateShard(files, minGames, out) {
   return stats;
 }
 
-export function writeHeader(fd, meta) {
+/*
+ * Writes the header at the start of `fd`. With `pad`, the JSON is padded with spaces to
+ * that many bytes (JSON.parse doesn't mind), so a header whose counts are only known once
+ * the records are written can be written again over the first one (rewriteHeader).
+ */
+export function writeHeader(fd, meta, pad, at) {
   var json = Buffer.from(JSON.stringify(meta), 'utf8');
+  if (pad) {
+    if (json.length > pad) throw new Error('Index header over ' + pad + ' bytes');
+    json = Buffer.concat([json, Buffer.alloc(pad - json.length, ' ')]);
+  }
   var head = Buffer.alloc(12);
   head.write(MAGIC, 0, 'latin1');
   head.writeUInt32LE(json.length, 8);
-  fs.writeSync(fd, head);
-  fs.writeSync(fd, json);
+  // Written where the file stands (a new file's start), unless `at` says where: a write
+  // at a given position isn't mixed with the ones that follow at the file's position.
+  fs.writeSync(fd, head, 0, 12, at == null ? null : at);
+  fs.writeSync(fd, json, 0, json.length, at == null ? null : at + 12);
   return 12 + json.length;
+}
+
+export var HEADER_PAD = 1 << 18;
+
+export function rewriteHeader(fd, meta) {
+  var head = Buffer.alloc(12);
+  fs.readSync(fd, head, 0, 12, 0);
+  return writeHeader(fd, meta, head.readUInt32LE(8), 0);
 }
 
 export function openIndex(file) {
@@ -181,6 +200,7 @@ export function openIndex(file) {
   return {
     meta: meta,
     count: n,
+    start: start,                             // byte offset of the first record
     // [{code, white, draws, black}] of a position's records, or [] if it isn't kept.
     records: function (key) {
       var a = 0, b = n;                       // first record with hash >= key
