@@ -77,7 +77,9 @@
     // choices. prepBar is UI only: which bars the Score column shows.
     prepEnabled: true,
     prepBar: false,
-    prepPriorGames: 50
+    prepPriorGames: 50,
+    // Opponent nodes: a risk-averse mean (search.js riskMean); 0 is the plain mean
+    riskAversion: 0.05
   };
 
   /* ---------------------------------------------------------------------
@@ -1040,7 +1042,8 @@
         maiaOnlyBelow: num(settings.maiaOnlyBelow, 10),
         maiaWeight: num(settings.maiaWeight, 20),
         prep: settings.prepEnabled !== false,
-        prepPriorGames: num(settings.prepPriorGames, 50)
+        prepPriorGames: num(settings.prepPriorGames, 50),
+        riskAversion: num(settings.riskAversion, 0.05)
       }
     }) }));
   }
@@ -1115,9 +1118,13 @@
     return lines.join('\n');
   }
 
-  // "<label> · engine 55% (+3)"
+  // "<label> (mean 54%) · engine 55% (+3)". The mean is the value with plain means at the
+  // opponent nodes, shown when risk aversion moves the value.
   function peValueLine(label, r) {
     var diff = r.engine != null ? Math.round(r.value - r.engine) : null;
+    if (r.mean != null && Math.round(r.mean) !== Math.round(r.value)) {
+      label += ' (mean ' + Math.round(r.mean) + '%)';
+    }
     return label + (r.engine != null
       ? ' · engine ' + Math.round(r.engine) + '% (' + (diff >= 0 ? '+' : '') + diff + ')' : '');
   }

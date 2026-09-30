@@ -811,7 +811,9 @@ module.exports = async function run(check) {
   await check('the column\'s rounds give each row its final value', () => {
     const r = rr.results.get('Nf3');
     assert.strictEqual(r.state, 'value');
-    assert.strictEqual(Number(r.value.toFixed(1)), 65.3);
+    // The column's own options: risk-averse, with the plain mean beside it.
+    assert.strictEqual(Number(r.mean.toFixed(1)), 65.3);
+    assert.ok(r.value < r.mean, r.value);
     assert.strictEqual(r.final, true);
     assert.strictEqual(rr.results.get('c4').state, 'few');
   });
@@ -821,6 +823,9 @@ module.exports = async function run(check) {
     const r = rp.results.get('Nf3');
     assert.ok(r.prep && Math.abs(r.prep.w + r.prep.d + r.prep.b - 1) < 1e-9, JSON.stringify(r.prep));
     assert.ok(r.prior > 0 && r.prior < 1, r.prior);
+    // repgen keeps the plain mean (riskAversion 0), so runs check the way they were made.
+    assert.strictEqual(G.SEARCH_DEFAULTS.riskAversion, 0);
+    assert.strictEqual(r.value, r.mean);
   });
   await check('  ...with the row\'s share as request priority and the budget passed on', () => {
     assert.ok(ctxs.some(c => c.priority === 10 + 0.6 && c.exempt === true), JSON.stringify(ctxs));

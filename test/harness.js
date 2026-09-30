@@ -783,6 +783,7 @@ const optText = o => o.children.map(c => c.textContent).join(' | ');
     assert.deepStrictEqual(peReqs[0].filter.ratings, [1600, 1800, 2000, 2200, 2500]);
     assert.strictEqual(peReqs[0].opts.replyThreshold, 0.03);
     assert.strictEqual(peReqs[0].opts.minGames, 50);
+    assert.strictEqual(peReqs[0].opts.riskAversion, 0.05);
   });
   await check('requested rows show a faint dot, the rest wait for a click', () => {
     assert.strictEqual(cellOf('e4').textContent, '·');
@@ -826,6 +827,16 @@ const optText = o => o.children.map(c => c.textContent).join(' | ');
     assert.ok(t.includes('Practical 65%') && t.includes('engine 55%'), t);
     assert.ok(t.includes('c5  38% → 67%'), t);
     assert.ok(t.includes('Depth 1'), t);
+    assert.ok(!t.includes('mean'), 'no mean when it rounds the same: ' + t);
+  });
+  await check('  ...with the plain mean beside the value when risk aversion moves it', () => {
+    peUpdate('e4', { state: 'value', value: 51.2, mean: 54, engine: 48, depth: 1, positions: 1,
+      games: 9000, replies: [] });
+    const t = cellOf('e4').title;
+    assert.ok(t.startsWith('Practical 51% (mean 54%) · engine 48% (+3)'), t);
+    assert.strictEqual(cellOf('e4').textContent, '51%');
+    peUpdate('e4', { state: 'value', value: 65.3, engine: 55, depth: 1, positions: 1, games: 9000,
+      tailShare: 0.02, unexplained: 0.01, replies: [{ san: 'c5', share: 0.38, v: 67 }] });
   });
   await check('too few games shows a dash with the reason', () => {
     assert.strictEqual(cellOf('Nf3').textContent, '–');

@@ -85,7 +85,9 @@ export var REPGEN_DEFAULTS = {
 // --reply-threshold 3 --skip-explorer-below 10 --compare-reach-min 10 turn them on.
 // Maia is off for the same reason, and because it needs onnxruntime-node and its model
 // (repgen/maia.mjs): --maia turns it on for a run, with the column's blend. maiaElo 0 means
-// "from the run's rating filter", as the column's does.
+// "from the run's rating filter", as the column's does. riskAversion (the column's
+// 0.05 since v1.18.0) is 0 here, plain means, so older runs check the way they were made;
+// --risk-aversion 0.05 turns it on.
 export var SEARCH_DEFAULTS = {
   replyThreshold: 0.02,
   minGames: 50,
@@ -99,7 +101,8 @@ export var SEARCH_DEFAULTS = {
   maiaUntil: 100,
   maiaOnlyBelow: 10,
   maiaWeight: 20,
-  prepPriorGames: 50
+  prepPriorGames: 50,
+  riskAversion: 0
 };
 
 // 0 means "the top reply only".

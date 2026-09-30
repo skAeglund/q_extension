@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 508 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 514 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -756,6 +756,22 @@ than one valued row), and re-chooses the others with fresh ChessDB evals. Checke
 harness, and a CLI run against a synthetic local explorer index (6,000 random games) and live
 ChessDB, 2 searches and a `--check --dry-run`. At depth 5 on that thin index the prepared
 score rested 86–100% on the Practical value, as designed. Not yet run on real Lichess data.
+
+**Risk-averse Practical (v1.18.0).** Asked 2026-09-30, with a row at 54% (engine 48%):
+82% of games played the sound reply (48% for me) and 14% blundered (82%), and the user
+would rather have a position whose common replies all give 50–55%. Opponent nodes now take
+`riskMean` (`search.js`): the certainty equivalent under exponential utility,
+`-(1/λ) ln Σ w exp(-λ v) / Σ w`, λ = `riskAversion` per win% point, 0.05 by default (the
+popup's Risk aversion field). At 0.05 that row is worth 51.2 and a 50/55 split 52.3; at 0
+it is the plain mean. It is applied at every opponent node, so it also picks my moves
+(a blunder-propped line can lose the comparison) and compounds with depth, which works
+against the upward drift but keeps "compare at one depth" as it is. The Maia share and
+the prepared split stay linear. Every value carries `vm`, the plain mean along the same
+choices, which reaches the page as `mean` and the tooltip as `(mean N%)`. Rejected: engine
++ γ·(mean − engine), which shrinks the trap row and the sound one about equally. repgen
+keeps 0 (`SEARCH_DEFAULTS`), so older runs check the way they were made;
+`--risk-aversion 0.05` turns it on. Settings changes don't clear values already shown this
+page load, as for the other search settings. Harness only; not yet seen live.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

@@ -120,6 +120,12 @@
         <input type="text" id="num-peRatings" data-kind="text"></label>
     </div>
 
+    <label class="field"><span class="field-label">Risk aversion</span>
+      <input type="number" id="num-riskAversion" min="0" max="1" step="0.01">
+      <small class="note">How much the opponent's likely good replies outweigh their
+      blunders. 0 takes the plain mean: 82% of games at 48% and the rest at 82% is worth 54%.
+      At 0.05 it is worth 51%, below replies that all give 50–55%.</small></label>
+
     <details>
       <summary>Advanced</summary>
       <div class="grid2">

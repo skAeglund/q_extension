@@ -51,7 +51,9 @@
     // Prepared score
     prepEnabled: true,
     prepBar: false,
-    prepPriorGames: 50
+    prepPriorGames: 50,
+    // Opponent nodes: a risk-averse mean (search.js riskMean); 0 is the plain mean
+    riskAversion: 0.05
   };
 
   var current = DEFAULTS;

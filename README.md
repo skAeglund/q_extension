@@ -133,6 +133,17 @@ often Lichess players actually play it, and each reply is valued by its ChessDB 
 is the engine's worst-case view; Prac is what you score in practice against that player
 pool.
 
+By default Prac is slightly **risk-averse**. The opponent's replies aren't simply
+averaged: the ones that are good for them count for a little more than their share, and
+their blunders for a little less. Take a position where 82% of players find the one good
+move, which leaves you at 48%, and the rest blunder into 82% for you. Its plain average
+is 54%, and it shows 51%. A position whose common replies all leave you at 50–55% shows
+52%, so it ranks higher. Blunders are counted at the rate the whole rating filter makes
+them, and they are what fades against stronger or forewarned opponents. The setting is
+**Risk aversion** in the popup: 0 gives the plain average, and higher values count the
+blunders for less. When it changes a value, the tooltip shows the plain average beside
+it: `Practical 51% (mean 54%)`.
+
 - It is computed only on your moves. Rows are picked two ways, up to 8 in all: the moves
   the Eval column rates within 5 win% points of its best (up to 3), so a strong but rarely
   played move is never skipped, and the rows with at least 2% of the games. Any other row
@@ -233,7 +244,7 @@ up again every 2 minutes, only while a search needs it, for an hour at most.
 
 Settings are in the popup's **Practical eval** section: on/off, token and Test, the local
 explorer's address and Test, whether to
-follow the panel's filter (and the fallback speeds and ratings), and under Advanced the row
+follow the panel's filter (and the fallback speeds and ratings), risk aversion, and under Advanced the row
 and reply thresholds, the minimum games, the request rate, how rare a line can be and still
 be followed, the maximum depth, how many of your own moves are compared and how close they
 must be, the requests per position, and Maia's game limits and weight. Maia itself, and
