@@ -18,14 +18,16 @@
  *     pick: a move ChessDB now rates close enough to be a candidate, my move no longer
  *     being one, positions the last search found without an eval, or ChessDB's best
  *     changing where its best was played. With Maia now on for the run, a search made
- *     without it where a move had fewer games than Maia starts at. With `all`, every
+ *     without it where a move had fewer games than Maia starts at. With the prepared
+ *     score weighed in the choice, a search from before rows saved it. With `all`, every
  *     searched position.
  *   - Back in the queue when it ended for want of an eval that ChessDB now has, or
  *     because the last try failed.
  */
 
 import { sideToMove, moveKey, scoreToRootWin } from '../../src/pe/search.js';
-import { pickCandidates, choose, reachable, REPGEN_DEFAULTS, SEARCH_DEFAULTS } from './generator.mjs';
+import { pickCandidates, choose, blendScore, practicalOnly, reachable, REPGEN_DEFAULTS,
+  SEARCH_DEFAULTS } from './generator.mjs';
 import { engineLoss, markFor, pawns } from './pgn.mjs';
 
 function win(x) { return x == null ? '?' : x.toFixed(1); }
@@ -81,12 +83,17 @@ export function assess(n, ex, cdb, cfg, sopts, all) {
 
   var c = pickCandidates(ex, cdb, n.fen, cfg, sopts);
   var best = c.best;
+  var w = cfg.weights;
   var rows = (n.rows || []).map(function (r) {
     var e = engineOf(cdb, n.fen, r.san);
-    return Object.assign({}, r, { engine: e, cp: cpOf(cdb, r.san) });
+    var b = r.value != null ? blendScore(w, e, r.value, r.prep) : null;
+    return Object.assign({}, r, { engine: e, cp: cpOf(cdb, r.san), blend: b != null ? b : undefined });
   });
+  // The blend my move was chosen by moves with ChessDB's eval of it.
+  var own = rows.find(function (r) { return moveKey(r.san) === moveKey(n.move); });
   out.engine = { engine: engineOf(cdb, n.fen, n.move), bestMove: best.san,
-    bestEngine: best.win, rows: n.rows ? rows : undefined };
+    bestEngine: best.win, rows: n.rows ? rows : undefined,
+    blend: n.blend != null && own && own.blend != null ? own.blend : n.blend };
   out.markFrom = markFor(engineLoss(n), cfg);
   out.markTo = markFor(engineLoss(Object.assign({}, n, out.engine)), cfg);
 
@@ -101,14 +108,29 @@ export function assess(n, ex, cdb, cfg, sopts, all) {
     }
     // The last search's own rows, picked by today's choose() on today's ChessDB evals:
     // runs from before moves with too few games competed on ChessDB's eval passed those
-    // over, and a near-tie can go the other way now.
-    var cps = {};
-    rows.forEach(function (r) { if (r.cp != null) cps[r.san] = r.cp; });
-    var again = choose((n.rows || []).map(function (r) {
+    // over, a near-tie can go the other way now, and so can a blend with ChessDB in it.
+    // Rows saved before the prepared score was can't be blended: they are searched again,
+    // where the choice has more than one row to go on.
+    var blending = !practicalOnly(w);
+    var cps = {}, wins = {}, preps = {};
+    rows.forEach(function (r) {
+      if (r.cp != null) cps[r.san] = r.cp;
+      if (r.engine != null) wins[r.san] = r.engine;
+      if (r.prep != null) preps[r.san] = r.prep;
+    });
+    var valued = rows.filter(function (r) {
+      return (r.state === 'value' || r.state === 'few') && r.value != null;
+    });
+    var noPrep = w && w[2] > 0 && valued.length > 1 &&
+      valued.some(function (r) { return r.prep === undefined; });
+    if (noPrep) {
+      out.reasons.push('searched before prepared scores were saved, and the choice now weighs them');
+    }
+    var again = noPrep ? null : choose((n.rows || []).map(function (r) {
       return { san: r.san, res: { state: r.state, value: r.value, depth: r.depth,
         complete: r.complete } };
     }), (n.rows || []).reduce(function (m, r) { m[r.san] = r.share || 0; return m; }, {}),
-    { cps: cps, within: cfg.closeWithin, cp: cfg.closeCp });
+    { weights: w, wins: wins, preps: preps, cps: cps, within: cfg.closeWithin, cp: cfg.closeCp });
     if (again && moveKey(again.san) !== moveKey(n.move)) {
       if (again.res.state === 'few') {
         out.reasons.push(again.san + ' has too few games for a Practical value, but its engine ' +
@@ -117,9 +139,12 @@ export function assess(n, ex, cdb, cfg, sopts, all) {
         out.reasons.push(again.san + ' is within ' + win(again.over.res.value - again.res.value) +
           ' of ' + again.over.san + '\'s Practical value, and ChessDB rates it ' +
           pawns(cps[again.san]) + ' vs ' + pawns(cps[again.over.san]));
-      } else if (n.close) {
+      } else if (n.close && !blending) {
         out.reasons.push(n.move + ' won a near-tie on ChessDB\'s eval, which no longer decides it (' +
           pawns(cps[n.move]) + ' vs ' + again.san + ' ' + pawns(cps[again.san]) + ')');
+      } else if (blending) {
+        out.reasons.push(again.san + ' now leads the blend: ' + win(again.score) + ' vs ' + n.move +
+          ' ' + win(own && own.blend));
       }
     }
     var missing = (n.rows || []).reduce(function (s, r) { return s + (r.analysing || 0); }, 0);
@@ -207,6 +232,7 @@ export function apply(state, found) {
       n.bestMove = r.engine.bestMove;
       n.bestEngine = r.engine.bestEngine;
       if (r.engine.rows) n.rows = r.engine.rows;
+      if (r.engine.blend != null) n.blend = r.engine.blend;
       c.engine++;
       if (r.markFrom !== r.markTo) c.marks++;
     }

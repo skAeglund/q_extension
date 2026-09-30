@@ -75,6 +75,13 @@ function maiaPart(x) {
   var p = Math.round((x || 0) * 100);
   return p >= 1 ? ', ' + p + '% Maia' : '';
 }
+// A blended pick's prepared score, and how much of it rests on the Practical value when
+// that is a good part of it (thin games at the leaves).
+function prepPart(n) {
+  if (n.prep == null) return '';
+  var p = Math.round((n.prior || 0) * 100);
+  return ', prep ' + win(n.prep) + (p >= 25 ? ' (' + p + '% Prac)' : '');
+}
 
 export function toPgn(state, o) {
   o = o || {};
@@ -135,10 +142,15 @@ export function toPgn(state, o) {
     } else if (n.pickedBy === 'practical') {
       // A move with too few games won on ChessDB's eval, a floor for its Practical value.
       var mine = n.few && (n.rows || []).find(function (r) { return moveKey(r.san) === moveKey(n.move); });
-      var s = n.few
+      // Chosen by the blend of ChessDB, Practical and prepared (not by Practical alone):
+      // the parts, the blend, and the other rows by their blend with their Practical value.
+      var blended = n.blend != null;
+      var s = (n.few
         ? 'Prac at least ' + win(n.value) + ', few games' +
-          (mine && mine.games != null ? ' (' + mine.games + ')' : '') + ', engine ' + win(n.engine)
-        : 'Prac ' + win(n.value) + ' d' + n.depth + maiaPart(n.maia) + ', engine ' + win(n.engine);
+          (mine && mine.games != null ? ' (' + mine.games + ')' : '')
+        : 'Prac ' + win(n.value) + ' d' + n.depth + maiaPart(n.maia)) +
+        (blended ? prepPart(n) : '') + ', engine ' + win(n.engine) +
+        (blended ? ', blend ' + win(n.blend) : '');
       // Marked: say what it was measured against.
       if (e.mark) s += ' (best ' + e.best.san + ' ' + win(e.best.win) + ')';
       // A near-tie ChessDB decided: the move with the top Practical value it beat.
@@ -146,11 +158,16 @@ export function toPgn(state, o) {
         s += ' (over ' + n.close.san + ' ' + win(n.close.value) + ': ChessDB ' +
           pawns(n.close.mine) + ' vs ' + pawns(n.close.cp) + ')';
       }
+      function rank(r) { return blended && r.blend != null ? r.blend : r.value; }
       var others = (n.rows || []).filter(function (r) {
         return r.san !== n.move && !(n.close && r.san === n.close.san) &&
           r.state === 'value' && r.value != null;
-      }).sort(function (a, b) { return b.value - a.value; }).slice(0, 3)
-        .map(function (r) { return r.san + ' ' + win(r.value) + (r.depth !== n.depth ? ' d' + r.depth : ''); });
+      }).sort(function (a, b) { return rank(b) - rank(a); }).slice(0, 3)
+        .map(function (r) {
+          var dp = r.depth !== n.depth ? ' d' + r.depth : '';
+          return r.san + ' ' + win(rank(r)) +
+            (blended && r.blend != null ? ' (Prac ' + win(r.value) + dp + ')' : dp);
+        });
       if (others.length) s += '; ' + others.join(', ');
       bits.push(s);
     } else {

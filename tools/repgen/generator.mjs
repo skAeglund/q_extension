@@ -34,7 +34,7 @@
  * whatever only the old move led to.
  */
 
-import { fenKey, sideToMove, moveKey, scoreToRootWin } from '../../src/pe/search.js';
+import { fenKey, sideToMove, moveKey, scoreToRootWin, expectedScore } from '../../src/pe/search.js';
 
 export var REPGEN_DEFAULTS = {
   coverage: 0.9,          // first opponent decision: follow replies covering this share
@@ -68,9 +68,13 @@ export var REPGEN_DEFAULTS = {
   // its best doesn't: at the depth ChessDB backs its scores up from, 0.00 is a draw with
   // best play, and giving the opponent even a slight edge concedes it.
   markWorseThan: 10,
-  // A near-tie on Practical value goes to ChessDB (see choose()): a move within closeWithin
-  // win% points of the top one wins when ChessDB rates it at least closeCp centipawns
-  // higher. 0 turns it off.
+  // How my move is chosen (see choose()): a weighted mean of ChessDB's eval of the move,
+  // its Practical value and its prepared score, all in win% for me. A run keeps the
+  // weights it was made with; runs from before the blend have [0, 1, 0], Practical alone.
+  weights: [0.2, 0.4, 0.4],
+  // A near-tie goes to ChessDB (see choose()): a move within closeWithin win% points of
+  // the top one wins when ChessDB rates it at least closeCp centipawns higher. Only while
+  // ChessDB has no weight of its own in the choice. 0 turns it off.
   closeWithin: 1,
   closeCp: 5
 };
@@ -94,7 +98,8 @@ export var SEARCH_DEFAULTS = {
   maiaElo: 0,
   maiaUntil: 100,
   maiaOnlyBelow: 10,
-  maiaWeight: 20
+  maiaWeight: 20,
+  prepPriorGames: 50
 };
 
 // 0 means "the top reply only".
@@ -182,44 +187,80 @@ export function pickCandidates(ex, cdb, fen, cfg, sopts) {
     cps: rows.reduce(function (m, e) { if (e.cp != null) m[e.san] = e.cp; return m; }, {}) };
 }
 
+// Practical alone: no weight on ChessDB or the prepared score. Also what a missing
+// `weights` means (choose() called without them).
+export function practicalOnly(w) {
+  return !w || !(w[0] > 0 || w[2] > 0);
+}
+
 /*
- * The column's green, as a choice: the highest value among rows at the table's depth.
+ * The blend a move is chosen by: weights [chessdb, practical, prepared] over its ChessDB
+ * eval, Practical value and prepared score (win% for me). A part that is missing spreads
+ * its weight over the others. The prepared score needs no weighting by games of its own:
+ * it is already pulled towards the Practical value when its leaves have few (prior), so
+ * with thin data the blend leans on Practical by itself. Null for Practical alone.
+ */
+export function blendScore(w, engine, value, prep) {
+  if (practicalOnly(w)) return null;
+  var sw = 0, s = 0;
+  [[w[0], engine], [w[1], value], [w[2], prep]].forEach(function (p) {
+    if (p[0] > 0 && p[1] != null && isFinite(p[1])) { sw += p[0]; s += p[0] * p[1]; }
+  });
+  return sw > 0 ? s / sw : value;
+}
+
+/*
+ * The column's green, as a choice: the best row among rows at the table's depth.
  * A row that can't go deeper (`complete`) is exact at every depth and always competes.
  * So does a row with too few games for a Practical value (`few`, under minGames without
  * Maia), on ChessDB's eval: the opponent's mean over their replies is never below their
  * best one, so its Practical value would be at least about that. It wins only when even
  * that floor beats the others, which also drift upwards with depth. Without this, a move
  * ChessDB rates well above the rest lost to the one move with enough games.
- * Equal values go to the more played move.
+ * Equal scores go to the more played move.
  *
- * close = { cps: { san: centipawns for me }, within, cp }: a near-tie goes to ChessDB.
- * Going down the rows in Practical order, a row within `within` points of the top value
- * takes over when ChessDB rates it at least `cp` centipawns above the current pick. A
- * Practical lead under a point is mostly noise, so ChessDB decides there; a clear lead
- * still wins however ChessDB rates the move, which is the point of Practical (a move can
- * look bad only for an engine reply people don't find). A row without a ChessDB eval
- * never takes over and is never taken over. The pick then carries `over`: the top row it
- * beat.
+ * o = { weights, wins: { san: ChessDB win% for me }, preps: { san: prepared score, win%
+ * for me }, cps: { san: centipawns for me }, within, cp }
+ *
+ * Best means the highest blendScore(). With `weights` Practical alone (or none), that is
+ * the Practical value. The depth rule stays whatever the weights: the prepared score
+ * follows the Practical choices of the same search, so it drifts with its depth too.
+ *
+ * A near-tie goes to ChessDB, while ChessDB has no weight in the blend. Going down the
+ * rows in order, a row within `within` points of the top one takes over when ChessDB
+ * rates it at least `cp` centipawns above the current pick. A Practical lead under a
+ * point is mostly noise, so ChessDB decides there; a clear lead still wins however
+ * ChessDB rates the move, which is the point of Practical (a move can look bad only for
+ * an engine reply people don't find). A row without a ChessDB eval never takes over and
+ * is never taken over. The pick then carries `over`: the top row it beat.
+ *
+ * Returns a copy of the picked row with `score` (what it was ranked by), or null.
  */
-export function choose(rows, shares, close) {
+export function choose(rows, shares, o) {
+  o = o || {};
+  var w = o.weights;
   var vals = rows.filter(function (r) {
     return r.res && (r.res.state === 'value' || r.res.state === 'few') && r.res.value != null;
   });
   function any(res) { return res.complete || res.state === 'few'; }
   var top = 0;
   vals.forEach(function (r) { if (!any(r.res) && r.res.depth > top) top = r.res.depth; });
-  var cmp = vals.filter(function (r) { return any(r.res) || r.res.depth === top; });
+  var cmp = vals.filter(function (r) { return any(r.res) || r.res.depth === top; })
+    .map(function (r) {
+      var b = blendScore(w, o.wins && o.wins[r.san], r.res.value, o.preps && o.preps[r.san]);
+      return Object.assign({}, r, { score: b == null ? r.res.value : b });
+    });
   cmp.sort(function (a, b) {
-    return (b.res.value - a.res.value) || ((shares[b.san] || 0) - (shares[a.san] || 0));
+    return (b.score - a.score) || ((shares[b.san] || 0) - (shares[a.san] || 0));
   });
   if (!cmp.length) return null;
   var first = cmp[0];
-  if (!close || !(close.within > 0) || !close.cps) return first;
-  var cps = close.cps;
-  var need = Math.max(1, close.cp || 0);
+  if (!(o.within > 0) || !o.cps || (w && w[0] > 0)) return first;
+  var cps = o.cps;
+  var need = Math.max(1, o.cp || 0);
   var pick = first;
   cmp.forEach(function (r) {
-    if (r === first || first.res.value - r.res.value > close.within) return;
+    if (r === first || first.score - r.score > o.within) return;
     var a = cps[pick.san], b = cps[r.san];
     if (a == null || b == null) return;
     if (b - a >= need) pick = r;
@@ -402,11 +443,21 @@ export function createGenerator(o) {
         if (errs.length === rows.length) {
           throw (errs[0].res && errs[0].res.error) || new Error('no results');
         }
-        var pick = choose(rows, c.shares,
-          { cps: c.cps, within: cfg.closeWithin, cp: cfg.closeCp });
+        // The prepared score as win% for me, like the other two parts of the blend.
+        var side = sideToMove(n.fen);
+        var preps = {};
+        rows.forEach(function (r) {
+          var e = r.res && r.res.prep ? expectedScore(r.res.prep, side) : null;
+          if (e != null) preps[r.san] = e * 100;
+        });
+        var w = cfg.weights;
+        var pick = choose(rows, c.shares, { weights: w, wins: c.wins, preps: preps,
+          cps: c.cps, within: cfg.closeWithin, cp: cfg.closeCp });
         state.searches++;
         var summary = rows.filter(function (r) { return r.res && r.res.state !== 'error'; })
           .map(function (r) {
+            var b = r.res.value != null
+              ? blendScore(w, c.wins[r.san], r.res.value, preps[r.san]) : null;
             return { san: r.san, state: r.res.state, value: r.res.value, depth: r.res.depth,
               complete: !!r.res.complete, stopped: r.res.stopped || null,
               engine: c.wins[r.san], share: c.shares[r.san] || 0,
@@ -417,7 +468,14 @@ export function createGenerator(o) {
               score: c.scores[r.san] != null ? c.scores[r.san] : null,
               cp: c.cps[r.san] != null ? c.cps[r.san] : null,
               // The share of the value that rests on Maia rather than games.
-              maia: r.res.maia ? r.res.maia : undefined };
+              maia: r.res.maia ? r.res.maia : undefined,
+              // The prepared score (win% for me; null when the search had none) and the
+              // share of it that rests on the Practical value rather than games. A check
+              // tells rows from before they were saved by `prep` being absent.
+              prep: preps[r.san] != null ? preps[r.san] : null,
+              prior: r.res.prior != null ? r.res.prior : undefined,
+              // What the row was ranked by, when that isn't its Practical value.
+              blend: b != null ? b : undefined };
           });
         var san = pick ? pick.san : c.best.san;
         settle(n, d.play(n.fen, san), {
@@ -425,10 +483,14 @@ export function createGenerator(o) {
           why: pick ? undefined : 'no-value',
           // Won on ChessDB's eval, a floor for the Practical value it has too few games for.
           few: pick && pick.res.state === 'few' ? true : undefined,
-          // A near-tie on Practical value that ChessDB decided: the top row it beat.
-          close: pick && pick.over ? { san: pick.over.san, value: pick.over.res.value,
+          // A near-tie that ChessDB decided: the top row it beat, and its score.
+          close: pick && pick.over ? { san: pick.over.san, value: pick.over.score,
             cp: c.cps[pick.over.san], mine: c.cps[pick.san] } : undefined,
           value: pick ? pick.res.value : null,
+          // The blend it was chosen by, when not Practical alone, and its prepared score.
+          blend: pick && !practicalOnly(w) ? pick.score : undefined,
+          prep: pick && preps[pick.san] != null ? preps[pick.san] : undefined,
+          prior: pick && pick.res.prior != null ? pick.res.prior : undefined,
           depth: pick ? pick.res.depth : 0,
           maia: pick && pick.res.maia ? pick.res.maia : undefined,
           // The rating Maia played at, when the search had Maia: a check tells searches

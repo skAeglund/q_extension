@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 490 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 507 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -734,6 +734,27 @@ below).
 - `serve feb16` answered `/info`, and repgen `--explorer localhost:9337 --max-searches 2`
   ran without a token: d4 at the start (Prac 53.6, d5), then Nf3 after 1.d4 d5, "0 Lichess
   and 521 ChessDB requests in 8m41s". The ChessDB pace sets that time.
+
+**Repgen: blended choice (2026-09-30).** Requested: choose my move by a weighted blend of
+ChessDB's eval, the Practical value and the prepared score (`weights`, default
+`[0.2, 0.4, 0.4]`, all in win% for me), since Practical sees only as deep as the search and
+the prepared score's leaves carry what the games did after it: an objectively worse position
+with practical chances, often as Black. `choose()` ranks by `blendScore()`; a missing part
+spreads its weight over the others. No extra weighting by games: `leafSplit` already shrinks
+each leaf towards its Practical value by `prepPriorGames` (k = 50, now a repgen `--search`
+option), so thin data falls back to Practical by itself, and scaling the weight too would
+discount it twice. The depth rule is unchanged, and the search's inner choices of my later
+moves stay Practical: the prepared score is results measured along Practical's choices, and
+choosing by results there would pick the lucky move and report its luck. The near-tie rule
+applies only while ChessDB's weight is 0. The prepared split was already computed for every
+row (`PE_DEFAULTS.prep`) and dropped; rows now save `prep` (win% for me, null when the search
+had none), `prior` and `blend` (not `score`, which is the move's score in the games), and
+the node `prep`, `prior`, `blend`. `state.config.weights` is saved at creation; a run without it is from before and gets `[0, 1, 0]`. `--check` with
+the prepared score weighed re-searches practical picks whose rows have no `prep` key (more
+than one valued row), and re-chooses the others with fresh ChessDB evals. Checked here: the
+harness, and a CLI run against a synthetic local explorer index (6,000 random games) and live
+ChessDB, 2 searches and a `--check --dry-run`. At depth 5 on that thin index the prepared
+score rested 86–100% on the Practical value, as designed. Not yet run on real Lichess data.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

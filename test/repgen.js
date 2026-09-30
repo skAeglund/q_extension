@@ -92,7 +92,16 @@ module.exports = async function run(check) {
   const PG = await load('tools/repgen/pgn.mjs');
   const FC = await load('tools/repgen/filecache.mjs');
   const R = await load('tools/repgen/root.mjs');
-  const D = G.REPGEN_DEFAULTS;
+  // Most of what follows is about choosing by Practical value alone, as runs from before
+  // the blend do (repgen.mjs saves [0, 1, 0] into them). The blend has its own section.
+  const PRAC = { weights: [0, 1, 0] };
+  const D = Object.assign({}, G.REPGEN_DEFAULTS, PRAC);
+  // A generator the way repgen.mjs makes one: the run's saved config, Practical alone
+  // unless the state says otherwise.
+  const pracGen = o => {
+    o.state.config = Object.assign({}, PRAC, o.state.config);
+    return G.createGenerator(Object.assign({}, o, { config: Object.assign({}, o.state.config, o.config) }));
+  };
 
   console.log('\nrepertoire generator: replies');
   await check('coverage falls by a step per opponent decision, then only the top reply', () => {
@@ -243,12 +252,64 @@ module.exports = async function run(check) {
     assert.strictEqual(G.choose(rows, {}, near({ A: 100, B: 0 }, 0)).san, 'B');
   });
 
+  console.log('\nrepertoire generator: the blend');
+  const W = [0.2, 0.4, 0.4];
+  await check('the default choice blends ChessDB, Practical and prepared 0.2 / 0.4 / 0.4', () =>
+    assert.deepStrictEqual(G.REPGEN_DEFAULTS.weights, W));
+  await check('the blend is the weighted mean, and a missing part spreads its weight', () => {
+    assert.ok(Math.abs(G.blendScore(W, 50, 60, 70) - 62) < 1e-9);
+    // No prepared score: ChessDB 1/3, Practical 2/3.
+    assert.ok(Math.abs(G.blendScore(W, 50, 62, null) - 58) < 1e-9);
+    assert.strictEqual(G.blendScore([0, 1, 0], 50, 60, 70), null);
+    assert.strictEqual(G.blendScore(undefined, 50, 60, 70), null);
+    assert.ok(Math.abs(G.blendScore([1, 0, 0], null, 60, 70) - 60) < 1e-9, 'nothing weighed: Practical');
+  });
+  const bo = (wins, preps, extra) => Object.assign({ weights: W, wins, preps }, extra);
+  await check('a better prepared score can outweigh a Practical lead', () => {
+    // a: 0.2*50 + 0.4*58 + 0.4*50 = 53.2; b: 0.2*50 + 0.4*56 + 0.4*56 = 54.8.
+    const rows = [{ san: 'a', res: val(58, 3) }, { san: 'b', res: val(56, 3) }];
+    const p = G.choose(rows, {}, bo({ a: 50, b: 50 }, { a: 50, b: 56 }));
+    assert.strictEqual(p.san, 'b');
+    assert.ok(Math.abs(p.score - 54.8) < 1e-9, p.score);
+    assert.strictEqual(G.choose(rows, {}, { wins: { a: 50, b: 50 }, preps: { a: 50, b: 56 } }).san, 'a',
+      'without weights, Practical alone');
+  });
+  await check('  ...and so can ChessDB\'s eval', () => {
+    const rows = [{ san: 'a', res: val(58, 3) }, { san: 'b', res: val(57, 3) }];
+    assert.strictEqual(G.choose(rows, {}, bo({ a: 40, b: 50 }, { a: 55, b: 55 })).san, 'b');
+  });
+  await check('  ...but rows are still compared at the table\'s depth only', () => {
+    const rows = [{ san: 'a', res: val(55, 3) }, { san: 'b', res: val(60, 1) }];
+    assert.strictEqual(G.choose(rows, {}, bo({ a: 50, b: 70 }, { a: 50, b: 70 })).san, 'a');
+  });
+  await check('  ...and a row with too few games competes on its blend', () => {
+    // few: value = ChessDB's 56; 0.2*56 + 0.4*56 + 0.4*56 = 56 vs 0.2*50 + 0.4*58 + 0.4*54 = 54.8.
+    const rows = [{ san: 'a', res: val(58, 3) }, { san: 'b', res: few(56, 5) }];
+    assert.strictEqual(G.choose(rows, {}, bo({ a: 50, b: 56 }, { a: 54, b: 56 })).san, 'b');
+  });
+  await check('with ChessDB weighed in, the near-tie rule stays out of it', () => {
+    // Practical and prepared tie; the blend's ChessDB part already favours A by 1.
+    const rows = [{ san: 'A', res: val(56, 3) }, { san: 'B', res: val(56.5, 3) }];
+    const p = G.choose(rows, {}, bo({ A: 50, B: 49 }, { A: 56, B: 55 },
+      { cps: { A: 0, B: 100 }, within: 1, cp: 5 }));
+    assert.strictEqual(p.san, 'A');
+    assert.ok(!p.over);
+  });
+  await check('  ...and without it, it applies to the blend of the other two', () => {
+    const rows = [{ san: 'A', res: val(56, 3) }, { san: 'B', res: val(56.5, 3) }];
+    const p = G.choose(rows, {}, bo({}, { A: 56, B: 56 }, { weights: [0, 0.5, 0.5],
+      cps: { A: 100, B: 0 }, within: 1, cp: 5 }));
+    assert.strictEqual(p.san, 'A');
+    assert.strictEqual(p.over.san, 'B');
+    assert.ok(Math.abs(p.over.score - 56.25) < 1e-9, p.over.score);
+  });
+
   console.log('\nrepertoire generator: a run');
   const w = world();
   const clock = { t: 1000 };
   const dp = deps(w);
   const state = G.newState('S w - - 0 1', 'w');
-  const gen = G.createGenerator({ state, deps: dp, now: () => clock.t, config: { deepPlies: 2 } });
+  const gen = pracGen({ state, deps: dp, now: () => clock.t, config: { deepPlies: 2 } });
   const events = await drain(gen, clock);
   const N = state.nodes;
   await check('the practical pick wins over the engine\'s', () => {
@@ -288,14 +349,14 @@ module.exports = async function run(check) {
 
   const saved = JSON.parse(JSON.stringify(state));
   const dp2 = deps(world());
-  await drain(G.createGenerator({ state: saved, deps: dp2, now: () => clock.t }), clock);
+  await drain(pracGen({ state: saved, deps: dp2, now: () => clock.t }), clock);
   await check('a saved run resumes without searching anything again', () =>
     assert.strictEqual(dp2.log.roots.length, 0));
 
   const w3 = world();
   w3['S w - - 0 1'].root = Object.assign(new Error('HTTP 502'), { status: 502 });
   const clock3 = { t: 0 };
-  const g3 = G.createGenerator({ state: G.newState('S w - - 0 1', 'w'), deps: deps(w3), now: () => clock3.t });
+  const g3 = pracGen({ state: G.newState('S w - - 0 1', 'w'), deps: deps(w3), now: () => clock3.t });
   const e3 = await g3.step();
   await check('a failed search waits and is retried', () => {
     assert.strictEqual(e3.type, 'retry');
@@ -307,7 +368,7 @@ module.exports = async function run(check) {
   await check('  ...but a rejected token stops the run', () => assert.strictEqual(e4 && e4.status, 401));
 
   const w5 = world();
-  const g5 = G.createGenerator({ state: G.newState('S w - - 0 1', 'w'), deps: deps(w5),
+  const g5 = pracGen({ state: G.newState('S w - - 0 1', 'w'), deps: deps(w5),
     now: () => 0, config: { maxPly: 2 } });
   await drain(g5, { t: 0 });
   await check('maxPly ends lines at the depth limit', () => {
@@ -317,7 +378,7 @@ module.exports = async function run(check) {
 
   const w6 = world();
   w6['D b - - 0 1'].ex = ex(40, [['Nf6', 9], ['d5', 9], ['e6', 8], ['c5', 7], ['g6', 7]]);
-  const g6 = G.createGenerator({ state: G.newState('S w - - 0 1', 'w'), deps: deps(w6), now: () => 0 });
+  const g6 = pracGen({ state: G.newState('S w - - 0 1', 'w'), deps: deps(w6), now: () => 0 });
   await drain(g6, { t: 0 });
   await check('a position whose games are spread thin over replies ends the line', () =>
     assert.strictEqual(g6.state.nodes['D b - -'].reason, 'thin'));
@@ -400,7 +461,7 @@ module.exports = async function run(check) {
   const w7 = world();
   w7['S w - - 0 1'].cdb = cdb([['e4', 30], ['d4', -150]]);
   const s7 = G.newState('S w - - 0 1', 'w');
-  await drain(G.createGenerator({ state: s7, deps: deps(w7), now: () => 0 }), { t: 0 });
+  await drain(pracGen({ state: s7, deps: deps(w7), now: () => 0 }), { t: 0 });
   const b7 = PG.toPgn(s7).split('\n\n')[1].replace(/\n/g, ' ');
   await check('a Practical pick far under the engine\'s best gets ??, and says the best', () =>
     assert.ok(/^1\. d4\?\? \{Prac 58\.0 d3, engine 36\.\d \(best e4 52\.\d\)/.test(b7), b7));
@@ -418,7 +479,7 @@ module.exports = async function run(check) {
   const wf = world();
   wf['S w - - 0 1'].root = { e4: few(60, 5), d4: val(58, 3) };
   const sf = G.newState('S w - - 0 1', 'w');
-  await drain(G.createGenerator({ state: sf, deps: deps(wf), now: () => 0 }), { t: 0 });
+  await drain(pracGen({ state: sf, deps: deps(wf), now: () => 0 }), { t: 0 });
   await check('a move with too few games wins on its eval, and the PGN says so', () => {
     const n = sf.nodes['S w - -'];
     assert.deepStrictEqual([n.move, n.pickedBy, n.few, n.value], ['e4', 'practical', true, 60]);
@@ -429,7 +490,7 @@ module.exports = async function run(check) {
   const wn = world();
   wn['S w - - 0 1'].root = { e4: val(57.5, 3), d4: val(58, 3) };
   const sn = G.newState('S w - - 0 1', 'w');
-  await drain(G.createGenerator({ state: sn, deps: deps(wn), now: () => 0 }), { t: 0 });
+  await drain(pracGen({ state: sn, deps: deps(wn), now: () => 0 }), { t: 0 });
   await check('a run gives a near-tie to ChessDB, and the PGN says what it beat', () => {
     const n = sn.nodes['S w - -'];
     assert.strictEqual(n.move, 'e4');
@@ -439,7 +500,7 @@ module.exports = async function run(check) {
     assert.ok(/^1\. e4 \{Prac 57\.5 d3, engine 5\d\.\d \(over d4 58\.0: ChessDB \+0\.30 vs \+0\.25\) ·/.test(bn), bn);
   });
   const sn0 = G.newState('S w - - 0 1', 'w');
-  await drain(G.createGenerator({ state: sn0, deps: deps(wn), now: () => 0,
+  await drain(pracGen({ state: sn0, deps: deps(wn), now: () => 0,
     config: { closeWithin: 0 } }), { t: 0 });
   await check('  ...and not with --close-within 0', () => {
     assert.strictEqual(sn0.nodes['S w - -'].move, 'd4');
@@ -465,7 +526,7 @@ module.exports = async function run(check) {
   cw['X w - - 0 3'].root = { Nc3: val(50, 3, { analysing: 2 }) };
   const cs = G.newState('S w - - 0 1', 'w');
   const cclock = { t: 1000 };
-  await drain(G.createGenerator({ state: cs, deps: deps(cw), now: () => cclock.t, config: { deepPlies: 2 } }), cclock);
+  await drain(pracGen({ state: cs, deps: deps(cw), now: () => cclock.t, config: { deepPlies: 2 } }), cclock);
   const xReach = cs.nodes['X w - -'].reach;
   await check('a search keeps how many positions it found without an eval', () =>
     assert.strictEqual(cs.nodes['X w - -'].rows[0].analysing, 2));
@@ -512,7 +573,7 @@ module.exports = async function run(check) {
     assert.ok(PG.toPgn(cs).includes('2. c4'), PG.toPgn(cs));
   });
   const cdp = deps(later());
-  const cev = await drain(G.createGenerator({ state: cs, deps: cdp, now: () => cclock.t }), cclock);
+  const cev = await drain(pracGen({ state: cs, deps: cdp, now: () => cclock.t }), cclock);
   await check('only the positions the check sent back are searched, likeliest first', () =>
     assert.deepStrictEqual(cdp.log.roots.map(r => r.fen.split(' ')[0]), ['X', 'N', 'E']));
   await check('  ...a better move replaces the old one, and what only it led to goes', () => {
@@ -550,7 +611,7 @@ module.exports = async function run(check) {
   fw['S w - - 0 1'].root = Object.assign(new Error('HTTP 502'), { status: 502 });
   cs.nodes['S w - -'].recheck = true;
   const fclock = { t: cclock.t };
-  const fev = await drain(G.createGenerator({ state: cs, deps: deps(fw), now: () => fclock.t }), fclock);
+  const fev = await drain(pracGen({ state: cs, deps: deps(fw), now: () => fclock.t }), fclock);
   await check('a search again that keeps failing leaves the old move in place', () => {
     assert.ok(fev.some(e => e.type === 'recheck-failed'), fev.map(e => e.type));
     assert.strictEqual(cs.nodes['S w - -'].move, 'd4');
@@ -611,6 +672,73 @@ module.exports = async function run(check) {
       .test(r.reasons.join()), r.reasons.join());
     assert.strictEqual(CK.assess(n, wn['S w - - 0 1'].ex, cdb([['e4', 30], ['d4', 25]]), D,
       G.SEARCH_DEFAULTS).action, null);
+  });
+
+  console.log('\nrepertoire generator: a blended run');
+  // e4: Practical 55, prepared 65 (30% of it from the Practical value), ChessDB +0.30.
+  // d4: Practical 58, prepared 55, ChessDB +0.25. Blend: e4 58.55, d4 55.66.
+  const sp = (w, d, b) => ({ w, d, b });
+  const wb = world();
+  wb['S w - - 0 1'].root = { e4: val(55, 3, { prep: sp(0.62, 0.06, 0.32), prior: 0.3 }),
+    d4: val(58, 3, { prep: sp(0.55, 0, 0.45), prior: 0.1 }) };
+  const sb = G.newState('S w - - 0 1', 'w');
+  await drain(G.createGenerator({ state: sb, deps: deps(wb), now: () => 0 }), { t: 0 });
+  const nb = sb.nodes['S w - -'];
+  await check('with the default weights, the prepared score wins it for 1.e4', () => {
+    assert.strictEqual(nb.move, 'e4');
+    assert.strictEqual(nb.value, 55);
+    assert.ok(Math.abs(nb.prep - 65) < 1e-9, nb.prep);
+    assert.strictEqual(nb.prior, 0.3);
+    assert.ok(Math.abs(nb.blend - (0.2 * nb.engine + 0.4 * 55 + 0.4 * 65)) < 1e-9, nb.blend);
+  });
+  await check('  ...and every row keeps its prepared score, share of prior and blend', () => {
+    const d4 = nb.rows.find(r => r.san === 'd4');
+    assert.ok(Math.abs(d4.prep - 55) < 1e-9, d4.prep);
+    assert.strictEqual(d4.prior, 0.1);
+    assert.ok(Math.abs(d4.blend - (0.2 * d4.engine + 0.4 * 58 + 0.4 * 55)) < 1e-9, d4.blend);
+    assert.strictEqual(d4.score, 0.5, 'its score in the games stays');
+  });
+  const bb = PG.toPgn(sb).split('\n\n')[1].replace(/\n/g, ' ');
+  await check('  ...and the PGN gives the parts, the blend, and the others by theirs', () =>
+    assert.ok(/^1\. e4 \{Prac 55\.0 d3, prep 65\.0 \(30% Prac\), engine 52\.\d, blend 58\.\d; d4 55\.\d \(Prac 58\.0\) ·/
+      .test(bb), bb));
+  await check('  ...which pgnclean drops like any Prac comment', () =>
+    assert.strictEqual(CL.cleanComment('Prac 55.0 d3, prep 65.0 (30% Prac), engine 52.8, blend 58.5; ' +
+      'd4 55.7 (Prac 58.0) · end: few games (5)'), null));
+  // Black to move: the prepared split is turned into Black's score.
+  const wk = { 'B b - - 0 1': { ex: ex(1000, [['c5', 600], ['e5', 400]]), cdb: cdb([['c5', 20], ['e5', 20]]),
+    next: { c5: 'C w - - 0 2', e5: 'E w - - 0 2' },
+    root: { c5: val(50, 3, { prep: sp(0.6, 0.2, 0.2) }), e5: val(50, 3, { prep: sp(0.3, 0.2, 0.5) }) } } };
+  const sk = G.newState('B b - - 0 1', 'b');
+  await drain(G.createGenerator({ state: sk, deps: deps(wk), now: () => 0 }), { t: 0 });
+  await check('with Black to move, the prepared score is Black\'s', () => {
+    const n = sk.nodes['B b - -'];
+    assert.strictEqual(n.move, 'e5');
+    assert.ok(Math.abs(n.prep - 60) < 1e-9, n.prep);
+    assert.ok(Math.abs(n.rows.find(r => r.san === 'c5').prep - 30) < 1e-9);
+  });
+  const WD = Object.assign({}, G.REPGEN_DEFAULTS);
+  await check('a check with the same evals leaves a blended pick alone', () => {
+    const r = CK.assess(Object.assign({}, nb), wb['S w - - 0 1'].ex, wb['S w - - 0 1'].cdb, WD, G.SEARCH_DEFAULTS);
+    assert.strictEqual(r.action, null, r.reasons.join());
+  });
+  await check('  ...and searches again where ChessDB\'s new eval tips the blend', () => {
+    // e4 at -3.00 now: 0.2*24.9 + 22 + 26 = 53.0 against d4's 55.7.
+    const r = CK.assess(Object.assign({}, nb), wb['S w - - 0 1'].ex, cdb([['e4', -300], ['d4', 25]]), WD,
+      G.SEARCH_DEFAULTS);
+    assert.strictEqual(r.action, 'recheck');
+    assert.ok(/d4 now leads the blend: 55\.\d vs e4 53\.\d/.test(r.reasons.join()), r.reasons.join());
+    assert.ok(Math.abs(r.engine.blend - r.engine.rows.find(x => x.san === 'e4').blend) < 1e-9,
+      'the pick\'s blend follows the new eval');
+  });
+  await check('a run from before rows saved prepared scores is searched again once they count', () => {
+    const n = Object.assign({}, N['S w - -']);
+    const old = Object.assign({}, n, { rows: n.rows.map(r => { const x = Object.assign({}, r); delete x.prep; return x; }) });
+    const r = CK.assess(old, w['S w - - 0 1'].ex, w['S w - - 0 1'].cdb, WD, G.SEARCH_DEFAULTS);
+    assert.strictEqual(r.action, 'recheck');
+    assert.ok(/searched before prepared scores were saved/.test(r.reasons.join()), r.reasons.join());
+    assert.strictEqual(CK.assess(old, w['S w - - 0 1'].ex, w['S w - - 0 1'].cdb, D, G.SEARCH_DEFAULTS).action,
+      null, 'not while it chooses by Practical alone');
   });
 
   console.log('\nrepertoire generator: file cache');
@@ -679,6 +807,13 @@ module.exports = async function run(check) {
     assert.strictEqual(Number(r.value.toFixed(1)), 65.3);
     assert.strictEqual(r.final, true);
     assert.strictEqual(rr.results.get('c4').state, 'few');
+  });
+  await check('  ...and, with repgen\'s search options, a prepared split for the blend', async () => {
+    const rp = await runRoot('root w - -', ['Nf3'], { opts: Object.assign({}, G.SEARCH_DEFAULTS, { maxPly: 4 }),
+      budget: 10, shares: { Nf3: 0.6 } });
+    const r = rp.results.get('Nf3');
+    assert.ok(r.prep && Math.abs(r.prep.w + r.prep.d + r.prep.b - 1) < 1e-9, JSON.stringify(r.prep));
+    assert.ok(r.prior > 0 && r.prior < 1, r.prior);
   });
   await check('  ...with the row\'s share as request priority and the budget passed on', () => {
     assert.ok(ctxs.some(c => c.priority === 10 + 0.6 && c.exempt === true), JSON.stringify(ctxs));
@@ -839,7 +974,7 @@ module.exports = async function run(check) {
   wm['S w - - 0 1'].root = { e4: val(55, 3), d4: val(58, 3, { maia: 0.4 }) };
   const sm = G.newState('S w - - 0 1', 'w');
   const dpm = deps(wm);
-  await drain(G.createGenerator({ state: sm, deps: dpm, now: () => 0, search: { maia: true, maiaElo: 2100 } }),
+  await drain(pracGen({ state: sm, deps: dpm, now: () => 0, search: { maia: true, maiaElo: 2100 } }),
     { t: 0 });
   await check('a run with Maia searches with it, and keeps its share and rating', () => {
     const o = dpm.log.roots[0].opts;

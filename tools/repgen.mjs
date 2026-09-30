@@ -77,7 +77,10 @@ function usage() {
     '           repertoires/' + MAIA_FILE + ', downloaded on first use), --maia-elo <n>',
     '           (default: from --ratings, 2100 for 1800,2000,2200), --maia-until 100,',
     '           --maia-only-below 10, --maia-weight 20',
-    'Plan:      ' + Object.keys(REPGEN_DEFAULTS).map(function (k) {
+    'Choice:    --weights <ChessDB>,<Practical>,<prepared> (default ' + REPGEN_DEFAULTS.weights + ';',
+    '           kept with the run, and runs from before it have 0,1,0), --prep-prior-games 50',
+    '           (games\' worth of trust in the Practical value at a prepared score\'s leaf)',
+    'Plan:      ' + Object.keys(REPGEN_DEFAULTS).filter(function (k) { return k !== 'weights'; }).map(function (k) {
       return '--' + k.replace(/[A-Z]/g, function (c) { return '-' + c.toLowerCase(); }) +
         ' ' + REPGEN_DEFAULTS[k];
     }).join('\n           '),
@@ -94,6 +97,17 @@ function numberOpt(k, v) {
   if (!isFinite(n) || n < 0) throw new Error('--' + k + ' needs a number, got ' + v);
   if (SHARES.indexOf(k) >= 0 && n > 1) n /= 100;
   return n;
+}
+
+// --weights 0.2,0.4,0.4: ChessDB, Practical, prepared. Kept as shares of 1.
+function weightsOpt(v) {
+  var w = String(v).split(',').map(Number);
+  if (w.length !== 3 || w.some(function (x) { return !isFinite(x) || x < 0; }) ||
+      !(w[0] + w[1] + w[2] > 0)) {
+    throw new Error('--weights is three numbers for ChessDB, Practical and prepared, e.g. 0.2,0.4,0.4; got ' + v);
+  }
+  var t = w[0] + w[1] + w[2];
+  return w.map(function (x) { return Math.round(x / t * 1e6) / 1e6; });
 }
 
 function pick(args, defaults) {
@@ -200,9 +214,26 @@ function run(args, local) {
       speeds: String(args.speeds || 'blitz,rapid,classical').split(',').filter(Boolean),
       ratings: String(args.ratings || '1800,2000,2200').split(',').filter(Boolean).map(Number)
     };
-    state.config = {};
+    // The weights are saved even at their defaults, so a later change of the defaults
+    // doesn't change how this run chooses.
+    state.config = { weights: REPGEN_DEFAULTS.weights.slice() };
     state.search = {};
     state.created = new Date().toISOString();
+  }
+  // Runs from before the blend chose by Practical value alone, and keep doing so.
+  if (!state.config.weights) {
+    state.config.weights = [0, 1, 0];
+    if (!args.pgnOnly && args.weights == null) log('Note: this run was made choosing by Practical value alone and keeps doing so. ' +
+      '--weights ' + REPGEN_DEFAULTS.weights + ' --check chooses again with ChessDB and the prepared ' +
+      'score weighed in (a search again for each of my positions with more than one candidate).');
+  }
+  if (args.weights != null) {
+    var wWas = state.config.weights.join();
+    state.config.weights = weightsOpt(args.weights === true ? '' : args.weights);
+    if (wWas !== state.config.weights.join() && state.searches > 0 && !checking) {
+      log('Note: the positions searched so far keep the moves chosen with weights ' + wWas +
+        '. --check chooses them again.');
+    }
   }
   if (args.speeds || args.ratings) {
     if (Object.keys(state.nodes).length > 1 && !args.fresh) {
@@ -435,13 +466,20 @@ function run(args, local) {
       }
       var n = ev.node;
       if (ev.type === 'searched') {
+        // Blended: the other rows by their blend, as the choice saw them.
+        var blended = n.blend != null;
         var alts = (n.rows || []).filter(function (r) { return r.san !== n.move && r.value != null; })
-          .map(function (r) { return r.san + ' ' + r.value.toFixed(1); });
+          .map(function (r) {
+            return r.san + ' ' + (blended && r.blend != null
+              ? r.blend.toFixed(1) + ' (Prac ' + r.value.toFixed(1) + ')' : r.value.toFixed(1));
+          });
         var el = engineLoss(n);
         log('Me   ' + lineOf(n) + ': ' + n.move + markFor(el, state.config) +
           (n.pickedBy === 'practical'
           ? ' (Prac ' + n.value.toFixed(1) + (n.few ? ' few games' : ' d' + n.depth) +
             (n.maia >= 0.005 ? ', ' + Math.round(n.maia * 100) + '% Maia' : '') +
+            (blended ? (n.prep != null ? ', prep ' + n.prep.toFixed(1) : '') +
+              ', blend ' + n.blend.toFixed(1) : '') +
             (alts.length ? '; ' + alts.join(', ') : '') +
             (n.ms != null ? '; ' + mmss(n.ms) + ', ' + n.spent + ' requests' : '') + ')'
           : ' (engine, ' + n.why + ')') +
