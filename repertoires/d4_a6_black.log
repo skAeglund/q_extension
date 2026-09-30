@@ -9,3 +9,9 @@
 09:30:11 Options: {"weights":[0.1,0.2,0.7]}
 09:30:27 repgen: Black from rnbqkbnr/1ppppppp/p7/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 2 (d4 a6); Lichess blitz,rapid,classical / 1800,2000,2200.
 09:30:27 Options: {"weights":[0.1,0.2,0.7]}
+09:35:23 Me   [28.51%] 2.c4 Nf6 3.Nc3: c5 (Prac 50.0 d5, prep 54.1, blend 52.7; d5 50.1 (Prac 51.9), g6 46.6 (Prac 48.4), b5 47.8 (Prac 48.5), b6 44.2 (Prac 44.7), e6 46.5 (Prac 47.3); 4m56s, 80 requests)
+09:35:23 Opp  [28.51%] 2.c4 Nf6 3.Nc3 c5: d5 72% of 32526 games
+09:40:35 Me   [20.53%] 2.c4 Nf6 3.Nc3 c5 4.d5: b5 (Prac 51.5 d5, prep 53.3, blend 52.5; e5 46.1 (Prac 44.1), g6 47.9 (Prac 47.2), d6 47.7 (Prac 47.2); 5m08s, 77 requests)
+09:40:35 Opp  [20.53%] 2.c4 Nf6 3.Nc3 c5 4.d5 b5: cxb5 64% of 46008 games
+09:47:22 Me   [19.03%] 2.e4: g6 (Prac 48.1 d3, prep 49.9, blend 49.2; e6 49.0 (Prac 49.7), c6 48.2 (Prac 48.6), c5 48.8 (Prac 47.7), b5 47.7 (Prac 47.1), h6 44.7 (Prac 44.4); 6m43s, 100 requests)
+09:47:22 Opp  [19.03%] 2.e4 g6: Nf3 23%, Nc3 18%, c4 17%, f4 12%, Bd3 7%, Be3 6% of 30562 games

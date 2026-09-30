@@ -5,10 +5,19 @@
 [Black "Repertoire"]
 [Result "*"]
 
-1. d4 a6 2. c4 {37% of 680,446 games} (2. e4 {19% of 680,446 games · not
-searched yet}) (2. Nf3 {17% of 680,446 games · not searched yet}) (2. Bf4 {12%
-of 680,446 games · not searched yet}) (2. e3 {5% of 680,446 games · not
+1. d4 a6 2. c4 {37% of 680,446 games} (2. e4 {19% of 680,446 games} 2... g6
+{Prac 48.1 d3, prep 49.9, engine 46.6, blend 49.2; e6 49.0 (Prac 49.7), c5 48.8
+(Prac 47.7), c6 48.2 (Prac 48.6)} 3. Nf3 {23% of 30,562 games · not searched
+yet} (3. Nc3 {18% of 30,562 games · not searched yet}) (3. c4 {17% of 30,562
+games · not searched yet}) (3. f4 {12% of 30,562 games · not searched yet})
+(3. Bd3 {7% of 30,562 games · not searched yet}) (3. Be3 {6% of 30,562 games ·
+not searched yet})) (2. Nf3 {17% of 680,446 games · not searched yet}) (2. Bf4
+{12% of 680,446 games · not searched yet}) (2. e3 {5% of 680,446 games · not
 searched yet}) 2... Nf6!? {Prac 49.7 d5, prep 53.4, engine 48.0, blend 52.1
 (best e6 49.4); b5 52.0 (Prac 51.1), c5 50.5 (Prac 48.9), e6 49.2 (Prac 50.5)}
-3. Nc3 {78% of 94,853 games · not searched yet} (3. Nf3 {13% of 94,853 games ·
-not searched yet}) *
+3. Nc3 {78% of 94,853 games} (3. Nf3 {13% of 94,853 games · not searched yet})
+3... c5 {Prac 50.0 d5, prep 54.1, engine 48.0, blend 52.7; d5 50.1 (Prac 51.9),
+b5 47.8 (Prac 48.5), g6 46.6 (Prac 48.4)} 4. d5 {72% of 32,526 games} 4... b5
+{Prac 51.5 d5, prep 53.3, engine 48.7, blend 52.5; g6 47.9 (Prac 47.2), d6 47.7
+(Prac 47.2), e5 46.1 (Prac 44.1)} 5. cxb5 {64% of 46,008 games · not searched
+yet} *
