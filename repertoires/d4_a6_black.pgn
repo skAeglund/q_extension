@@ -5,7 +5,10 @@
 [Black "Repertoire"]
 [Result "*"]
 
-1. d4 a6 2. c4 {37% of 680,446 games · not searched yet} (2. e4 {19% of 680,446
-games · not searched yet}) (2. Nf3 {17% of 680,446 games · not searched yet})
-(2. Bf4 {12% of 680,446 games · not searched yet}) (2. e3 {5% of 680,446 games
-· not searched yet}) *
+1. d4 a6 2. c4 {37% of 680,446 games} (2. e4 {19% of 680,446 games · not
+searched yet}) (2. Nf3 {17% of 680,446 games · not searched yet}) (2. Bf4 {12%
+of 680,446 games · not searched yet}) (2. e3 {5% of 680,446 games · not
+searched yet}) 2... Nf6!? {Prac 49.7 d5, prep 53.4, engine 48.0, blend 52.1
+(best e6 49.4); b5 52.0 (Prac 51.1), c5 50.5 (Prac 48.9), e6 49.2 (Prac 50.5)}
+3. Nc3 {78% of 94,853 games · not searched yet} (3. Nf3 {13% of 94,853 games ·
+not searched yet}) *
