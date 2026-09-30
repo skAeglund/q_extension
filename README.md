@@ -641,6 +641,24 @@ node tools/explorerdb.mjs import 2016-02.json --out feb16     # where the parts 
 manifest, and refuses more plies than were kept, or a speed or rating group that was left
 out. The filter's own `--speeds`, `--ratings` and `--plies` fix what later imports can use.
 
+**Overnight, through GitHub.** `fill` (run where the line is fast) and `drain` (run at home)
+pass filtered months through a few private GitHub repositories, used as a queue:
+
+```bash
+# in the cloud: filters months into whichever repository has room, 3 at a time
+node tools/explorerdb.mjs fill --repos you/database_helper,you/database_helper2 --months 2013-01..2019-12
+# at home: imports every month that arrives, keeps its files, and removes it from the repository
+node tools/explorerdb.mjs drain --repos you/database_helper,you/database_helper2
+```
+
+`drain` pulls each repository, checks each part's sha256, copies the month to
+`explorer/filtered/`, imports it as `explorer/<month>.xdb` (one index per month; `--workers`,
+`--min-games` as for import), and pushes its removal. Once a repository is empty, `fill` resets
+its history and fills it again (up to `--cap-gb`, 3 by default). A `LEDGER` file in each
+repository lists the months it has carried, so either side can be stopped and started again.
+`drain` runs until Ctrl+C, or until every month from 2013-01 to `--until` is imported. It
+pushes with your own git credentials.
+
 **Serving it.** To have the Practical column and repgen use the index instead of Lichess:
 
 ```bash
@@ -799,6 +817,7 @@ tools/repgen/       their plan, PGN reader/writers, file cache, root search adap
                     ChessDB exploration (explore.mjs) and Maia 3 (maia.mjs)
 tools/explorerdb/   the dump reader and fast replay (games.mjs), shard counting and the
                     index file (store.mjs), the importer and its worker threads,
-                    and the filter that shrinks a dump for download (filter.mjs)
+                    the filter that shrinks a dump for download (filter.mjs), and the
+                    relay that carries filtered months home through GitHub (relay.mjs)
 tools/package.json  onnxruntime-node, for repgen --maia only
 ```

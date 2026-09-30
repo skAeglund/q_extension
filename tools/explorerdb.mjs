@@ -38,6 +38,7 @@ import path from 'node:path';
 import { Chess } from '../src/vendor/chess.js';
 import { importDump, DEFAULTS } from './explorerdb/importer.mjs';
 import { filterDump, FILTER_DEFAULTS } from './explorerdb/filter.mjs';
+import { fill, drain, parseMonths, lichessDumpSize, lichessFilter } from './explorerdb/relay.mjs';
 import { openIndex, explorerAnswer } from './explorerdb/store.mjs';
 import { createServer, indexInfo } from './explorerdb/server.mjs';
 import { RATING_GROUPS } from './explorerdb/games.mjs';
@@ -57,13 +58,29 @@ var USAGE = [
   '      --tmp <dir>         temporary files (default <out>.tmp; a month needs 10-15 GB)',
   '      --keep-tmp          leave them there',
   '      (or a filtered month\'s manifest, <month>.json, in place of the dump)',
-  '  node tools/explorerdb.mjs filter <dump.pgn.zst|-> [--out <path>] [options]',
-  '      keeps what an import would, each game cut to --plies + 1; - reads a .zst on stdin',
+  '  node tools/explorerdb.mjs filter <dump.pgn.zst|url|-> [--out <path>] [options]',
+  '      keeps what an import would, each game cut to --plies + 1; - reads a .zst on stdin;',
+  '      a URL is read as it downloads, resuming where the connection breaks',
   '      --speeds, --ratings, --plies  as for import (these are all an import can use later)',
   '      --part-mb 95        parts under this size (GitHub refuses files over 100 MB)',
   '      --level 19          zstd level',
   '      --source <name>     the dump\'s name in the manifest (for stdin)',
   '      --max-games N       stop after N games of the dump (a quick trial)',
+  '  node tools/explorerdb.mjs drain --repos <owner/name,...> [options]      (at home)',
+  '      imports every filtered month the repositories hold, keeps its files, and removes',
+  '      it from the repository so fill can use the room; runs until stopped',
+  '      --keep <dir>        where the months\' files are kept (default explorer/filtered;',
+  '                          --no-keep to drop them after importing)',
+  '      --until YYYY-MM     stop once every month from 2013-01 to this one is imported',
+  '      --once              one pass, then stop',
+  '      --poll-min 5        how often to look when there is nothing new',
+  '      --workers, --min-games, --plies   as for import (an index per month, <month>.xdb)',
+  '  node tools/explorerdb.mjs fill --repos <owner/name,...> [options]       (in the cloud)',
+  '      filters months from database.lichess.org into the repositories, as drain empties them',
+  '      --months 2013-01..2026-12   which months (months not published yet are skipped)',
+  '      --cap-gb 3          filtered months a repository holds at once',
+  '      --workers 3         months filtered at once (one core each)',
+  '      --footer <text>     appended to commit messages',
   '  node tools/explorerdb.mjs query <index> (--moves "1.e4 c5" | --fen "<fen>")',
   '  node tools/explorerdb.mjs info <index>',
   '  node tools/explorerdb.mjs serve <index> [--port 9337] [--host 127.0.0.1]'
@@ -184,7 +201,7 @@ async function cmdFilter(argv) {
     if (!m) throw new Error('--out is needed (a path without extension, e.g. --out 2016/2016-02)');
     out = m[1];
   }
-  if (input !== '-') {
+  if (input !== '-' && !/^https?:\/\//i.test(input)) {
     input = inPath(input, EXPLORER);
     if (!fs.existsSync(input)) throw new Error('No such file: ' + input);
   }
@@ -199,6 +216,63 @@ async function cmdFilter(argv) {
     (100 * m2.games.kept / m2.games.read).toFixed(1) + '%)');
   console.log('Size:     ' + size(m2.bytes.dump) + ' of dump -> ' + size(total) + ' (' +
     (m2.bytes.dump / total).toFixed(1) + 'x smaller), in ' + m2.seconds + ' s');
+  return 0;
+}
+
+function repoUrls(s) {
+  var r = list(s).map(function (x) {
+    return /^[\w.-]+\/[\w.-]+$/.test(x) ? 'https://github.com/' + x : x;
+  });
+  if (!r.length) throw new Error('--repos is needed (e.g. --repos you/database_helper,you/database_helper2)');
+  return r;
+}
+
+async function cmdFill(argv) {
+  var o = { months: parseMonths('2013-01..' + (new Date().getFullYear()) + '-12') };
+  for (var i = 0; i < argv.length; i++) {
+    var a = argv[i];
+    if (a === '--repos') o.repos = repoUrls(argv[++i]);
+    else if (a === '--months') o.months = parseMonths(argv[++i]);
+    else if (a === '--cap-gb') o.capBytes = Number(argv[++i]) * 1e9;
+    else if (a === '--workers') o.workers = num(argv[++i], '--workers');
+    else if (a === '--work') o.work = argv[++i];
+    else if (a === '--footer') o.footer = argv[++i];
+    else throw new Error('Unexpected argument: ' + a + '\n' + USAGE);
+  }
+  if (!o.repos) repoUrls('');
+  if (!(o.capBytes === undefined || o.capBytes >= 1e8)) throw new Error('--cap-gb is at least 0.1');
+  o.dumpSize = lichessDumpSize;
+  o.filterMonth = lichessFilter({ log: function () {} });
+  o.log = function (s) { console.log(s); };
+  var r = await fill(o);
+  console.log(r.pushed + ' months pushed' + (r.skipped.length ? '; not published yet: ' + r.skipped.join(', ') : '') +
+    (r.failed.length ? '; failed: ' + r.failed.join(', ') : ''));
+  return r.failed.length ? 1 : 0;
+}
+
+async function cmdDrain(argv) {
+  var o = { dir: path.join(EXPLORER, 'relay'), keep: path.join(EXPLORER, 'filtered'), out: EXPLORER,
+    importOptions: { speeds: DEFAULTS.speeds, ratings: DEFAULTS.ratings } };
+  for (var i = 0; i < argv.length; i++) {
+    var a = argv[i];
+    if (a === '--repos') o.repos = repoUrls(argv[++i]);
+    else if (a === '--keep') o.keep = path.resolve(argv[++i]);
+    else if (a === '--no-keep') o.keep = null;
+    else if (a === '--dir') o.dir = path.resolve(argv[++i]);
+    else if (a === '--out') o.out = path.resolve(argv[++i]);
+    else if (a === '--until') o.until = parseMonths('2013-01..' + parseMonths(argv[++i])[0]);
+    else if (a === '--once') o.once = true;
+    else if (a === '--poll-min') o.pollMs = Number(argv[++i]) * 60000;
+    else if (a === '--footer') o.footer = argv[++i];
+    else if (a === '--workers') o.importOptions.workers = num(argv[++i], '--workers');
+    else if (a === '--min-games') o.importOptions.minGames = Math.max(1, num(argv[++i], '--min-games'));
+    else if (a === '--plies') o.importOptions.plies = num(argv[++i], '--plies');
+    else throw new Error('Unexpected argument: ' + a + '\n' + USAGE);
+  }
+  if (!o.repos) repoUrls('');
+  o.log = function (s) { console.log(s); };
+  var got = await drain(o);
+  console.log(got.length + ' months imported');
   return 0;
 }
 
@@ -286,6 +360,8 @@ async function main(argv) {
   var cmd = argv[0];
   if (cmd === 'import') return cmdImport(argv.slice(1));
   if (cmd === 'filter') return cmdFilter(argv.slice(1));
+  if (cmd === 'fill') return cmdFill(argv.slice(1));
+  if (cmd === 'drain') return cmdDrain(argv.slice(1));
   if (cmd === 'query') return cmdQuery(argv.slice(1));
   if (cmd === 'info') return cmdInfo(argv.slice(1));
   if (cmd === 'serve') return cmdServe(argv.slice(1));

@@ -83,7 +83,7 @@ function fmt(n) { return n.toLocaleString('en-US'); }
 function mb(b) { return b >= 1e9 ? (b / 1e9).toFixed(1) + ' GB' : (b / 1e6).toFixed(1) + ' MB'; }
 
 /*
- * o: { input (a dump, or '-' for a .zst on stdin), out (path without extension), source,
+ * o: { input (a dump, an https URL of one, or '-' for a .zst on stdin), size (a URL's), out (path without extension), source,
  *      speeds, ratings, plies, partBytes, chunkBytes, level, windowLog, maxGames, log }
  * Resolves with the manifest written to <out>.json.
  */
@@ -93,7 +93,8 @@ export async function filterDump(o) {
   var filter = makeFilter(o);
   var why = { broken: 0, variant: 0, speed: 0, rating: 0, result: 0 };
   var n = { read: 0, kept: 0, bytesIn: 0, textOut: 0 };
-  var size = o.input === '-' ? 0 : fs.statSync(o.input).size;
+  var url = /^https?:\/\//i.test(o.input);
+  var size = o.input === '-' || url ? o.size || 0 : fs.statSync(o.input).size;
   var base = path.basename(o.out);
   var dir = path.dirname(o.out);
   fs.mkdirSync(dir, { recursive: true });
@@ -160,7 +161,7 @@ export async function filterDump(o) {
 
   var manifest = {
     format: FILTERED_FORMAT,
-    source: o.source || path.basename(o.input),
+    source: o.source || path.basename(o.input.replace(/[?#].*$/, '')),
     filter: { speeds: o.speeds, ratings: o.ratings },
     plies: o.plies,
     games: { read: n.read, kept: n.kept, skipped: why, complete: !o.maxGames || n.read < o.maxGames },

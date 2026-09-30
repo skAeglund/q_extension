@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import { Transform, Readable } from 'node:stream';
+import { Transform, Readable, PassThrough } from 'node:stream';
 import { spawn } from 'node:child_process';
 import { Worker } from 'node:worker_threads';
 import { makeFilter, HASH_NAME, FILTERED_FORMAT } from './games.mjs';
@@ -97,6 +97,7 @@ export function zstdFrames() {
 function openRaw(files, onBytes) {
   var raw;
   if (files.length === 1 && files[0] === '-') raw = process.stdin;
+  else if (files.length === 1 && /^https?:\/\//i.test(files[0])) raw = curlStream(files[0]);
   else if (files.length === 1) raw = fs.createReadStream(files[0], { highWaterMark: 1 << 20 });
   else {
     raw = Readable.from((async function* () {
@@ -109,9 +110,45 @@ function openRaw(files, onBytes) {
   return raw;
 }
 
+/*
+ * A download as one stream, picked up where it broke off. Lichess's server drops long
+ * downloads now and then (twice about 1 GB into a 1 GB dump on 2026-09-30), and starting a
+ * month again from byte 0 can fail the same way; it serves byte ranges, so each retry asks
+ * for the rest (-r <bytes so far>-). curl, not fetch: it follows the environment's proxy.
+ */
+export function curlStream(url, o) {
+  o = Object.assign({ tries: 20, waitMs: 2000, curl: 'curl' }, o);
+  var out = new PassThrough({ highWaterMark: 1 << 20 });
+  var got = 0, fails = 0, child = null, stopped = false;
+  function attempt() {
+    if (stopped) return;
+    var args = ['-sSfL'].concat(got ? ['-r', got + '-'] : [], [url]);
+    var cmd = [].concat(o.curl);         // [program, args...] too, for the tests
+    var p = child = spawn(cmd[0], cmd.slice(1).concat(args), { stdio: ['ignore', 'pipe', 'pipe'] });
+    var err = '';
+    p.stderr.on('data', function (b) { err += b; });
+    p.stdout.on('data', function (b) { got += b.length; });
+    p.stdout.pipe(out, { end: false });
+    p.on('error', function (e) { stopped = true; out.destroy(e); });
+    p.on('close', function (code) {
+      if (stopped) return;
+      if (code === 0) { out.end(); return; }
+      if (++fails > o.tries) {
+        out.destroy(new Error('Download failed ' + fails + ' times at byte ' + got + ': ' + err.trim()));
+        return;
+      }
+      if (o.log) o.log('download broke at byte ' + got + ' (' + err.trim() + '); resuming');
+      setTimeout(attempt, Math.min(60000, o.waitMs * fails));
+    });
+  }
+  out.on('close', function () { stopped = true; if (child) child.kill(); });
+  attempt();
+  return out;
+}
+
 // Every file .zst or none: they are read as one stream. stdin is always a .zst dump.
 function zstInputs(files) {
-  var z = files.filter(function (f) { return f === '-' || /\.zst$/i.test(f); }).length;
+  var z = files.filter(function (f) { return f === '-' || /\.zst$/i.test(f.replace(/[?#].*$/, '')); }).length;
   if (z && z !== files.length) throw new Error('Mixed .zst and plain inputs: ' + files.join(', '));
   return z > 0;
 }
