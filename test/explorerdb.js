@@ -571,6 +571,57 @@ module.exports = async function run(check) {
       out: path.join(dir, 'p.xdb'), from: '2013-02' })), /was adding .*2013-01/);
   });
 
+  console.log('\nexplorerdb: filtering a dump for download');
+  const F = await load('tools/explorerdb/filter.mjs');
+  await check('a kept game keeps its five headers and plies + 1 moves, nothing else', () => {
+    const g = F.compactGame(game(base), 3);
+    assert.strictEqual(g, '[Event "?"]\n[Result "1-0"]\n[WhiteElo "1700"]\n[BlackElo "1600"]\n' +
+      '[TimeControl "300+0"]\n\ne4 c5 Nf3?! d6 1-0\n\n');
+    assert.deepStrictEqual(f(g, why).result, 0);
+  });
+  const fdir = path.join(tmp, 'filtered');
+  const fm = await F.filterDump({ input: dumpFile, out: path.join(fdir, 'm'), plies: PLIES,
+    partBytes: 1200, chunkBytes: 500 });
+  await check('the filter keeps what import keeps, in parts under the size, with their hashes', () => {
+    assert.strictEqual(fm.games.read, 403);
+    assert.strictEqual(fm.games.kept, wantKept);
+    assert.ok(fm.parts.length >= 3, fm.parts.length + ' parts');
+    assert.strictEqual(fm.parts.reduce((n, p) => n + p.games, 0), wantKept);
+    for (const p of fm.parts) {
+      const b = fs.readFileSync(path.join(fdir, p.file));
+      assert.ok(b.length === p.bytes && p.bytes <= 1200, p.file + ' ' + b.length);
+      assert.strictEqual(require('crypto').createHash('sha256').update(b).digest('hex'), p.sha256);
+      assert.ok(/\n\n$/.test(zlib.zstdDecompressSync(b).toString()), p.file + ' ends inside a game');
+    }
+    assert.deepStrictEqual(JSON.parse(fs.readFileSync(path.join(fdir, 'm.json'), 'utf8')).parts, fm.parts);
+  });
+  const fIndex = path.join(tmp, 'filtered.xdb');
+  const fMeta = await I.importDump({ input: path.join(fdir, 'm.json'), out: fIndex, plies: PLIES,
+    minGames: 1, workers: 2 });
+  await check('importing the filtered parts counts exactly what importing the dump did', () => {
+    const fdb = S.openIndex(fIndex);
+    try {
+      assert.strictEqual(fMeta.source, 'dump.pgn');
+      assert.strictEqual(fMeta.report.games.kept, wantKept);
+      assert.strictEqual(fMeta.report.positions, meta.report.positions);
+      for (const k of want.keys()) assert.deepStrictEqual(fdb.records(G.keyOf(k)), db.records(G.keyOf(k)), k);
+    } finally {
+      fdb.close();
+    }
+  });
+  await check('a filtered month refuses more plies, other ratings, and a part not fully downloaded', async () => {
+    const man = path.join(fdir, 'm.json');
+    await assert.rejects(I.importDump({ input: man, out: path.join(tmp, 'p.xdb'), plies: PLIES + 1 }),
+      /filtered to 30 plies/);
+    await assert.rejects(I.importDump({ input: man, out: path.join(tmp, 'p.xdb'), plies: PLIES,
+      ratings: [1400, 1600] }), /has no 1400 games/);
+    const last = path.join(fdir, fm.parts[fm.parts.length - 1].file);
+    fs.truncateSync(last, 100);
+    await assert.rejects(I.importDump({ input: man, out: path.join(tmp, 'p.xdb'), plies: PLIES }),
+      /not fully downloaded/);
+    assert.ok(!fs.existsSync(path.join(tmp, 'p.xdb.tmp')), 'temporary files left');
+  });
+
   console.log('\nexplorerdb: the server');
   const START = new Chess().fen();
   const SV = await load('tools/explorerdb/server.mjs');

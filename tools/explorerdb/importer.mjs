@@ -12,10 +12,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import { Transform } from 'node:stream';
+import { Transform, Readable } from 'node:stream';
 import { spawn } from 'node:child_process';
 import { Worker } from 'node:worker_threads';
-import { makeFilter, HASH_NAME } from './games.mjs';
+import { makeFilter, HASH_NAME, FILTERED_FORMAT } from './games.mjs';
 import { SHARDS, REC, THRESHOLDS, FORMAT, shardFile, writeHeader } from './store.mjs';
 
 export var DEFAULTS = {
@@ -89,11 +89,39 @@ export function zstdFrames() {
   });
 }
 
-function openText(file, onBytes) {
-  var raw = fs.createReadStream(file, { highWaterMark: 1 << 20 });
+/*
+ * The raw bytes of one or more files read as one, or of stdin for '-'. A filtered month's
+ * parts (filter.mjs) are each whole zstd frames ending on a whole game, so reading them
+ * back to back is reading the month.
+ */
+function openRaw(files, onBytes) {
+  var raw;
+  if (files.length === 1 && files[0] === '-') raw = process.stdin;
+  else if (files.length === 1) raw = fs.createReadStream(files[0], { highWaterMark: 1 << 20 });
+  else {
+    raw = Readable.from((async function* () {
+      for (var i = 0; i < files.length; i++) {
+        for await (var b of fs.createReadStream(files[i], { highWaterMark: 1 << 20 })) yield b;
+      }
+    })(), { objectMode: false });
+  }
   raw.on('data', function (b) { onBytes(b.length); });
+  return raw;
+}
+
+// Every file .zst or none: they are read as one stream. stdin is always a .zst dump.
+function zstInputs(files) {
+  var z = files.filter(function (f) { return f === '-' || /\.zst$/i.test(f); }).length;
+  if (z && z !== files.length) throw new Error('Mixed .zst and plain inputs: ' + files.join(', '));
+  return z > 0;
+}
+
+export function openText(files, onBytes) {
+  if (!Array.isArray(files)) files = [files];
+  var zst = zstInputs(files);
+  var raw = openRaw(files, onBytes);
   var none = function () {};
-  if (!/\.zst$/i.test(file)) return { stream: raw, raw: raw, finished: Promise.resolve(), stop: none };
+  if (!zst) return { stream: raw, raw: raw, finished: Promise.resolve(), stop: none };
   if (typeof zlib.createZstdDecompress === 'function') {
     // Node's decoder emits 'end' before its 'error', so only 'close' says it is done.
     var z = zlib.createZstdDecompress();
@@ -158,6 +186,42 @@ function mins(ms) {
 }
 
 /*
+ * What an import reads: a dump, or a filtered month's manifest (filter.mjs), whose parts
+ * are read back to back. A part whose size differs from the manifest's is a download that
+ * didn't finish.
+ */
+export function readInputs(input) {
+  if (!/\.json$/i.test(input)) {
+    return { files: [input], size: fs.statSync(input).size, source: path.basename(input), filtered: null };
+  }
+  var m = JSON.parse(fs.readFileSync(input, 'utf8'));
+  if (m.format !== FILTERED_FORMAT) throw new Error(path.basename(input) + ' is not a filtered month\'s manifest');
+  var dir = path.dirname(input), size = 0;
+  var files = m.parts.map(function (p) {
+    var f = path.join(dir, p.file);
+    if (!fs.existsSync(f)) throw new Error('Missing part ' + p.file + ' of ' + path.basename(input));
+    var b = fs.statSync(f).size;
+    if (b !== p.bytes) throw new Error(p.file + ' is ' + b + ' bytes, the manifest says ' + p.bytes + ' (not fully downloaded?)');
+    size += b;
+    return f;
+  });
+  return { files: files, size: size, source: m.source, filtered: m };
+}
+
+// A filtered month holds only what its filter kept, and each game only its first plies + 1.
+function checkFiltered(o, m) {
+  if (o.plies > m.plies) {
+    throw new Error(m.source + ' was filtered to ' + m.plies + ' plies (+1); import it with --plies ' + m.plies + ' or fewer');
+  }
+  var sp = o.speeds.filter(function (x) { return m.filter.speeds.indexOf(x) < 0; });
+  var ra = o.ratings.filter(function (x) { return m.filter.ratings.indexOf(x) < 0; });
+  if (sp.length || ra.length) {
+    throw new Error(m.source + ' was filtered to ' + m.filter.speeds.join(',') + ' and ratings ' +
+      m.filter.ratings.join(',') + '; it has no ' + sp.concat(ra).join(', ') + ' games');
+  }
+}
+
+/*
  * o: { input, out, speeds, ratings, plies, minGames, combinePlies, workers, maxGames,
  *      tmp, keepTmp, log, intoShard, shardMerged }
  * Resolves with the header written to the index (its `report` has the counts).
@@ -171,10 +235,12 @@ export async function importDump(o) {
   o = Object.assign({}, DEFAULTS, o);
   var log = o.log || function () {};
   var nWorkers = o.workers || Math.max(1, Math.min(8, os.cpus().length - 1));
+  var inputs = readInputs(o.input);
+  if (inputs.filtered) checkFiltered(o, inputs.filtered);
   var tmp = o.tmp || o.out + '.tmp';
   fs.rmSync(tmp, { recursive: true, force: true });
   fs.mkdirSync(tmp, { recursive: true });
-  var size = fs.statSync(o.input).size;
+  var size = inputs.size;
   var t0 = Date.now();
 
   var pool = createPool(nWorkers, { dir: tmp, plies: o.plies, combinePlies: o.combinePlies });
@@ -184,7 +250,7 @@ export async function importDump(o) {
 
   try {
     await new Promise(function (resolve, reject) {
-      var src = openText(o.input, function (b) { n.bytes += b; });
+      var src = openText(inputs.files, function (b) { n.bytes += b; });
       var text = src.stream;
       text.setEncoding('latin1');   // headers and moves are ASCII; names don't matter here
       var carry = '', batch = [], inflight = 0, ended = false, done = false, lastLog = Date.now();
@@ -336,7 +402,7 @@ export async function importDump(o) {
   var meta = {
     format: FORMAT,
     hash: HASH_NAME,
-    source: path.basename(o.input),
+    source: inputs.source,
     filter: { speeds: o.speeds, ratings: o.ratings },
     plies: o.plies,
     minGames: o.minGames,

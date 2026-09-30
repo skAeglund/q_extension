@@ -22,6 +22,9 @@ import { Chess } from '../../src/vendor/chess.js';
 // Named in the index header: an index is only readable by the same hash function.
 export var HASH_NAME = 'chess.js-1.4.0-zobrist';
 
+// A filtered month's manifest (filter.mjs), which import reads in place of a dump.
+export var FILTERED_FORMAT = 'explorerdb-filtered-1';
+
 // Lichess's speeds, from its estimated game length: base + 40 × increment, in seconds.
 export function speedOf(timeControl) {
   if (!timeControl || timeControl === '-') return 'correspondence';
@@ -47,7 +50,7 @@ export function ratingGroup(avg) {
 
 var RESULT = { '1-0': 0, '1/2-1/2': 1, '0-1': 2 };
 
-function header(text, name) {
+export function header(text, name) {
   var i = text.indexOf('[' + name + ' "');
   if (i < 0) return null;
   var s = i + name.length + 3;
