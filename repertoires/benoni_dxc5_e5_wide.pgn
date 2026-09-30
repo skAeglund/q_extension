@@ -9,13 +9,17 @@
 3... Bxc5 {Prac 54.5 d5, prep 57.0, engine 50.0, blend 54.7; Nf6 52.4 (Prac
 53.5), h6 41.7 (Prac 42.7)} 4. Nf3 {61% of 124,578 games · not searched yet}
 (4. Nc3 {17% of 124,578 games · not searched yet}) (4. Bc4 {10% of 124,578
-games · not searched yet})) (3. Nc3 {17% of 759,589 games · not searched yet})
-(3. b4 {15% of 759,589 games · not searched yet}) (3. Be3 {6% of 759,589 games
-· not searched yet}) (3. e3 {6% of 759,589 games · not searched yet}) (3. c4
-{4% of 759,589 games · not searched yet}) (3. Qd5 {3% of 759,589 games · not
-searched yet}) 3... Nf6?! {Prac 55.4 d5, prep 59.7 (38% Prac), engine 40.7,
-blend 53.5 (best Nc6 48.3); Nc6 52.2 (Prac 52.9), Bxc5 51.0 (Prac 52.0), e4
-46.9 (Prac 49.2)} 4. Nxe5 {44% of 8,447 games · not searched yet} (4. Nc3 {11%
-of 8,447 games · not searched yet}) (4. Bg5 {11% of 8,447 games · not searched
-yet}) (4. e3 {11% of 8,447 games · not searched yet}) (4. b4 {6% of 8,447 games
-· not searched yet}) *
+games · not searched yet})) (3. Nc3 {17% of 759,589 games} 3... Bxc5 {Prac 54.7
+d7, prep 55.8, engine 49.7, blend 53.8; Nf6 53.3 (Prac 54.9), Nc6 52.0 (Prac
+52.1 d5), a5 42.6 (Prac 43.6 d5)} 4. Nf3 {33% of 114,464 games · not searched
+yet} (4. e4 {30% of 114,464 games · transposes to 3. e4 Bxc5 4. Nc3}) (4. Ne4
+{17% of 114,464 games · not searched yet}) (4. e3 {12% of 114,464 games · not
+searched yet})) (3. b4 {15% of 759,589 games · not searched yet}) (3. Be3 {6%
+of 759,589 games · not searched yet}) (3. e3 {6% of 759,589 games · not
+searched yet}) (3. c4 {4% of 759,589 games · not searched yet}) (3. Qd5 {3% of
+759,589 games · not searched yet}) 3... Nf6?! {Prac 55.4 d5, prep 59.7 (38%
+Prac), engine 40.7, blend 53.5 (best Nc6 48.3); Nc6 52.2 (Prac 52.9), Bxc5 51.0
+(Prac 52.0), e4 46.9 (Prac 49.2)} 4. Nxe5 {44% of 8,447 games · not searched
+yet} (4. Nc3 {11% of 8,447 games · not searched yet}) (4. Bg5 {11% of 8,447
+games · not searched yet}) (4. e3 {11% of 8,447 games · not searched yet})
+(4. b4 {6% of 8,447 games · not searched yet}) *
