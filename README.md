@@ -714,6 +714,9 @@ next month downloads while one imports. At the end it writes `explorer/lichess.x
   month takes about an hour, about as long as its import. Over a slower line (3.5 MB/s) the
   download was the slow part, at about a week for the archive. `--connections N` splits
   each download across N connections, but two measured no faster than one, either way.
+  A download that fails Lichess's sha256 check (after a crash, say) is repaired with the
+  checksums in Lichess's torrent for that month: only the bad megabytes are fetched again,
+  not the whole month.
 - **Keep the machine awake.** Set Windows to never sleep while plugged in (Settings → System
   → Power), or run `powercfg /change standby-timeout-ac 0` in a terminal. Run it in its own
   terminal window. For restarts after a reboot, a Task Scheduler task that runs the same

@@ -7,6 +7,7 @@ repertoires/repgen-cache.jsonl
 repertoires/*.onnx
 repertoires/*.onnx.part
 # explorerdb's indexes (explorer/; rebuilt from Lichess's dumps) and their temporary files
+/explorer/
 *.xdb
 *.xdb.part
 *.xdb.tmp/

@@ -469,6 +469,7 @@ module.exports = async function run(check) {
     let cut = true, corrupt = 0, ranges = [];
     const server = http.createServer((req, res) => {
       if (req.method === 'HEAD') { res.writeHead(200, { 'Content-Length': body.length }); return res.end(); }
+      if (req.url.endsWith('.torrent')) { res.writeHead(404); return res.end(); }   // no repair: fetched whole
       const m = /bytes=(\d+)-/.exec(req.headers.range || '');
       const from = m ? Number(m[1]) : 0;
       ranges.push(from);
@@ -497,6 +498,59 @@ module.exports = async function run(check) {
       await assert.rejects(AL.download({ url, name: 'x.pgn.zst', sha256: sum }, path.join(tmp, 'dl3.pgn.zst'),
         () => {}, { unitMs: 1 }), /sha256 mismatch twice/);
       assert.ok(!fs.existsSync(path.join(tmp, 'dl3.pgn.zst')));
+    } finally {
+      server.close();
+    }
+  });
+  await check('a copy that fails its sha256 is repaired from the torrent\'s piece hashes', async () => {
+    const http = require('http');
+    const body = crypto.randomBytes(300000), plen = 32768, count = Math.ceil(body.length / plen);
+    const pieces = Buffer.concat(Array.from({ length: count }, (_, p) =>
+      crypto.createHash('sha1').update(body.subarray(p * plen, (p + 1) * plen)).digest()));
+    const torrentOf = len => Buffer.concat([Buffer.from('d8:announce3:x:y4:infod6:lengthi' + len +
+      'e4:name9:x.pgn.zst12:piece lengthi' + plen + 'e6:pieces' + pieces.length + ':'), pieces, Buffer.from('ee')]);
+    let torrent = torrentOf(body.length), asked = [];
+    const server = http.createServer((req, res) => {
+      if (req.method === 'HEAD') { res.writeHead(200, { 'Content-Length': body.length }); return res.end(); }
+      if (req.url.endsWith('.torrent')) { res.writeHead(200, { 'Content-Length': torrent.length }); return res.end(torrent); }
+      const m = /bytes=(\d+)-(\d*)/.exec(req.headers.range || '');
+      const from = m ? Number(m[1]) : 0, to = m && m[2] ? Number(m[2]) + 1 : body.length;
+      asked.push([from, to]);
+      const data = body.subarray(from, to);
+      res.writeHead(m ? 206 : 200, { 'Content-Length': data.length });
+      res.end(data);
+    });
+    await new Promise(r => server.listen(0, '127.0.0.1', r));
+    try {
+      const url = 'http://127.0.0.1:' + server.address().port + '/x.pgn.zst';
+      const sum = crypto.createHash('sha256').update(body).digest('hex');
+      assert.deepStrictEqual(AL.bdecode(torrent).info.length, body.length);
+      // What the crash left: a full-length .part (no map, as from before) whose tail
+      // around pieces 4-5 went to zeros, and one flipped byte in piece 8.
+      const broken = () => {
+        const b = Buffer.from(body);
+        b.fill(0, 4 * plen + 100, 6 * plen - 7);
+        b[8 * plen + 3] ^= 1;
+        return b;
+      };
+      const dest = path.join(tmp, 'rep.pgn.zst'), logs = [];
+      fs.writeFileSync(dest + '.part', broken());
+      await AL.download({ url, name: 'x.pgn.zst', sha256: sum }, dest, l => logs.push(l), { unitMs: 1 });
+      assert.ok(fs.readFileSync(dest).equals(body));
+      // Two requests: pieces 4-5 together, then piece 8. Nothing else of the file.
+      assert.deepStrictEqual(asked, [[4 * plen, 6 * plen], [8 * plen, 9 * plen]]);
+      assert.ok(logs.some(l => /3 of 10 pieces are bad/.test(l)), logs.join('\n'));
+      assert.ok(!fs.existsSync(dest + '.part') && !fs.existsSync(dest + '.part.json'));
+
+      // A torrent for another upload of the dump is no help: fetched whole.
+      asked = []; logs.length = 0;
+      torrent = torrentOf(body.length + 1);
+      const d2 = path.join(tmp, 'rep2.pgn.zst');
+      fs.writeFileSync(d2 + '.part', broken());
+      await AL.download({ url, name: 'x.pgn.zst', sha256: sum }, d2, l => logs.push(l), { unitMs: 1 });
+      assert.ok(fs.readFileSync(d2).equals(body));
+      assert.deepStrictEqual(asked, [[0, body.length]]);
+      assert.ok(logs.some(l => /another upload/.test(l)), logs.join('\n'));
     } finally {
       server.close();
     }

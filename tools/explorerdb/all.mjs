@@ -96,6 +96,105 @@ async function sha256(file) {
 export var CONNECTIONS = 1;
 var MIN_SPLIT = 64e6;          // a range left under twice this isn't split again
 
+// Just enough bencode for a .torrent: integers, byte strings (as Buffers), lists, dicts.
+export function bdecode(buf) {
+  var i = 0;
+  function next() {
+    var c = buf[i];
+    if (c === 0x69) {                                    // i<n>e
+      var e = buf.indexOf(0x65, i);
+      var n = Number(buf.toString('latin1', i + 1, e));
+      i = e + 1;
+      return n;
+    }
+    if (c === 0x6c || c === 0x64) {                      // l...e, d...e
+      i++;
+      var l = c === 0x6c ? [] : {};
+      while (buf[i] !== 0x65) {
+        if (i >= buf.length) throw new Error('bencode: cut off');
+        if (c === 0x6c) l.push(next());
+        else { var k = next().toString('latin1'); l[k] = next(); }
+      }
+      i++;
+      return l;
+    }
+    var colon = buf.indexOf(0x3a, i);                    // <len>:<bytes>
+    var len = Number(buf.toString('latin1', i, colon));
+    if (!(colon > i) || !(len >= 0) || colon + 1 + len > buf.length) throw new Error('bencode: bad string at ' + i);
+    i = colon + 1 + len;
+    return buf.subarray(colon + 1, i);
+  }
+  return next();
+}
+
+/*
+ * After a failed sha256: finds the bad pieces by the SHA-1s in Lichess's .torrent for the
+ * dump (nobody seeds them, but the hashes are good) and fetches only those again, by Range.
+ * true when it replaced some; false when it can't help (no torrent, a torrent for another
+ * upload of the dump, as 2026-06's is, or most of the file bad), and the caller downloads
+ * it all again.
+ */
+async function repair(d, part, size, log, o) {
+  var t;
+  try {
+    var res = await fetch(d.url + '.torrent', { signal: AbortSignal.timeout(60000) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    t = bdecode(Buffer.from(await res.arrayBuffer())).info;
+    if (!t || !(t['piece length'] > 0) || !t.pieces) throw new Error('not a torrent');
+  } catch (e) {
+    log('no piece hashes for ' + d.name + ' (' + (e && e.message || e) + ')');
+    return false;
+  }
+  if (t.length !== size) {
+    log('the torrent of ' + d.name + ' is for another upload of it (' + t.length + ' bytes, not ' + size + ')');
+    return false;
+  }
+  var plen = t['piece length'], count = Math.ceil(size / plen);
+  if (t.pieces.length !== count * 20) { log('the torrent of ' + d.name + ' has the wrong number of pieces'); return false; }
+  log('finding the bad pieces of ' + d.name + ' (' + count + ' pieces of ' + gb(plen) + ')');
+  var bad = [], buf = Buffer.alloc(plen), fh = await fsp.open(part, 'r+');
+  try {
+    for (var p = 0; p < count; p++) {
+      var at = p * plen, n = Math.min(plen, size - at);
+      await fh.read(buf, 0, n, at);
+      var h = crypto.createHash('sha1').update(buf.subarray(0, n)).digest();
+      if (!h.equals(t.pieces.subarray(p * 20, p * 20 + 20))) bad.push(p);
+    }
+    if (!bad.length) { log('every piece of ' + d.name + ' is good, yet the sha256 isn\'t'); return false; }
+    if (bad.length > count / 2) { log(bad.length + ' of ' + count + ' pieces are bad'); return false; }
+    log(bad.length + ' of ' + count + ' pieces are bad (' + gb(bad.length * plen) + ', from ' +
+      gb(bad[0] * plen) + '); fetching them again');
+    // Adjacent bad pieces go in one request, up to 64 MB (a crash leaves one run of them).
+    var runs = [];
+    bad.forEach(function (q) {
+      var r = runs[runs.length - 1];
+      if (r && q === r.to && (r.to - r.from) * plen < 64e6) r.to++;
+      else runs.push({ from: q, to: q + 1 });
+    });
+    for (var k = 0; k < runs.length; k++) {
+      var run = runs[k], from = run.from * plen, len = Math.min(run.to * plen, size) - from;
+      await retry('fetching pieces ' + run.from + '-' + (run.to - 1) + ' of ' + d.name, log, async function () {
+        var r = await fetch(d.url, { signal: AbortSignal.timeout(o.pieceMs || 300000),
+          headers: { Range: 'bytes=' + from + '-' + (from + len - 1) } });
+        if (r.status !== 206) throw new Error('HTTP ' + r.status);
+        var got = Buffer.from(await r.arrayBuffer());
+        if (got.length !== len) throw new Error(got.length + ' of ' + len + ' bytes');
+        for (var q = run.from; q < run.to; q++) {
+          var piece = got.subarray((q - run.from) * plen, Math.min((q - run.from + 1) * plen, len));
+          if (!crypto.createHash('sha1').update(piece).digest().equals(t.pieces.subarray(q * 20, q * 20 + 20))) {
+            throw new Error('piece ' + q + ' came back bad');
+          }
+        }
+        await fh.write(got, 0, len, from);
+      }, o.unitMs);
+    }
+    await fh.sync();
+  } finally {
+    await fh.close();
+  }
+  return true;
+}
+
 /*
  * Downloads d.url to `dest` over `connections` Range requests at once, into dest.part,
  * so a break resumes where it stopped. dest.part.json holds each range's progress
@@ -104,7 +203,8 @@ var MIN_SPLIT = 64e6;          // a range left under twice this isn't split agai
  * Whenever fewer ranges than connections are left, the largest is split in half, so both
  * connections stay busy to the end. A connection that sends nothing for 2 minutes stops
  * the pass, which is resumed. Checked against Lichess's sha256 before it's renamed into
- * place.
+ * place; a copy that fails is repaired piece by piece if the torrent allows (repair()),
+ * and otherwise fetched again whole.
  */
 export async function download(d, dest, log, o) {
   o = o || {};
@@ -154,6 +254,18 @@ export async function download(d, dest, log, o) {
       var fh = await fsp.open(part, fs.existsSync(part) ? 'r+' : 'w+');
       var ctl = new AbortController();
       var from = size - left(ranges), last = Date.now(), t0 = Date.now(), saved = Date.now();
+      /*
+       * Progress is saved only for bytes known to be on the disk: the positions are taken,
+       * then the file is flushed, then they're saved. Without the flush, a crash can keep
+       * the file's length while losing its last writes to zeros, and a resume trusts them.
+       * That happened on 2026-09-30 (an unexpected restart; 126 zero bytes in log.txt),
+       * and cost the whole of 2026-07 on its sha256 check.
+       */
+      var checkpoint = async function () {
+        var snap = ranges.map(function (r) { return { at: r.at, to: r.to }; });
+        await fh.sync();
+        save(snap);
+      };
       try {
         if ((await fh.stat()).size < size) await fh.truncate(size);
         var one = async function (r) {
@@ -183,7 +295,7 @@ export async function download(d, dest, log, o) {
             if (n > 0) await fh.write(b, 0, n, r.at);
             r.at += n;
             if (r.at >= r.to) break;
-            if (Date.now() - saved > 5000) { saved = Date.now(); save(ranges); }
+            if (Date.now() - saved > 5000) { saved = Date.now(); await checkpoint(); }
             if (Date.now() - last > 60000) {
               last = Date.now();
               var got = size - left(ranges), rate = (got - from) / ((Date.now() - t0) / 1000);
@@ -201,14 +313,21 @@ export async function download(d, dest, log, o) {
         var bad = res.find(function (x) { return x.status === 'rejected'; });
         if (bad) throw ctl.signal.reason || bad.reason;
       } finally {
+        // Every write has settled by now; a failed flush keeps the last saved map.
+        var synced = await fh.sync().then(function () { return true; }, function () { return false; });
         await fh.close();
-        save(ranges);
+        if (synced) save(ranges);
       }
     }, o.unitMs);
     if (!d.sha256) { log('no sha256 listed for ' + d.name + '; not checked'); break; }
     log('checking ' + d.name);
     var sum = await sha256(part);
     if (sum === d.sha256) break;
+    if (round === 0 && await repair(d, part, size, log, o)) {
+      log('checking ' + d.name + ' again');
+      sum = await sha256(part);
+      if (sum === d.sha256) break;
+    }
     fs.rmSync(part);
     fs.rmSync(map, { force: true });
     if (round >= 1) throw new Error(d.name + ': sha256 mismatch twice (' + sum + ')');

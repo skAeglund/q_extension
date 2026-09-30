@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 548 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 549 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -857,6 +857,17 @@ took 60 minutes for 2026-08 (92 M games read, 28.8 M kept, accumulator 15.1 GB).
   user's request, then back to 1 the same evening. On cable (11 MB/s to OVH), one
   connection to Lichess got 7.4–8.4 MB/s and two at once 3.5 + 3.6, so there's no gain, and
   a download now takes about as long as an import.
+- **A crash cost a whole month.** The PC restarted unexpectedly at 23:06 (Kernel-Power 41),
+  and `log.txt` got 126 zero bytes where its last writes had been. The resumed 2026-07
+  trusted its `.part`'s length and failed the sha256 check 16 GB later, so all 29 GB were
+  fetched again (about 70 minutes). Two fixes followed:
+  - The progress map is saved only after `fh.sync()`, with the positions taken before the
+    flush.
+  - A failed sha256 now tries `repair()`: the torrent's SHA-1 per piece (1 MiB pieces; 2026-07
+    has 27,706) finds the bad pieces, and runs of adjacent ones up to 64 MB are fetched by
+    Range and checked. It isn't used when the torrent is for another upload (its length
+    differs, as with 2026-06) or more than half the pieces are bad. Checked live on 2013-01,
+    with 3 MB zeroed and a byte flipped: 5 of 17 pieces refetched in 1 s, then sha256 passed.
 - **The user's line is the limit.** An earlier trial suggested Lichess capped each
   connection: aria2c's webseed got 3.0 MiB/s beside the HTTP run's 2.8. Measured again
   later: 2016-02 over two connections got 2.4 MB/s in all, while the run's own download
