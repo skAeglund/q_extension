@@ -85,7 +85,9 @@ export var REPGEN_DEFAULTS = {
 // --reply-threshold 3 --skip-explorer-below 10 --compare-reach-min 10 turn them on.
 // Maia is off for the same reason, and because it needs onnxruntime-node and its model
 // (repgen/maia.mjs): --maia turns it on for a run, with the column's blend. maiaElo 0 means
-// "from the run's rating filter", as the column's does.
+// "from the run's rating filter", as the column's does. riskAversion is the column's
+// 0.05: a new run saves it at creation, and a run from before it was searched with plain
+// means and keeps 0 (repgen.mjs).
 export var SEARCH_DEFAULTS = {
   replyThreshold: 0.02,
   minGames: 50,
@@ -99,7 +101,8 @@ export var SEARCH_DEFAULTS = {
   maiaUntil: 100,
   maiaOnlyBelow: 10,
   maiaWeight: 20,
-  prepPriorGames: 50
+  prepPriorGames: 50,
+  riskAversion: 0.05
 };
 
 // 0 means "the top reply only".
@@ -496,6 +499,9 @@ export function createGenerator(o) {
           // The rating Maia played at, when the search had Maia: a check tells searches
           // made without it by its absence.
           maiaElo: opts.maia ? opts.maiaElo : undefined,
+          // The risk aversion the values were searched with; none means plain means (0), as
+          // in runs from before it.
+          risk: opts.riskAversion > 0 ? opts.riskAversion : undefined,
           engine: c.wins[san],
           bestMove: c.best.san,
           bestEngine: c.best.win,

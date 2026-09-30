@@ -31,7 +31,8 @@ var FIELDS = {
   maiaUntil: 100,
   maiaOnlyBelow: 10,
   maiaWeight: 20,
-  prepPriorGames: 50
+  prepPriorGames: 50,
+  riskAversion: 0.05
 };
 
 var OPTS = Object.keys(DEFAULTS);

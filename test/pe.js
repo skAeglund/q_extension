@@ -57,10 +57,13 @@ module.exports = async function run(check) {
   console.log('\npractical eval: metric');
 
   let res;
-  res = await S.evaluateRow(fakeProvider(WORKED), 'root w - -', 'Nf3', 1, {});
+  // The worked examples here are plain means: riskAversion 0 (see "risk aversion" below).
+  const LIN = { riskAversion: 0 };
+  res = await S.evaluateRow(fakeProvider(WORKED), 'root w - -', 'Nf3', 1, LIN);
   await check('worked example gives 65.3%', () => {
     assert.strictEqual(res.state, 'value');
     assert.strictEqual(Number(res.value.toFixed(1)), 65.3, 'got ' + res.value);
+    assert.strictEqual(res.mean, res.value);
   });
   await check('  ...with the unevaluated reply reported as unexplained mass', () =>
     near(res.unexplained, 0.28, 1e-9, 'unexplained'));
@@ -388,7 +391,7 @@ module.exports = async function run(check) {
   const failing = Object.assign(fakeProvider(WORKED), { analyse: () => { throw new Error('x'); } });
   res = await S.evaluateRow(failing, 'root w - -', 'Nf3', 1, {});
   await check('  ...and a failed request for analysis never fails the search', () =>
-    assert.strictEqual(Number(res.value.toFixed(1)), 65.3));
+    assert.strictEqual(Number(res.mean.toFixed(1)), 65.3));
 
   console.log('\npractical eval: Maia preview');
   // The Lichess search and the preview over switchTree. switchTree has 1000 games
@@ -520,7 +523,8 @@ module.exports = async function run(check) {
       cdb: cdb([['A', -100], ['B', 0], ['C', 100]]) }
   });
   const POL = { 'row b - -': [['A', 0.2], ['B', 0.3], ['C', 0.5]] };
-  const MAIA = { maia: true, maiaElo: 2000 };
+  // The formulas below are plain means.
+  const MAIA = { maia: true, maiaElo: 2000, riskAversion: 0 };
   let log = {};
   res = await S.evaluateRow(withMaia(thin([30, 10]), POL, log), 'root w - -', 'R', 1, MAIA);
   await check('under 100 games, Maia fills in as pseudo-games that fade towards 100', () => {
@@ -696,6 +700,57 @@ module.exports = async function run(check) {
   await S.evaluateRow(fakeProvider(TRANS, calls), 'root w - -', 'R', 3, {});
   await check('a transposition inside a row is searched once per iteration', () =>
     assert.strictEqual(calls.explorer, 2, 'explorer calls: ' + calls.explorer));
+
+  console.log('\npractical eval: risk aversion');
+  const rm = (pairs, l) => S.riskMean(pairs.map(([w, v]) => ({ w, v })), l);
+  await check('the default is 0.05; 0 is the plain weighted mean', () => {
+    assert.strictEqual(S.PE_DEFAULTS.riskAversion, 0.05);
+    near(rm([[0.82, 48], [0.14, 82], [0.04, 85]], 0), 0.82 * 48 + 0.14 * 82 + 0.04 * 85, 1e-9);
+    near(rm([[3, 40], [1, 60]], 0), 45, 1e-9);
+  });
+  await check('  ...and at 0.05 a sound position beats one propped up by blunders', () => {
+    const trap = [[0.82, 48], [0.14, 82], [0.04, 85]], sound = [[1, 50], [1, 55]];
+    assert.ok(rm(trap, 0) > rm(sound, 0));
+    near(rm(trap, 0.05), 51.2, 0.05, 'trap');
+    near(rm(sound, 0.05), 52.3, 0.05, 'sound');
+  });
+  await check('  ...between the smallest value and the mean, and exact for equal values', () => {
+    const xs = [[5, 20], [1, 90], [2, 55]];
+    [0.01, 0.05, 0.2, 1].forEach(l => {
+      const v = rm(xs, l);
+      assert.ok(v >= 20 && v <= rm(xs, 0), l + ': ' + v);
+    });
+    near(rm([[1, 60], [3, 60]], 0.05), 60, 1e-9);
+    assert.ok(isFinite(rm([[1, 0], [1, 100]], 5)), 'no underflow');
+    assert.strictEqual(rm([], 0.05), null);
+  });
+
+  // My move after the row's only reply: T (ChessDB's best) leads to a position where 82%
+  // play a sound reply and 18% blunder; S to one where both replies are fine for me. The
+  // plain mean keeps T, risk aversion switches to S. Depth 5, so the my-node compares at 1.
+  const RISK = {
+    'root w - -': { next: { R: 'row b - -' } },
+    'row b - -': { ex: ex(1000, [['x', 1000]]), cdb: cdb([['x', 0]]), next: { x: 'me w - -' } },
+    'me w - -': { cdb: cdb([['T', 30], ['S', 20]]), next: { T: 't b - -', S: 's b - -' } },
+    't b - -': { ex: ex(1000, [['g', 820], ['b', 180]]), cdb: cdb([['g', 10], ['b', -400]]),
+      next: { g: 'tg w - -', b: 'tb w - -' } },
+    's b - -': { ex: ex(1000, [['p', 500], ['q', 500]]), cdb: cdb([['p', -20], ['q', -80]]),
+      next: { p: 'sp w - -', q: 'sq w - -' } }
+  };
+  const rLin = await S.evaluateRow(fakeProvider(RISK), 'root w - -', 'R', 5, LIN);
+  const rRisk = await S.evaluateRow(fakeProvider(RISK), 'root w - -', 'R', 5, {});
+  await check('risk aversion can change my move: the blunder-propped line loses', () => {
+    assert.strictEqual(rLin.replies[0].move, 'T');
+    assert.strictEqual(rLin.switches.length, 0);
+    assert.strictEqual(rRisk.replies[0].move, 'S');
+    assert.deepStrictEqual(rRisk.switches.map(w => w.from + '>' + w.to), ['T>S']);
+  });
+  await check('  ...and the row\'s mean is the plain mean along the moves it chose', () => {
+    near(rLin.mean, rLin.value, 1e-12);
+    const w = 500 + 2;                               // games + alpha / k, k = 2
+    near(rRisk.mean, (w * W(20) + w * W(80)) / (2 * w), 1e-9, 'mean along S');
+    assert.ok(rRisk.value < rRisk.mean, rRisk.value + ' vs ' + rRisk.mean);
+  });
 
   console.log('\nprepared score: metric');
   // Explorer responses with real counts: [san, white, draws, black]. The position's own
@@ -964,7 +1019,7 @@ module.exports = async function run(check) {
   await check('the existing fakes (all draws, no position counts) still get a split', () => {
     sameSplit(res.raw, { w: 0, d: 1, b: 0 }, 'raw');
     sums1(res.prep);
-    assert.strictEqual(Number(res.value.toFixed(1)), 65.3);
+    assert.strictEqual(Number(res.mean.toFixed(1)), 65.3);
   });
 
   console.log('\nprepared score: requests, rounds, switch');

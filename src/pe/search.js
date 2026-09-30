@@ -55,7 +55,8 @@ export var PE_DEFAULTS = {
   compareReachMin: 0.10,   // my alternatives are compared only on lines reached this often
   preferBestWithin: 1,     // keep the ChessDB best unless another beats it by more
   prep: true,              // compute the prepared split alongside the Practical value
-  prepPriorGames: 50       // k: games' worth of trust in the Practical value at a leaf
+  prepPriorGames: 50,      // k: games' worth of trust in the Practical value at a leaf
+  riskAversion: 0.05       // lambda of riskMean at opponent nodes; 0: the plain mean
 };
 
 // ChessDB encodes mate as +-(30000 - plies). Anything this large is a mate score.
@@ -196,14 +197,46 @@ export function expectedScore(split, rootSide) {
 }
 
 /*
+ * An opponent node's value: a risk-averse mean of its replies (the certainty equivalent
+ * under exponential utility), with lambda per win% point:
+ *
+ *   -(1/lambda) ln( sum w_i exp(-lambda v_i) / sum w_i )
+ *
+ * lambda 0 is the plain weighted mean. Above it, replies good for me count for less than
+ * their share and replies good for the opponent for more, so a position whose common
+ * reply is sound and whose tail is blunders is worth less than its mean. Asked for on
+ * 2026-09-30: 82% of games at 48 and the rest at 82+ has a mean of 54, but the user
+ * would rather have a position whose common replies all give 50-55. At lambda 0.05 that
+ * row is worth 51.2 and a 50/55 split 52.3. The mean counts the blunders at the rate
+ * the whole rating filter makes them; they are the part that fades against stronger or
+ * forewarned opponents. Shifted by the smallest value, so exp never underflows.
+ */
+export function riskMean(items, lambda) {
+  var sw = 0, swv = 0, lo = Infinity;
+  items.forEach(function (x) {
+    sw += x.w; swv += x.w * x.v;
+    if (x.v < lo) lo = x.v;
+  });
+  if (!(sw > 0)) return null;
+  if (!(lambda > 0)) return swv / sw;
+  var se = 0;
+  items.forEach(function (x) { se += x.w * Math.exp(-lambda * (x.v - lo)); });
+  return lo - Math.log(se / sw) / lambda;
+}
+
+/*
  * value(pos, depthLeft, reach, leafWin) - expectimax over human replies.
  *
- * Opponent nodes: weighted mean of their replies' values. My nodes: max over a few
- * candidates near the ChessDB best. Leaves: `leafWin`, the parent's ChessDB score for the
+ * Opponent nodes: risk-averse mean of their replies' values (riskMean). My nodes: max over
+ * a few candidates near the ChessDB best. Leaves: `leafWin`, the parent's ChessDB score for the
  * move that got here - already fetched, so a leaf never costs a request of its own.
  *
  * Provider calls carry { reach, plies } so the caller can order requests by the mass
  * they explain, and tell the first iteration from later ones.
+ *
+ * Every value `v` carries `vm` beside it: the same tree, the same choices of my moves, but
+ * plain means at the opponent nodes. The tooltip shows it, so the effect of riskAversion
+ * can be seen. Leaves have no `vm`; it is their `v`.
  *
  * One makeSearch is one iteration. Its stats:
  *   positions  opponent nodes visited (after the per-iteration memo)
@@ -398,6 +431,7 @@ function makeSearch(provider, opts, rootSide, stats, plies) {
         { counts: m.cnt, dr: rdr })
         .then(function (n) {
           out.v = n.v;
+          out.vm = n.vm;
           out.expanded = true;
           out.move = n.move || null;
           out.sub = n.maia || 0;
@@ -413,14 +447,18 @@ function makeSearch(provider, opts, rootSide, stats, plies) {
           return out;
         });
     })).then(function (replies) {
-      var sw = 0, swv = 0, swm = 0;
+      var sw = 0, swvm = 0, swm = 0;
       var pw = 0, pd = 0, pb = 0, pp = 0, lg = 0, prepOk = opts.prep;
+      var items = [];
       replies.forEach(function (x) {
         // Uniform smoothing belongs to the games; Maia is already a prior.
         var w = x.g + x.mw + (gamesOn ? opts.alpha / k : 0);
         var f = w > 0 ? x.mw / w : 0;
         sw += w;
-        swv += w * x.v;
+        items.push({ w: w, v: x.v });
+        swvm += w * (x.vm != null ? x.vm : x.v);
+        // The Maia share and the prepared split stay linear: they say what the value
+        // rests on, and what the games did, not how much it is worth to me.
         swm += w * (f + (1 - f) * (x.sub || 0));
         // The prepared split: the same weighted mean. Its prior share has no Maia term,
         // because the Maia part of a weight is already a reply valued at its prior.
@@ -430,7 +468,8 @@ function makeSearch(provider, opts, rootSide, stats, plies) {
         lg += x.leafGames;
       });
       var node = {
-        v: swv / sw,
+        v: riskMean(items, opts.riskAversion),
+        vm: swvm / sw,
         kind: 'mean',
         games: total,
         engine: engine,
@@ -495,7 +534,8 @@ function makeSearch(provider, opts, rootSide, stats, plies) {
         // whichever move got lucky in a small sample and then report that same luck.
         function done(c) {
           return function (n) {
-            var r = { v: n.v, kind: 'max', move: c.san, maia: n.maia || 0 };
+            var r = { v: n.v, vm: n.vm != null ? n.vm : n.v, kind: 'max', move: c.san,
+              maia: n.maia || 0 };
             if (n.prep) { r.prep = n.prep; r.prior = n.prior; r.leafGames = n.leafGames; }
             return r;
           };
@@ -553,6 +593,8 @@ export function evaluateRow(provider, rootFen, san, plies, options) {
       fen: rowFen,
       depth: plies,
       value: n.v,
+      // The value with plain means at the opponent nodes (riskAversion 0), same choices.
+      mean: n.vm != null ? n.vm : n.v,
       engine: n.engine,
       games: n.games,
       positions: stats.positions,
