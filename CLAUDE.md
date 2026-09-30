@@ -586,7 +586,7 @@ does, so a repertoire's choices stay practical down to about 10 games. `--maia` 
 search's own Maia path (`search.js`, unchanged) for a run, saved in `state.search`; the model
 runs in Node (`repgen/maia.mjs`), not in a tab. Off by default: it needs an install, and a
 checked run must search the way it was made. Maia's rating comes from the filter like
-`peMaiaElo` (2100 for repgen's default 1800/2000/2200) unless `--maia-elo` is given. Nodes
+`peMaiaElo` (2100 for 1800/2000/2200, repgen's default until 2026-09-30; now 2150) unless `--maia-elo` is given. Nodes
 save `maia` (the pick's Maia share, in the PGN as `N% Maia` inside the `Prac` bit, so
 `clean.mjs` needed no change) and `maiaElo`; `--check --maia` re-searches positions searched
 without it that had a candidate under `maiaUntil` games (70% of the searched positions in the
@@ -790,7 +790,9 @@ no longer close or `deeperMaxPly` (8, depth 7) is reached: d3 → d5 → d7, d5 
 deepening has its own budget, `budgetDeeper` (300). The other rows stay at their depth,
 which keeps them out of the comparison, as "compare at one depth" requires. If a close row
 doesn't reach the new depth (budget, error), the shallower comparison stands. The node
-saves `deeper: [{from, to, rows}]` and the log says `close call: d3→d5 a6/Be6`. `closeBand()`
+saves `deeper: [{from, to, rows}]` and the log says `close call: d3→d5 a6/Be6`. The same
+day repgen's default rating filter widened to 1600–2500 (1600,1800,2000,2200,2500, the
+explorer panel's default), speeds unchanged; a run keeps the filter it was made with. `closeBand()`
 in `generator.mjs`; covered by the harness. On by default, also for resumed runs.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a

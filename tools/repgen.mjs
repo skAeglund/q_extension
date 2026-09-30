@@ -69,13 +69,13 @@ function usage() {
     '           (search every one of my positions again), --dry-run (report only)',
     'Run:       --hours <n>, --max-searches <n>, --rate <Lichess requests/min, default 15>,',
     '           --chessdb-rate <ChessDB requests/min, default 60>',
-    'Lichess:   --speeds blitz,rapid,classical  --ratings 1800,2000,2200  --token-file <file>',
+    'Lichess:   --speeds blitz,rapid,classical  --ratings 1600,1800,2000,2200,2500  --token-file <file>',
     '           (or the LICHESS_TOKEN environment variable)',
     '           --explorer localhost:9337: ask a local explorer (tools/explorerdb.mjs serve)',
     '           instead; no token needed, and a new run takes the index\'s filter',
     'Maia:      --maia [on|off] (off; kept with the run), --maia-model <file> (default',
     '           repertoires/' + MAIA_FILE + ', downloaded on first use), --maia-elo <n>',
-    '           (default: from --ratings, 2100 for 1800,2000,2200), --maia-until 100,',
+    '           (default: from --ratings, 2150 for the default ratings), --maia-until 100,',
     '           --maia-only-below 10, --maia-weight 20',
     'Choice:    --weights <ChessDB>,<Practical>,<prepared> (default ' + REPGEN_DEFAULTS.weights + ';',
     '           kept with the run, and runs from before it have 0,1,0), --prep-prior-games 50',
@@ -212,7 +212,7 @@ function run(args, local) {
     state = newState(st.fen, sideOf(args.side, st.fen), st.prefix);
     state.filter = local ? { speeds: local.info.filter.speeds.slice(), ratings: local.info.filter.ratings.slice() } : {
       speeds: String(args.speeds || 'blitz,rapid,classical').split(',').filter(Boolean),
-      ratings: String(args.ratings || '1800,2000,2200').split(',').filter(Boolean).map(Number)
+      ratings: String(args.ratings || '1600,1800,2000,2200,2500').split(',').filter(Boolean).map(Number)
     };
     // The weights are saved even at their defaults, so a later change of the defaults
     // doesn't change how this run chooses.
