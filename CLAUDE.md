@@ -20,14 +20,14 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 533 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 537 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
                               # and test/pgnclean.js (PGN tree, cleaning, transpositions)
                               # and test/cdbexplore.js (target picking, ChessDB search)
                               # and test/explorerdb.js (dump filter, fast replay, import,
-                              # the server and providers.js's local path)
+                              # filtered parts, the server and providers.js's local path)
 node --check src/main-world.js
 python icons/make_icons.py    # regenerate PNGs (stdlib only, no Pillow)
 ```
@@ -734,6 +734,20 @@ below).
 - `serve feb16` answered `/info`, and repgen `--explorer localhost:9337 --max-searches 2`
   ran without a token: d4 at the start (Prac 53.6, d5), then Nf3 after 1.d4 d5, "0 Lichess
   and 521 ChessDB requests in 8m41s". The ChessDB pace sets that time.
+
+**Filtered dumps (`explorerdb filter`, 2026-09-30).** The user's import is limited by
+downloading the dumps, so a cloud session can shrink them first: `filter` (`explorerdb/
+filter.mjs`) keeps the games that pass the filter as five headers and their first `plies` + 1
+moves (the extra ply keeps CUT apart from ENDED), zstd 19 with a 2^27 window and long-distance
+matching, in parts under 95 MB (GitHub's 100 MB file limit), each a whole frame ending on a
+whole game, flushed per megabyte so the size is known before the next chunk. A manifest
+(`<month>.json`, format `explorerdb-filtered-1`) lists the parts with sizes and sha256;
+`import` takes it in place of a dump, reads the parts back to back (`openText` over several
+files), and refuses a short part, more plies than were kept, or a speed or rating group the
+filter dropped. The harness checks that importing the parts gives the same records as
+importing the dump. The size gain on a real month is not measured yet; the estimate was 5–10×.
+The output goes to a separate private data repo, which the user creates (the GitHub
+integration can't).
 
 **Repgen: blended choice (2026-09-30).** Requested: choose my move by a weighted blend of
 ChessDB's eval, the Practical value and the prepared score (`weights`, all in win% for

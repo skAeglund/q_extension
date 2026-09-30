@@ -25,12 +25,19 @@
  *
  * answers the explorer's queries over HTTP (explorerdb/server.mjs), for the extension's
  * "Local explorer" setting and repgen's --explorer.
+ *
+ *   curl -sL <dump url> | node tools/explorerdb.mjs filter - --out 2016/2016-02
+ *
+ * keeps only the games an import would keep, cut to their first plies (explorerdb/
+ * filter.mjs), in parts under 95 MB with a manifest, 2016-02.json. Meant for a machine with
+ * a fast line; `import 2016-02.json --out feb16` then reads the parts as the month.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { Chess } from '../src/vendor/chess.js';
 import { importDump, DEFAULTS } from './explorerdb/importer.mjs';
+import { filterDump, FILTER_DEFAULTS } from './explorerdb/filter.mjs';
 import { openIndex, explorerAnswer } from './explorerdb/store.mjs';
 import { createServer, indexInfo } from './explorerdb/server.mjs';
 import { RATING_GROUPS } from './explorerdb/games.mjs';
@@ -49,6 +56,14 @@ var USAGE = [
   '      --max-games N       stop after N games of the dump (a quick trial)',
   '      --tmp <dir>         temporary files (default <out>.tmp; a month needs 10-15 GB)',
   '      --keep-tmp          leave them there',
+  '      (or a filtered month\'s manifest, <month>.json, in place of the dump)',
+  '  node tools/explorerdb.mjs filter <dump.pgn.zst|-> [--out <path>] [options]',
+  '      keeps what an import would, each game cut to --plies + 1; - reads a .zst on stdin',
+  '      --speeds, --ratings, --plies  as for import (these are all an import can use later)',
+  '      --part-mb 95        parts under this size (GitHub refuses files over 100 MB)',
+  '      --level 19          zstd level',
+  '      --source <name>     the dump\'s name in the manifest (for stdin)',
+  '      --max-games N       stop after N games of the dump (a quick trial)',
   '  node tools/explorerdb.mjs query <index> (--moves "1.e4 c5" | --fen "<fen>")',
   '  node tools/explorerdb.mjs info <index>',
   '  node tools/explorerdb.mjs serve <index> [--port 9337] [--host 127.0.0.1]'
@@ -102,6 +117,15 @@ function printReport(meta) {
   console.log('Took ' + Math.floor(r.seconds / 60) + 'm' + String(r.seconds % 60).padStart(2, '0') + 's.');
 }
 
+function checkFilter(o) {
+  o.speeds.forEach(function (s) {
+    if (SPEEDS.indexOf(s) < 0) throw new Error('Unknown speed ' + s + ' (' + SPEEDS.join(', ') + ')');
+  });
+  o.ratings.forEach(function (r) {
+    if (RATING_GROUPS.indexOf(r) < 0) throw new Error('Rating groups are ' + RATING_GROUPS.join(', '));
+  });
+}
+
 async function cmdImport(argv) {
   var o = { speeds: DEFAULTS.speeds, ratings: DEFAULTS.ratings };
   var input = null, out = null;
@@ -121,12 +145,7 @@ async function cmdImport(argv) {
   }
   if (!input) throw new Error('Which dump?\n' + USAGE);
   if (!out) throw new Error('--out is needed (a name, e.g. --out aug26)');
-  o.speeds.forEach(function (s) {
-    if (SPEEDS.indexOf(s) < 0) throw new Error('Unknown speed ' + s + ' (' + SPEEDS.join(', ') + ')');
-  });
-  o.ratings.forEach(function (r) {
-    if (RATING_GROUPS.indexOf(r) < 0) throw new Error('Rating groups are ' + RATING_GROUPS.join(', '));
-  });
+  checkFilter(o);
   if (o.minGames < 1) o.minGames = 1;
   input = inPath(input, EXPLORER);
   if (!fs.existsSync(input)) throw new Error('No such file: ' + input);
@@ -137,6 +156,49 @@ async function cmdImport(argv) {
   var meta = await importDump(o);
   console.log('Wrote ' + o.out + ' (' + size(fs.statSync(o.out).size) + ')\n');
   printReport(meta);
+  return 0;
+}
+
+async function cmdFilter(argv) {
+  var o = { speeds: FILTER_DEFAULTS.speeds, ratings: FILTER_DEFAULTS.ratings };
+  var input = null, out = null;
+  for (var i = 0; i < argv.length; i++) {
+    var a = argv[i];
+    if (a === '--out') out = argv[++i];
+    else if (a === '--speeds') o.speeds = list(argv[++i]);
+    else if (a === '--ratings') o.ratings = list(argv[++i]).map(Number);
+    else if (a === '--plies') o.plies = num(argv[++i], '--plies');
+    else if (a === '--part-mb') o.partBytes = num(argv[++i], '--part-mb') * 1e6;
+    else if (a === '--level') o.level = num(argv[++i], '--level');
+    else if (a === '--source') o.source = argv[++i];
+    else if (a === '--max-games') o.maxGames = num(argv[++i], '--max-games');
+    else if (!input && (a === '-' || !/^--/.test(a))) input = a;
+    else throw new Error('Unexpected argument: ' + a + '\n' + USAGE);
+  }
+  if (!input) throw new Error('Which dump?\n' + USAGE);
+  checkFilter(o);
+  if (!(o.partBytes === undefined || o.partBytes >= 1e6)) throw new Error('--part-mb is at least 1');
+  var name = o.source || (input === '-' ? null : path.basename(input));
+  if (!out) {
+    var m = name && /(\d{4}-\d{2})/.exec(name);
+    if (!m) throw new Error('--out is needed (a path without extension, e.g. --out 2016/2016-02)');
+    out = m[1];
+  }
+  if (input !== '-') {
+    input = inPath(input, EXPLORER);
+    if (!fs.existsSync(input)) throw new Error('No such file: ' + input);
+  }
+  o.input = input;
+  o.out = outPath(out, EXPLORER).replace(/\.json$/i, '');
+  o.log = function (s) { console.error(s); };
+  var m2 = await filterDump(o);
+  var total = m2.parts.reduce(function (a, p) { return a + p.bytes; }, 0);
+  console.log('Wrote ' + o.out + '.json and ' + m2.parts.length + ' part' + (m2.parts.length > 1 ? 's' : '') +
+    ' (' + size(total) + ')');
+  console.log('Games:    ' + fmt(m2.games.read) + ' read, ' + fmt(m2.games.kept) + ' kept (' +
+    (100 * m2.games.kept / m2.games.read).toFixed(1) + '%)');
+  console.log('Size:     ' + size(m2.bytes.dump) + ' of dump -> ' + size(total) + ' (' +
+    (m2.bytes.dump / total).toFixed(1) + 'x smaller), in ' + m2.seconds + ' s');
   return 0;
 }
 
@@ -223,6 +285,7 @@ function cmdServe(argv) {
 async function main(argv) {
   var cmd = argv[0];
   if (cmd === 'import') return cmdImport(argv.slice(1));
+  if (cmd === 'filter') return cmdFilter(argv.slice(1));
   if (cmd === 'query') return cmdQuery(argv.slice(1));
   if (cmd === 'info') return cmdInfo(argv.slice(1));
   if (cmd === 'serve') return cmdServe(argv.slice(1));

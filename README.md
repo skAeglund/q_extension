@@ -626,6 +626,21 @@ so one month tells you what the whole archive would cost.
 `query` prints a position the way the Lichess explorer answers it (totals, then each move's
 uci, SAN and results, most played first).
 
+**Filtering elsewhere.** When downloading the dumps is the slow part, a machine with a fast
+line can shrink them first. `filter` keeps only the games that pass the filter, each cut to
+its first 41 plies and the five headers `import` reads, and writes them in parts under 95 MB
+with a manifest:
+
+```bash
+curl -sL https://database.lichess.org/standard/lichess_db_standard_rated_2016-02.pgn.zst \
+  | node tools/explorerdb.mjs filter - --source lichess_db_standard_rated_2016-02.pgn.zst
+node tools/explorerdb.mjs import 2016-02.json --out feb16     # where the parts were copied
+```
+
+`import` reads the manifest's parts as the month. It checks each part's size against the
+manifest, and refuses more plies than were kept, or a speed or rating group that was left
+out. The filter's own `--speeds`, `--ratings` and `--plies` fix what later imports can use.
+
 **Serving it.** To have the Practical column and repgen use the index instead of Lichess:
 
 ```bash
@@ -783,6 +798,7 @@ tools/explorerdb.mjs builds a local opening explorer from a Lichess monthly dump
 tools/repgen/       their plan, PGN reader/writers, file cache, root search adapter,
                     ChessDB exploration (explore.mjs) and Maia 3 (maia.mjs)
 tools/explorerdb/   the dump reader and fast replay (games.mjs), shard counting and the
-                    index file (store.mjs), the importer and its worker threads
+                    index file (store.mjs), the importer and its worker threads,
+                    and the filter that shrinks a dump for download (filter.mjs)
 tools/package.json  onnxruntime-node, for repgen --maia only
 ```
