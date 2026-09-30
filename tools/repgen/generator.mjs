@@ -58,7 +58,7 @@ export var REPGEN_DEFAULTS = {
   // comparison (see choose()). 0 turns it off.
   deeperWithin: 1,
   deeperMaxPly: 8,
-  budgetDeeper: 300,
+  budgetDeeper: 600,
   scoreRows: 3,           // my best scoring moves in the games are always candidates...
   scoreMinGames: 20,      // ...among those played at least this often
   rowShare: 0.05,         // my moves played this often are candidates too...

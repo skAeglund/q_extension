@@ -432,7 +432,7 @@ module.exports = async function run(check) {
     const sr = dd1.log.roots.filter(r => r.fen.startsWith('S '));
     assert.deepStrictEqual(sr.map(r => r.opts.maxPly), [6, 8]);
     assert.deepStrictEqual(sr[1].rows.slice().sort(), ['d4', 'e4']);
-    assert.strictEqual(sr[1].budget, 300);
+    assert.strictEqual(sr[1].budget, 600);
   });
   await check('  ...and chooses at the deeper depth', () => {
     assert.strictEqual(s1.move, 'e4');

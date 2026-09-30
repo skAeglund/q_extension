@@ -787,7 +787,7 @@ d6 7.O-O), where the column at depth 5 ranked them the other way. Now, after a p
 search, the rows whose score (the blend, or Practical alone) is within `deeperWithin` (1)
 of the best are searched again two plies deeper, the close rows alone, until the call is
 no longer close or `deeperMaxPly` (8, depth 7) is reached: d3 → d5 → d7, d5 → d7. Each
-deepening has its own budget, `budgetDeeper` (300). The other rows stay at their depth,
+deepening has its own budget, `budgetDeeper` (600; 40 minutes at repgen's 15 a minute). The other rows stay at their depth,
 which keeps them out of the comparison, as "compare at one depth" requires. If a close row
 doesn't reach the new depth (budget, error), the shallower comparison stands. The node
 saves `deeper: [{from, to, rows}]` and the log says `close call: d3→d5 a6/Be6`. The same
