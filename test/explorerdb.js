@@ -642,13 +642,32 @@ module.exports = async function run(check) {
       filtered: fdir, log: s => logs.push(s) }));
     assert.deepStrictEqual(fetched.sort(), ['2013-01', '2013-03']);
     assert.deepStrictEqual(fs.readdirSync(path.join(dir, 'dumps')), []);
-    assert.ok(fs.existsSync(path.join(fdir, '2013', '2013-02.json')), 'filtered parts deleted');
+    assert.deepStrictEqual(fs.readdirSync(path.join(fdir, '2013')), [], 'filtered files kept');
+    assert.ok(logs.some(s => /deleting the filtered files of 2013-02, added already/.test(s)), logs.join('\n'));
     assert.ok(logs.some(s => /adding .*2013-02.* from its filtered parts/.test(s)), logs.join('\n'));
     assert.ok(recordsOf(path.join(dir, 'f.xdb')).equals(keptAt(3)));
     const acc = A.openAcc(path.join(dir, 'f.acc'), { readOnly: true });
     const op = acc.state.ops.find(x => x.source === fakeList[1].name);
     assert.ok(op && op.filtered, JSON.stringify(acc.state.ops.map(x => x.source)));
     assert.ok(!acc.state.ops.some(x => /\.json$/.test(x.source)));
+  });
+  await check('...a filtered month that arrives once it is added goes at the start; keepFiltered keeps them all', async () => {
+    const dir = path.join(tmp, 'filt');
+    const fdir = path.join(dir, 'filtered');
+    await filterInto(fdir, 1);
+    await filterInto(fdir, 2);       // 2013-03 was added from its dump
+    const logs = [];
+    await AL.runAll(runOpts({ acc: path.join(dir, 'f.acc'), dumps: path.join(dir, 'dumps'), out: path.join(dir, 'f.xdb'),
+      filtered: fdir, log: s => logs.push(s) }));
+    assert.deepStrictEqual(fs.readdirSync(path.join(fdir, '2013')), [], logs.join('\n'));
+    fetched = [];
+    const kdir = path.join(tmp, 'filtKeep');
+    const kf = path.join(kdir, 'filtered');
+    const man = await filterInto(kf, 1);
+    await AL.runAll(runOpts({ acc: path.join(kdir, 'k.acc'), dumps: path.join(kdir, 'dumps'), out: path.join(kdir, 'k.xdb'),
+      filtered: kf, keepFiltered: true }));
+    assert.deepStrictEqual(fetched.sort(), ['2013-01', '2013-03']);
+    assert.deepStrictEqual(fs.readdirSync(path.join(kf, '2013')).sort(), man.parts.map(p => p.file).concat(['2013-02.json']).sort());
   });
   await check('...months before --filtered-before are waited for, never downloaded', async () => {
     fetched = [];

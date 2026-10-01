@@ -397,7 +397,7 @@ export function filteredMonth(dir, d) {
 
 /*
  * o: { acc (dir), dumps (dir), out (index path), minGames, from, to, oldestFirst,
- *      diskBytes, reserveBytes, prefetch, keepDumps, snapshotEvery, workers, filter, plies,
+ *      diskBytes, reserveBytes, prefetch, keepDumps, keepFiltered, snapshotEvery, workers, filter, plies,
  *      connections, filtered (dir of filtered months, or null), filteredBefore (YYYY-MM:
  *      older months only come filtered), pollMs, log, and for tests: list (the dumps,
  *      instead of asking Lichess), fetchDump, marginBytes, firstRatio }
@@ -437,6 +437,26 @@ export async function runAll(o) {
         if (hasDump(acc, f)) { log('deleting ' + f + ', added already'); fs.rmSync(path.join(o.dumps, f), { force: true }); }
       });
     }
+
+    // Filtered months already in the accumulator: drain keeps a month's files, but once it is
+    // added they are only a second copy of it. Also a month that arrives filtered after it was
+    // added from its dump, or after a stop just after its add.
+    function tidyFiltered() {
+      if (!o.filtered || o.keepFiltered || !fs.existsSync(o.filtered)) return;
+      fs.readdirSync(o.filtered).filter(function (y) { return /^\d{4}$/.test(y); }).forEach(function (y) {
+        var yd = path.join(o.filtered, y);
+        fs.readdirSync(yd).filter(function (f) { return /^\d{4}-\d{2}\.json$/.test(f); }).forEach(function (f) {
+          var man;
+          try { man = JSON.parse(fs.readFileSync(path.join(yd, f), 'utf8')); } catch (e) { return; }
+          if (!man || !man.source || !hasDump(acc, man.source)) return;
+          log('deleting the filtered files of ' + f.slice(0, 7) + ', added already');
+          // The manifest first: without it, nothing takes the parts for a month.
+          fs.rmSync(path.join(yd, f), { force: true });
+          (man.parts || []).forEach(function (q) { fs.rmSync(path.join(yd, path.basename(q.file)), { force: true }); });
+        });
+      });
+    }
+    tidyFiltered();
 
     var fetchDump = o.fetchDump || function (d, dest) { return download(d, dest, log, { connections: o.connections }); };
     var dest = function (d) { return path.join(o.dumps, d.name); };
@@ -573,8 +593,10 @@ export async function runAll(o) {
       log('added ' + m.d.name + ': ' + g.kept.toLocaleString('en-US') + ' of ' + g.read.toLocaleString('en-US') +
         ' games kept, accumulator ' + gb(op.bytesBefore) + ' -> ' + gb(op.bytesAfter) + ', ' +
         Math.round(op.report.seconds / 60) + ' min');
-      // The dump goes, also one downloaded before its filtered parts came; filtered parts stay.
+      // The dump goes, also one downloaded before its filtered parts came, and so do the
+      // filtered files (unless keepFiltered).
       if (!o.keepDumps && fs.existsSync(dest(m.d)) && !(dl && dl.d === m.d)) fs.rmSync(dest(m.d), { force: true });
+      tidyFiltered();
       todo.splice(todo.indexOf(m.d), 1);
       added++;
       if (o.snapshotEvery && added % o.snapshotEvery === 0 && todo.length) snapshot(false);

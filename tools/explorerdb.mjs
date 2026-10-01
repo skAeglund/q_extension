@@ -115,6 +115,7 @@ var USAGE = [
   '      --oldest-first      (default: newest first, so recent months are in soonest)',
   '      --dumps <dir>       where dumps are downloaded (default explorer/dumps)',
   '      --keep-dumps        keep a dump once it is added',
+  '      --keep-filtered     keep the files of a filtered month once it is added (by default they go)',
   '      --filtered <dir>    filtered months from drain, added instead of downloading the',
   '                          dump (default explorer/filtered; --no-filtered to ignore them)',
   '      --filtered-before YYYY-MM   older months only come filtered: they are waited for,',
@@ -585,6 +586,7 @@ async function cmdAll(argv) {
     else if (a === '--oldest-first') run.oldestFirst = true;
     else if (a === '--dumps') run.dumps = path.resolve(rest[++i]);
     else if (a === '--keep-dumps') run.keepDumps = true;
+    else if (a === '--keep-filtered') run.keepFiltered = true;
     else if (a === '--filtered') run.filtered = path.resolve(rest[++i]);
     else if (a === '--no-filtered') run.filtered = null;
     else if (a === '--filtered-before') run.filteredBefore = rest[++i];

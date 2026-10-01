@@ -755,7 +755,8 @@ next month downloads while one imports. At the end it writes `explorer/lichess.x
   while a dump downloads. With the cloud's `fill` working forward from 2013 and `all` back
   from the newest month, `--filtered-before 2024-09` (say) makes the meeting point explicit:
   older months are never downloaded here, and `all` waits for drain to bring them. A month
-  is recorded under its dump's name either way, so it is never added twice.
+  is recorded under its dump's name either way, so it is never added twice. Once a month is
+  added, its filtered files are deleted, like its dump (`--keep-filtered` keeps them).
 - **Stopping is safe at any point**, a crash, a reboot or Ctrl+C included. Run the same
   command again and it carries on. A month cut off mid-import is imported again, into the
   parts of the store that don't have it yet.

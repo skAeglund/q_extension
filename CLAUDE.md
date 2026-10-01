@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 569 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 570 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -839,7 +839,11 @@ duplicate-source refusal and `merged` list.
   part 2 of three months was retried for hours without finishing. Smaller parts lose less.
   Default still 95. A month can resume with another part size than it started with (the
   resume check compares plies and filter only); the harness pins that down.
-Covered by the harness (569 checks). Checked against the real `explorer/filtered/`: 76
+- `all` deletes a filtered month's files once the month is added (manifest first), and at the
+  start any whose month is already in (requested the same day, for disk: kept months were
+  about 1 GB each, a second copy of what the accumulator holds). `--keep-filtered` keeps
+  them. 2020-01..05's, and the old per-month `.xdb` indexes, were deleted by hand that day.
+Covered by the harness (570 checks). Checked against the real `explorer/filtered/`: 76
 months recognised (2013-01..2019-08, 2017-02..05 still arriving), the others not.
 
 **Repgen: blended choice (2026-09-30).** Requested: choose my move by a weighted blend of
