@@ -9,6 +9,12 @@
  * numbers, and it is split into parts under `partBytes` (GitHub refuses files over 100 MB),
  * each a whole zstd frame ending on a whole game, listed in a manifest (<base>.json) with
  * their sizes and sha256. `import <base>.json` reads the parts back to back.
+ *
+ * A month takes hours, and a cloud container can be recycled in the middle of one. So each
+ * closed part comes with a checkpoint (`onPart`): the counts up to its last game, and the
+ * start of the game after it. A run given that checkpoint (`resume`) reads the dump from the
+ * start again but only counts games up to there, checks it arrived at the same game, and
+ * goes on with the next part. Counting is cheap next to filtering and compressing.
  */
 
 import fs from 'node:fs';
@@ -82,10 +88,25 @@ function openPart(file, o) {
 function fmt(n) { return n.toLocaleString('en-US'); }
 function mb(b) { return b >= 1e9 ? (b / 1e9).toFixed(1) + ' GB' : (b / 1e6).toFixed(1) + ' MB'; }
 
+// The first two lines of the game at `at` (Event and Site, which names the game), or what
+// the chunk holds of them: what a resumed run must find where it picks up.
+function gameStart(s, at) {
+  var e = s.indexOf('\n', s.indexOf('\n', at) + 1);
+  return s.slice(at, e < 0 ? Math.min(s.length, at + 200) : e);
+}
+
+// Either may be cut short by the end of a chunk.
+function samePrefix(a, b) {
+  return typeof b === 'string' && b.length > 0 && (a.indexOf(b) === 0 || b.indexOf(a) === 0);
+}
+
 /*
  * o: { input (a dump, an https URL of one, or '-' for a .zst on stdin), size (a URL's), out (path without extension), source,
- *      speeds, ratings, plies, partBytes, chunkBytes, level, windowLog, maxGames, log }
- * Resolves with the manifest written to <out>.json.
+ *      speeds, ratings, plies, partBytes, chunkBytes, level, windowLog, maxGames, log,
+ *      onPart(part, checkpoint) (awaited after each part but the last closes),
+ *      resume (a checkpoint: its parts are not written again, and are not in `out`'s directory) }
+ * Resolves with the manifest written to <out>.json. A resume that doesn't arrive at the
+ * checkpoint's game rejects with `resumeMismatch` set.
  */
 export async function filterDump(o) {
   o = Object.assign({}, FILTER_DEFAULTS, o);
@@ -99,13 +120,29 @@ export async function filterDump(o) {
   var dir = path.dirname(o.out);
   fs.mkdirSync(dir, { recursive: true });
   var parts = [], part = null, lastRatio = 0, t0 = Date.now(), lastLog = t0;
+  var r = o.resume, skip = 0, earlier = 0;
+  if (r) {
+    if (r.plies !== o.plies || JSON.stringify(r.filter) !== JSON.stringify({ speeds: o.speeds, ratings: o.ratings })) {
+      throw Object.assign(new Error('The checkpoint is for another filter'), { resumeMismatch: true });
+    }
+    parts = r.parts.map(function (p) { return Object.assign({ done: true }, p); });
+    skip = r.read;
+    n.kept = r.kept;
+    n.textOut = r.textOut;
+    Object.assign(why, r.why);
+    earlier = r.seconds || 0;
+  }
+  // The counts after the last chunk written: when a part closes, they are its end.
+  var mark = { read: skip, kept: n.kept, why: Object.assign({}, why), textOut: n.textOut, next: null };
 
   async function flush(s, games) {
     if (!s) return;
     // A part closes before a chunk that might not fit: half again the last chunk's size.
     if (part && part.games && part.bytes + Math.max(lastRatio * s.length * 1.5, 1) > o.partBytes) {
       await part.close();
+      var closed = part;
       part = null;
+      if (o.onPart) await o.onPart(closed, checkpoint());
     }
     if (!part) {
       part = openPart(path.join(dir, base + '.' + (parts.length + 1) + '.pgn.zst'), o);
@@ -118,6 +155,17 @@ export async function filterDump(o) {
     n.textOut += s.length;
   }
 
+  function checkpoint() {
+    return {
+      source: o.source || path.basename(o.input.replace(/[?#].*$/, '')),
+      filter: { speeds: o.speeds, ratings: o.ratings },
+      plies: o.plies,
+      parts: parts.map(function (p) { return { file: path.basename(p.file), bytes: p.bytes, games: p.games, sha256: p.sha256 }; }),
+      read: mark.read, kept: mark.kept, why: mark.why, textOut: mark.textOut, next: mark.next,
+      seconds: earlier + Math.round((Date.now() - t0) / 1000)
+    };
+  }
+
   var src = openText(o.input, function (b) { n.bytesIn += b; });
   var text = src.stream;
   text.setEncoding('latin1');
@@ -127,16 +175,31 @@ export async function filterDump(o) {
       var s = carry + chunk, at = 0, next;
       while ((next = s.indexOf('\n[Event ', at + 1)) >= 0) {
         if (o.maxGames && n.read >= o.maxGames) { stopped = true; break; }
+        if (n.read < skip) {
+          // Filtered before the checkpoint: counted, nothing else.
+          n.read++;
+          at = next + 1;
+          if (n.read === skip && !samePrefix(gameStart(s, at), r.next)) {
+            throw Object.assign(new Error('The dump has changed since the checkpoint: game ' + (skip + 1) +
+              ' starts ' + JSON.stringify(gameStart(s, at).slice(0, 80))), { resumeMismatch: true });
+          }
+          continue;
+        }
         n.read++;
         var g = s.slice(at, next + 1);
         if (filter(g, why)) { n.kept++; buf += compactGame(g, o.plies); bufGames++; }
         at = next + 1;
-        if (buf.length >= o.chunkBytes) { await flush(buf, bufGames); buf = ''; bufGames = 0; }
+        if (buf.length >= o.chunkBytes) {
+          await flush(buf, bufGames);
+          buf = ''; bufGames = 0;
+          mark = { read: n.read, kept: n.kept, why: Object.assign({}, why), textOut: n.textOut, next: gameStart(s, at) };
+        }
       }
       carry = stopped ? '' : s.slice(at);
       if (Date.now() - lastLog > 10000) {
         lastLog = Date.now();
-        log('read ' + fmt(n.read) + ' games (' + mb(n.bytesIn) + (size ? ' of ' + mb(size) : '') +
+        if (n.read < skip) log('counted ' + fmt(n.read) + ' of the ' + fmt(skip) + ' games filtered before (' + mb(n.bytesIn) + ')');
+        else log('read ' + fmt(n.read) + ' games (' + mb(n.bytesIn) + (size ? ' of ' + mb(size) : '') +
           '), kept ' + fmt(n.kept) + ', written ' + mb(parts.reduce(function (a, p) { return a + p.bytes; }, 0)) +
           ', ' + fmt(Math.round(n.read / ((Date.now() - t0) / 1000))) + ' games/s');
       }
@@ -145,6 +208,7 @@ export async function filterDump(o) {
     if (stopped) { src.raw.destroy(); src.stop(); }
     else {
       await src.finished;
+      if (n.read < skip) throw Object.assign(new Error('The dump ended at game ' + n.read + ', before the checkpoint at ' + skip), { resumeMismatch: true });
       if (carry.trim() && !(o.maxGames && n.read >= o.maxGames)) {
         n.read++;
         if (filter(carry, why)) { n.kept++; buf += compactGame(carry.replace(/\s*$/, '\n\n'), o.plies); bufGames++; }
@@ -155,7 +219,14 @@ export async function filterDump(o) {
     await flush(buf, bufGames);
     await part.close();
   } catch (e) {
-    parts.forEach(function (p) { p.abort(); fs.rmSync(p.file, { force: true }); });
+    src.raw.destroy();
+    src.stop();
+    // Closed parts handed to onPart are the caller's (one may be on its way to a repository).
+    parts.forEach(function (p) {
+      if (p.done || (o.onPart && p !== part)) return;
+      p.abort();
+      fs.rmSync(p.file, { force: true });
+    });
     throw e;
   }
 
@@ -171,8 +242,9 @@ export async function filterDump(o) {
       return { file: path.basename(p.file), bytes: p.bytes, games: p.games, sha256: p.sha256 };
     }),
     created: new Date().toISOString(),
-    seconds: Math.round((Date.now() - t0) / 1000)
+    seconds: earlier + Math.round((Date.now() - t0) / 1000)
   };
+  if (r) manifest.resumed = r.parts.length;
   var big = manifest.parts.filter(function (p) { return p.bytes > o.partBytes; });
   if (big.length) log('warning: ' + big.map(function (p) { return p.file + ' ' + mb(p.bytes); }).join(', ') + ' over the part size');
   fs.writeFileSync(path.join(dir, base + '.json'), JSON.stringify(manifest, null, 1) + '\n');

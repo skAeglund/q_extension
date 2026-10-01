@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 565 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 567 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -825,7 +825,16 @@ duplicate-source refusal and `merged` list.
   rebalance. Months the other side is filtering at that moment aren't in its LEDGER yet, so
   at most `--workers` months are done twice at the meeting point; `all` takes each once.
   `fill`'s result carries `elsewhere`.
-Covered by the harness (565 checks). Checked against the real `explorer/filtered/`: 76
+- Resumable months (requested the same day, after recycled containers had cost both cloud
+  sessions hours): fill pushes each part as soon as it closes, with the filter's checkpoint
+  (`<month>.progress.json`: counts up to the part's last game, and the first two lines of the
+  game after it). A fill that finds a checkpoint in its repositories takes that month first,
+  in that repository, reads the dump from the start again counting games only, checks it
+  lands on the checkpoint's game (otherwise starts the month over), and filters on from
+  there. A recycle now costs at most a part plus re-reading the dump. The manifest commit
+  removes the checkpoint and any parts of an earlier attempt it didn't use. drain is
+  unchanged: it never looks at a month without a manifest.
+Covered by the harness (567 checks). Checked against the real `explorer/filtered/`: 76
 months recognised (2013-01..2019-08, 2017-02..05 still arriving), the others not.
 
 **Repgen: blended choice (2026-09-30).** Requested: choose my move by a weighted blend of

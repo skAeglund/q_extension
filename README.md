@@ -685,6 +685,11 @@ Before each month, each session reads the other's LEDGERs and skips what is ther
 meet wherever their speeds put them. At the meeting point a month or two may be filtered by
 both; drain and `all` still take it once. `drain` takes all the repositories.
 
+`fill` pushes each part as soon as it's written, with a checkpoint beside it. If the session
+stops in the middle of a month (a recycled container, Ctrl+C), running the same command again
+goes on from the last pushed part: it reads the dump from the start, only counting games up to
+the checkpoint, and filters on from there.
+
 `drain` pulls each repository, checks each part's sha256, copies the month to
 `explorer/filtered/`, imports it as `explorer/<month>.xdb` (one index per month; `--workers`,
 `--min-games` as for import), and pushes its removal. Once a repository is empty, `fill` resets

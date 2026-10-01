@@ -17,6 +17,12 @@
  * Why this shape: GitHub refuses files over 100 MB and pushes over 2 GB, and warns about
  * repositories past a few GB, while a recent month filters to about 3 GB. Parts are pushed
  * in batches under `pushBytes`, and a repository takes months only up to `capBytes`.
+ *
+ * Cloud containers get recycled, and a month takes hours to filter. So fill pushes each part
+ * as soon as it is closed, with the filter's checkpoint beside it (<month>.progress.json).
+ * A fill that finds a checkpoint in its repositories goes on from there: it counts its way
+ * through the dump to the checkpoint's game and filters the rest. drain ignores both until
+ * the manifest arrives, which also removes the checkpoint.
  */
 
 import fs from 'node:fs';
@@ -30,6 +36,9 @@ import { importDump } from './importer.mjs';
 export var LEDGER = 'LEDGER';
 var MONTH = /^(\d{4})-(\d{2})$/;
 var MANIFEST = /^(\d{4})\/(\d{4}-\d{2})\.json$/;
+var PROGRESS = /^(\d{4})\/(\d{4}-\d{2})\.progress\.json$/;
+
+export function progressFile(month) { return month.slice(0, 4) + '/' + month + '.progress.json'; }
 
 export var RELAY_DEFAULTS = {
   capBytes: 3e9,
@@ -142,9 +151,14 @@ export async function snapshot(url, dir) {
       months[m[2]] = { bytes: man.parts.reduce(function (a, p) { return a + p.bytes; }, 0), manifest: man };
     }
   });
+  var progress = {};
   files.forEach(function (f) {
     var m = /^(\d{4})\/(\d{4}-\d{2})\./.exec(f);
     if (m && !months[m[2]]) loose.push(f);      // parts of a month still being pushed
+    var p = PROGRESS.exec(f);
+    if (p && !months[p[2]]) {
+      try { progress[p[2]] = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')); } catch (e) {}
+    }
   });
   var ledgerFile = path.join(dir, LEDGER);
   return {
@@ -154,6 +168,7 @@ export async function snapshot(url, dir) {
     files: files,
     months: months,
     loose: loose,
+    progress: progress,
     ledger: parseLedger(fs.existsSync(ledgerFile) ? fs.readFileSync(ledgerFile, 'utf8') : '')
   };
 }
@@ -180,7 +195,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
  * it first when drain has emptied it. Starts over from a fresh snapshot when drain pushed
  * in between; parts already pushed then simply add nothing.
  */
-export async function pushMonth(url, month, srcDir, work, o) {
+export async function pushMonth(url, month, srcDir, work, o, pushed) {
   var year = month.slice(0, 4);
   var man = JSON.parse(fs.readFileSync(path.join(srcDir, month + '.json'), 'utf8'));
   var footer = o.footer ? '\n\n' + o.footer : '';
@@ -211,12 +226,22 @@ export async function pushMonth(url, month, srcDir, work, o) {
       };
       for (var i = 0; i < man.parts.length; i++) {
         var p = man.parts[i];
+        if (pushed && pushed.has(p.file)) {
+          // Pushed with its checkpoint while the month was being filtered.
+          if (snap.files.indexOf(year + '/' + p.file) < 0) throw new Error(p.file + ' was pushed but is not in ' + repoName(url));
+          continue;
+        }
         if (batchBytes + p.bytes > o.pushBytes) await flushParts();
         fs.copyFileSync(path.join(srcDir, p.file), path.join(dir, year, p.file));
         batch.push(year + '/' + p.file);
         batchBytes += p.bytes;
       }
       await flushParts();
+      // The checkpoint, and parts of an earlier attempt that this one didn't write.
+      var keep = {};
+      man.parts.forEach(function (q) { keep[year + '/' + q.file] = true; });
+      var stray = snap.files.filter(function (f) { return f.indexOf(year + '/' + month + '.') === 0 && !keep[f]; });
+      if (stray.length) await git(['rm', '-q', '--sparse', '--cached'].concat(stray), dir);
       fs.copyFileSync(path.join(srcDir, month + '.json'), path.join(dir, year, month + '.json'));
       ledger[month] = ledgerLine(month, man);
       fs.writeFileSync(path.join(dir, LEDGER), formatLedger(ledger));
@@ -228,6 +253,40 @@ export async function pushMonth(url, month, srcDir, work, o) {
     } catch (e) {
       if (!rejected(e) || attempt >= o.tries) throw e;
       o.log('push of ' + month + ' to ' + repoName(url) + ' was overtaken; trying again');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  }
+}
+
+/*
+ * Pushes one closed part of a month still being filtered, and the checkpoint after it. The
+ * first part may find the repository emptied by drain: it is reset first, as in pushMonth.
+ */
+export async function pushPart(url, month, srcDir, file, checkpoint, work, o) {
+  var year = month.slice(0, 4);
+  var footer = o.footer ? '\n\n' + o.footer : '';
+  for (var attempt = 1; ; attempt++) {
+    var snap = await snapshot(url, path.join(work, 'part-' + repoName(url)));
+    var dir = snap.dir;
+    try {
+      var lease = null;
+      if (repoPlan(snap, 0, 0).reset) {
+        await git(['checkout', '-q', '--orphan', 'fresh'], dir);
+        await git(['commit', '-q', '--allow-empty', '-m', 'reset: every month here has been consumed' + footer], dir);
+        lease = snap.sha;
+      }
+      fs.mkdirSync(path.join(dir, year), { recursive: true });
+      fs.copyFileSync(path.join(srcDir, file), path.join(dir, year, file));
+      fs.writeFileSync(path.join(dir, progressFile(month)), JSON.stringify(checkpoint, null, 1) + '\n');
+      await git(['add', '--sparse', year + '/' + file, progressFile(month)], dir);
+      await git(['commit', '-q', '-m', month + ': part ' + file.split('.').slice(-3)[0] + ', ' +
+        checkpoint.kept + ' games kept of ' + checkpoint.read + ' so far' + footer], dir);
+      await pushHead(dir, lease);
+      return;
+    } catch (e) {
+      if (!rejected(e) || attempt >= o.tries) throw e;
+      o.log('push of ' + month + ' ' + file + ' to ' + repoName(url) + ' was overtaken; trying again');
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -258,7 +317,8 @@ function pushHead(dir, lease) {
 /*
  * o: { repos: [url], months: [YYYY-MM], work, capBytes, pushBytes, ratio, workers, pollMs,
  *      footer (appended to commit messages), log, newestFirst, others: [url],
- *      dumpSize(month) -> bytes or 0 (not published), filterMonth(month, outBase) -> manifest }
+ *      dumpSize(month) -> bytes or 0 (not published),
+ *      filterMonth(month, outBase, { resume, onPart }) -> manifest (filterDump's options) }
  * Resolves with { pushed, skipped (not published), failed, elsewhere } once no month is left
  * to try.
  *
@@ -316,6 +376,10 @@ export async function fill(o) {
     return true;
   });
   if (o.newestFirst) queue.reverse();
+  // Months a recycled container left half done go first, before their checkpoints age.
+  var started = {};
+  snaps.forEach(function (s) { Object.keys(s.progress).forEach(function (m) { started[m] = true; }); });
+  queue = queue.filter(function (m) { return started[m]; }).concat(queue.filter(function (m) { return !started[m]; }));
   log(stamp() + ' ' + (o.months.length - queue.length - elsewhere.length) + ' of ' + o.months.length + ' months already done' +
     (others.length ? ', ' + elsewhere.length + ' done by the other session' : '') + '; ' + queue.length + ' to go' +
     (queue.length ? ' (' + queue[0] + (queue.length > 1 ? ' .. ' + queue[queue.length - 1] : '') + ')' : ''));
@@ -323,9 +387,14 @@ export async function fill(o) {
   async function one(month) {
     var size = await o.dumpSize(month);
     if (!size) { log(stamp() + ' ' + month + ': no dump published, skipped'); skipped.push(month); return; }
-    var est = size * o.ratio, target;
+    var est = size * o.ratio, target, resume = null;
     for (;;) {
-      var plans = (await look()).map(function (s, i) { return repoPlan(s, o.capBytes, reserved[i]); });
+      var snaps = await look();
+      // A checkpoint goes on in its own repository.
+      target = null;
+      snaps.forEach(function (s, i) { if (target === null && s.progress[month]) { target = i; resume = s.progress[month]; } });
+      if (target !== null) break;
+      var plans = snaps.map(function (s, i) { return repoPlan(s, o.capBytes, reserved[i]); });
       target = pickRepo(plans, est);
       if (target !== null) break;
       await sleep(o.pollMs);
@@ -333,13 +402,49 @@ export async function fill(o) {
     reserved[target] += est;
     var url = o.repos[target];
     var out = path.join(work, 'filter-' + month);
-    try {
-      log(stamp() + ' ' + month + ': filtering (' + mb(size) + ') for ' + repoName(url));
-      var man = await o.filterMonth(month, path.join(out, month));
-      var got = man.parts.reduce(function (a, p) { return a + p.bytes; }, 0);
-      var run = locks[target].then(function () { return pushMonth(url, month, out, work, o); });
+    var pushed = new Set();
+    var locked = function (f) {
+      var run = locks[target].then(f);
       locks[target] = run.catch(function () {});
-      await run;
+      return run;
+    };
+    var filterFrom = async function (cp) {
+      pushed = new Set(cp ? cp.parts.map(function (p) { return p.file; }) : []);
+      var last = Promise.resolve();
+      var man = await o.filterMonth(month, path.join(out, month), {
+        resume: cp,
+        onPart: async function (part, checkpoint) {
+          await last;           // one part on its way at a time: the filter waits for the one before
+          var file = path.basename(part.file);
+          last = locked(function () { return pushPart(url, month, out, file, checkpoint, work, o); }).then(function () {
+            pushed.add(file);
+            fs.rmSync(path.join(out, file), { force: true });
+          });
+          last.catch(function () {});
+        }
+      }).catch(async function (e) {
+        await last.catch(function () {});     // a part on its way still lands, for the next try to resume after
+        throw e;
+      });
+      await last;
+      return man;
+    };
+    try {
+      if (resume) {
+        log(stamp() + ' ' + month + ': going on from part ' + (resume.parts.length + 1) + ' (' + resume.read +
+          ' games read before) in ' + repoName(url));
+      } else log(stamp() + ' ' + month + ': filtering (' + mb(size) + ') for ' + repoName(url));
+      var man;
+      try {
+        man = await filterFrom(resume);
+      } catch (e) {
+        if (!(e && e.resumeMismatch)) throw e;
+        log(stamp() + ' ' + month + ': ' + e.message + '; starting the month over');
+        fs.rmSync(out, { recursive: true, force: true });
+        man = await filterFrom(null);
+      }
+      var got = man.parts.reduce(function (a, p) { return a + p.bytes; }, 0);
+      await locked(function () { return pushMonth(url, month, out, work, o, pushed); });
       log(stamp() + ' ' + month + ': pushed to ' + repoName(url) + ', ' + mb(got) + ' (' +
         (size / got).toFixed(1) + 'x smaller), ' + man.games.kept + ' games');
     } finally {
@@ -533,8 +638,8 @@ export function lichessDumpSize(month) {
 }
 
 export function lichessFilter(o) {
-  return function (month, outBase) {
-    return filterDump(Object.assign({}, o, { input: dumpUrl(month), out: outBase,
+  return function (month, outBase, more) {
+    return filterDump(Object.assign({}, o, more, { input: dumpUrl(month), out: outBase,
       source: path.basename(dumpUrl(month)) }));
   };
 }

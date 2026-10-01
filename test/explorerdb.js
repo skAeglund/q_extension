@@ -738,6 +738,30 @@ module.exports = async function run(check) {
     assert.ok(!fs.existsSync(path.join(tmp, 'p.xdb.tmp')), 'temporary files left');
   });
 
+  const partsText = (dir, man) => man.parts.map(p => zlib.zstdDecompressSync(fs.readFileSync(path.join(dir, p.file))).toString('latin1')).join('');
+  await check('a filter stopped after a part goes on from its checkpoint, and keeps exactly the same games', async () => {
+    const cps = [], cdir = path.join(tmp, 'cp1'), rdir = path.join(tmp, 'cp2');
+    const whole = await F.filterDump({ input: dumpFile, out: path.join(cdir, 'm'), plies: PLIES, partBytes: 1200, chunkBytes: 500,
+      onPart: async (p, cp) => { cps.push(JSON.parse(JSON.stringify(cp))); } });
+    assert.strictEqual(cps.length, whole.parts.length - 1);
+    assert.deepStrictEqual(cps[1].parts, whole.parts.slice(0, 2));
+    assert.strictEqual(cps[1].kept, whole.parts[0].games + whole.parts[1].games);
+    // The resumed run has only what a recycled container would: the checkpoint.
+    const res = await F.filterDump({ input: dumpFile, out: path.join(rdir, 'm'), plies: PLIES, partBytes: 1200, chunkBytes: 500,
+      resume: cps[1] });
+    assert.deepStrictEqual(res.games, whole.games);
+    assert.deepStrictEqual(res.parts.slice(0, 2), whole.parts.slice(0, 2));
+    assert.strictEqual(res.resumed, 2);
+    assert.ok(!fs.existsSync(path.join(rdir, whole.parts[0].file)), 'wrote a part again');
+    for (const p of whole.parts.slice(0, 2)) fs.copyFileSync(path.join(cdir, p.file), path.join(rdir, p.file));
+    assert.strictEqual(partsText(rdir, res), partsText(cdir, whole));
+    await assert.rejects(F.filterDump({ input: dumpFile, out: path.join(tmp, 'cp3', 'm'), plies: PLIES,
+      resume: Object.assign({}, cps[1], { next: '[Event "Rated Bullet game"]\n[Site "https://lichess.org/xxxxxxxx"]' }) }),
+      e => e.resumeMismatch && /changed since the checkpoint/.test(e.message));
+    await assert.rejects(F.filterDump({ input: dumpFile, out: path.join(tmp, 'cp3', 'm'), plies: PLIES + 1, resume: cps[1] }),
+      e => e.resumeMismatch);
+  });
+
   await check('a download that breaks is picked up where it broke off', async () => {
     // A stand-in for curl: serves the file from -r's offset, and breaks once 3000 bytes in.
     const fake = path.join(tmp, 'fakecurl.js'), count = path.join(tmp, 'fakecurl.n');
@@ -997,6 +1021,65 @@ module.exports = async function run(check) {
         const sn = await R.snapshot(repoC, path.join(rel, 'checkC'));
         assert.deepStrictEqual(Object.keys(sn.ledger).sort(), ['2020-07', '2020-08']);
         fs.rmSync(sn.dir, { recursive: true, force: true });
+      });
+      await check('fill pushes each part with a checkpoint, and after a recycle goes on from it', async () => {
+        const bareD = path.join(rel, 'helperD.git');
+        await R.git(['init', '-q', '--bare', '-b', 'main', bareD]);
+        await R.git(['config', 'uploadpack.allowFilter', 'true'], bareD);
+        const seed = path.join(rel, 'seed-helperD');
+        await R.git(['clone', '-q', bareD, seed]);
+        fs.writeFileSync(path.join(seed, 'README.md'), '# helperD\n');
+        await R.git(['add', 'README.md'], seed);
+        await R.git(['commit', '-q', '-m', 'README'], seed);
+        await R.git(['push', '-q', 'origin', 'HEAD:main'], seed);
+        const repoD = pathToFileURL(bareD).href;
+        const opts = { input: dumpFile, source: '2020-09', plies: PLIES, partBytes: 1200, chunkBytes: 500 };
+        const ref = path.join(rel, 'refD');
+        const whole = await F.filterDump(Object.assign({ out: path.join(ref, 'm') }, opts));
+        assert.ok(whole.parts.length >= 4, whole.parts.length + ' parts');
+        const dlogs = [], calls = [];
+        // The first container dies once its second part is pushed: its parts and checkpoint
+        // are in the repository, nothing else survives.
+        const recycled = async (m, out, more) => {
+          calls.push(more.resume ? more.resume.parts.length : 0);
+          if (calls.length > 1) return F.filterDump(Object.assign({ out }, opts, more));
+          let n = 0;
+          await F.filterDump(Object.assign({ out }, opts, { onPart: async (p, cp) => {
+            await more.onPart(p, cp);
+            if (++n === 2) throw new Error('container recycled');
+          } }));
+        };
+        const first = await R.fill({ repos: [repoD], months: ['2020-09'], work: path.join(rel, 'workD1'), capBytes: 1e9,
+          pushBytes: 4000, workers: 1, pollMs: 1, tries: 3, log: s => dlogs.push(s), dumpSize: () => 1e6,
+          filterMonth: (m, out, more) => calls.length ? Promise.reject(new Error('container gone')) : recycled(m, out, more) });
+        assert.deepStrictEqual(first.failed, ['2020-09'], dlogs.join('\n'));
+        let sn = await R.snapshot(repoD, path.join(rel, 'checkD'));
+        assert.deepStrictEqual(Object.keys(sn.months), []);
+        assert.strictEqual(sn.progress['2020-09'].parts.length, 2, 'the part on its way when the filter died is in');
+        fs.rmSync(sn.dir, { recursive: true, force: true });
+        // A new container: a fresh work directory, the same command.
+        calls.length = 0;
+        calls.push('new');
+        const second = await R.fill({ repos: [repoD], months: ['2020-09'], work: path.join(rel, 'workD2'), capBytes: 1e9,
+          pushBytes: 4000, workers: 1, pollMs: 1, log: s => dlogs.push(s), dumpSize: () => 1e6,
+          filterMonth: (m, out, more) => recycled(m, out, more) });
+        assert.strictEqual(second.pushed, 1, dlogs.join('\n'));
+        assert.ok(dlogs.some(s => /2020-09: going on from part 3 \(/.test(s)), dlogs.join('\n'));
+        assert.deepStrictEqual(calls, ['new', 2]);
+        sn = await R.snapshot(repoD, path.join(rel, 'checkD'));
+        assert.deepStrictEqual(sn.loose, []);
+        assert.deepStrictEqual(sn.months['2020-09'].manifest.games, whole.games);
+        assert.ok(!sn.files.includes(R.progressFile('2020-09')), 'checkpoint left behind');
+        fs.rmSync(sn.dir, { recursive: true, force: true });
+        const full = path.join(rel, 'fullD');
+        await R.git(['clone', '-q', repoD, full]);
+        const man = JSON.parse(fs.readFileSync(path.join(full, '2020', '2020-09.json'), 'utf8'));
+        assert.deepStrictEqual(fs.readdirSync(path.join(full, '2020')).sort(),
+          man.parts.map(p => p.file).concat(['2020-09.json']).sort());
+        for (const p of man.parts) {
+          assert.strictEqual(require('crypto').createHash('sha256').update(fs.readFileSync(path.join(full, '2020', p.file))).digest('hex'), p.sha256);
+        }
+        assert.strictEqual(partsText(path.join(full, '2020'), man), partsText(ref, whole));
       });
     } finally {
       Object.keys(env).forEach(k => { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; });
