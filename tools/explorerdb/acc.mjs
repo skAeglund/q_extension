@@ -224,12 +224,15 @@ export function hasDump(acc, source) {
 }
 
 /*
- * Adds one dump. `importDump` is importer.mjs's (passed in, so this module stays out of
- * the worker's import graph). Resolves with the op.
+ * Adds one dump, or a filtered month's manifest. `importDump` is importer.mjs's (passed
+ * in, so this module stays out of the worker's import graph). o.source names it in the
+ * ops (default: the file's name; all.mjs passes the dump's name for a filtered month, so
+ * a month counts as added whichever way it came), o.size and o.filtered are recorded.
+ * Resolves with the op.
  */
 export async function addDump(acc, input, importDump, o) {
   o = o || {};
-  var source = path.basename(input);
+  var source = o.source || path.basename(input);
   if (hasDump(acc, source)) throw new Error(source + ' is in ' + acc.dir + ' already');
   var before = acc.totals().bytes;
   var op = acc.begin({ type: 'dump', source: source });
@@ -253,7 +256,8 @@ export async function addDump(acc, input, importDump, o) {
   var after = acc.totals();
   var r = meta.report;
   acc.commit(op, { report: { games: r.games, spilled: r.spilled, seconds: r.seconds, partial: !!r.partial },
-    size: fs.statSync(input).size, bytesBefore: before, bytesAfter: after.bytes });
+    size: o.size || fs.statSync(input).size, filtered: !!o.filtered || undefined,
+    bytesBefore: before, bytesAfter: after.bytes });
   return op;
 }
 

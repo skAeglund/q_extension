@@ -625,6 +625,68 @@ module.exports = async function run(check) {
       out: path.join(dir, 'p.xdb'), from: '2013-02' })), /was adding .*2013-01/);
   });
 
+  // Filtered months as drain keeps them: <dir>/YYYY/YYYY-MM.json and its parts.
+  const FF = await load('tools/explorerdb/filter.mjs');
+  const filterInto = (dir, i) => FF.filterDump({ input: monthFiles[i], plies: PLIES, partBytes: 3000, chunkBytes: 1000,
+    out: path.join(dir, months[i].slice(0, 4), months[i]) });
+  await check('the driver adds a filtered month instead of downloading it, under its dump\'s name', async () => {
+    fetched = [];
+    const dir = path.join(tmp, 'filt');
+    const fdir = path.join(dir, 'filtered');
+    await filterInto(fdir, 1);
+    // A dump downloaded before its filtered parts came: added from the parts, then deleted.
+    fs.mkdirSync(path.join(dir, 'dumps'), { recursive: true });
+    fs.copyFileSync(monthFiles[1], path.join(dir, 'dumps', fakeList[1].name));
+    const logs = [];
+    await AL.runAll(runOpts({ acc: path.join(dir, 'f.acc'), dumps: path.join(dir, 'dumps'), out: path.join(dir, 'f.xdb'),
+      filtered: fdir, log: s => logs.push(s) }));
+    assert.deepStrictEqual(fetched.sort(), ['2013-01', '2013-03']);
+    assert.deepStrictEqual(fs.readdirSync(path.join(dir, 'dumps')), []);
+    assert.ok(fs.existsSync(path.join(fdir, '2013', '2013-02.json')), 'filtered parts deleted');
+    assert.ok(logs.some(s => /adding .*2013-02.* from its filtered parts/.test(s)), logs.join('\n'));
+    assert.ok(recordsOf(path.join(dir, 'f.xdb')).equals(keptAt(3)));
+    const acc = A.openAcc(path.join(dir, 'f.acc'), { readOnly: true });
+    const op = acc.state.ops.find(x => x.source === fakeList[1].name);
+    assert.ok(op && op.filtered, JSON.stringify(acc.state.ops.map(x => x.source)));
+    assert.ok(!acc.state.ops.some(x => /\.json$/.test(x.source)));
+  });
+  await check('...months before --filtered-before are waited for, never downloaded', async () => {
+    fetched = [];
+    const dir = path.join(tmp, 'filt2');
+    const fdir = path.join(dir, 'filtered');
+    await filterInto(fdir, 1);
+    const logs = [];
+    // 2013-01 arrives later, as drain would bring it; a part copied short doesn't count.
+    let half = null;
+    const arrive = async () => {
+      const man = await filterInto(fdir, 0);
+      const part = path.join(fdir, '2013', man.parts[0].file);
+      half = fs.readFileSync(part);
+      fs.truncateSync(part, 10);
+      setTimeout(() => fs.writeFileSync(part, half), 200);
+    };
+    await AL.runAll(runOpts({ acc: path.join(dir, 'g.acc'), dumps: path.join(dir, 'dumps'), out: path.join(dir, 'g.xdb'),
+      filtered: fdir, filteredBefore: '2013-03', pollMs: 20,
+      log: s => { logs.push(s); if (/^waiting for/.test(s)) arrive(); } }));
+    assert.deepStrictEqual(fetched, ['2013-03']);
+    assert.ok(half, 'never waited');
+    assert.strictEqual(logs.filter(s => /waiting for 1 filtered month \(2013-01\) from drain/.test(s)).length, 1, logs.join('\n'));
+    assert.ok(recordsOf(path.join(dir, 'g.xdb')).equals(keptAt(3)));
+  });
+  await check('...and a month cut off mid-add from its dump is finished from its filtered parts', async () => {
+    fetched = [];
+    const dir = path.join(tmp, 'filt3');
+    const fdir = path.join(dir, 'filtered');
+    for (const i of [0, 1, 2]) await filterInto(fdir, i);
+    const acc = A.openAcc(path.join(dir, 'h.acc'), { create });
+    acc.begin({ type: 'dump', source: fakeList[2].name });
+    acc.close();
+    await AL.runAll(runOpts({ acc: path.join(dir, 'h.acc'), dumps: path.join(dir, 'dumps'), out: path.join(dir, 'h.xdb'),
+      filtered: fdir }));
+    assert.deepStrictEqual(fetched, []);
+    assert.ok(recordsOf(path.join(dir, 'h.xdb')).equals(keptAt(3)));
+  });
+
   console.log('\nexplorerdb: filtering a dump for download');
   const F = await load('tools/explorerdb/filter.mjs');
   await check('a kept game keeps its five headers and plies + 1 moves, nothing else', () => {
@@ -856,6 +918,20 @@ module.exports = async function run(check) {
         const again = await R.fill({ repos, months, work: path.join(rel, 'work'), pollMs: 50, log: () => {},
           dumpSize: () => { throw new Error('asked'); }, filterMonth: () => { throw new Error('asked'); } });
         assert.deepStrictEqual(again, { pushed: 0, skipped: [], failed: ['2020-04'] });   // still unpublished, and asking throws
+      });
+      await check('...and drain clones again a clone left broken by a crash', async () => {
+        // As found on 2026-10-01: HEAD at refs/heads/.invalid, no refs, a stale shallow.lock.
+        const clone = path.join(out, 'clones', 'helperA');
+        fs.writeFileSync(path.join(clone, '.git', 'HEAD'), 'ref: refs/heads/.invalid\n');
+        fs.rmSync(path.join(clone, '.git', 'refs'), { recursive: true, force: true });
+        fs.mkdirSync(path.join(clone, '.git', 'refs', 'heads'), { recursive: true });
+        fs.rmSync(path.join(clone, '.git', 'packed-refs'), { force: true });
+        fs.writeFileSync(path.join(clone, '.git', 'shallow.lock'), 'x');
+        const dlogs = [];
+        await R.drain({ repos, dir: path.join(out, 'clones'), keep: path.join(out, 'kept'), out, once: true,
+          pollMs: 50, log: s => dlogs.push(s), importOptions: { plies: PLIES, minGames: 1, workers: 1 } });
+        assert.ok(!dlogs.some(s => /helperA: /.test(s)), dlogs.join('\n'));
+        await R.git(['rev-parse', '--verify', 'HEAD'], clone);
       });
     } finally {
       Object.keys(env).forEach(k => { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; });

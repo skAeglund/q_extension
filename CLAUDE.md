@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 559 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 563 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -786,6 +786,36 @@ exact. Inputs must share hash, plies, speeds and ratings; a source appearing twi
 inside a merged input (`meta.merged`), is refused. Measured here: 2016-02 at N ≥ 2 (117.6 MB,
 5.3 M records) imported in 4m51s on one worker, and merging it with a relabelled copy took
 1.6 s, with every count exactly doubled.
+
+**One line for explorerdb, and `all` takes filtered months (2026-10-01).** The relay
+branch (fill, drain, merge, folder import) and `main` (accumulator, `all`, downloads) had
+diverged, so `all` and `drain` ran from two checkouts. Switching the one checkout from
+`main` to the relay branch mid-import (to start drain) left `all`'s 2026-07 import with no
+merged shards: every shard stayed at generation 1, and the commit then failed with ENOENT
+on `a000.g2.bin`. Most likely the main thread (loaded at 22:57, partly uncommitted code)
+and the workers (loaded at 00:58) disagreed; the state was clean to resume. Lesson: a long
+run's checkout must not change, since the importer starts workers that load `worker.mjs`
+from disk. Merged: both lines had added `merge.mjs`; it keeps main's record primitives
+(the accumulator's) and the branch's `mergeIndexes({ inputs, out, minGames })` interface,
+duplicate-source refusal and `merged` list.
+- `all` now adds a month from `explorer/filtered/<YYYY>/<YYYY-MM>.json` when its parts are
+  all there (`filteredMonth()`: source matches, `games.complete`, every part at its size),
+  instead of downloading the dump. Each step adds the first ready month in todo order
+  (newest first), filtered or downloaded, so drain's months go in while a dump downloads;
+  with nothing ready it starts or waits on the download (`pollMs`, 5 min, so filtered
+  months arriving meanwhile get in). `--filtered-before YYYY-MM`: older months are only
+  waited for, never downloaded.
+- `addDump` takes `o.source`: a filtered month is recorded under its dump's name, so
+  `hasDump` and a pending op work whichever way the month came (a month cut off mid-add
+  from its dump can be finished from its parts; the counts are identical). Ops carry
+  `filtered: true`, and `peakRatio` skips them; a filtered month's disk need is
+  `games × plies × 16 B × 1.15` plus the usual margins.
+- drain copies a month's manifest last via `.tmp` + rename, and clones a repository again
+  when its clone has no valid HEAD (found on 2026-10-01: database_helper2's clone was cut
+  off at 01:12 with a stale `shallow.lock`, so every fetch failed and its 6 months sat
+  unconsumed for 8 hours).
+Covered by the harness (563 checks). Checked against the real `explorer/filtered/`: 76
+months recognised (2013-01..2019-08, 2017-02..05 still arriving), the others not.
 
 **Repgen: blended choice (2026-09-30).** Requested: choose my move by a weighted blend of
 ChessDB's eval, the Practical value and the prepared score (`weights`, all in win% for

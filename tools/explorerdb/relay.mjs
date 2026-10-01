@@ -354,7 +354,17 @@ async function update(url, dir) {
     await git(['clone', '-q', '--depth', '1', url, dir]);
     return;
   }
-  await git(['fetch', '-q', '--depth', '1', 'origin', 'main'], dir);
+  try {
+    await git(['fetch', '-q', '--depth', '1', 'origin', 'main'], dir);
+  } catch (e) {
+    // A clone cut off (2026-10-01: a stale shallow.lock, HEAD at refs/heads/.invalid) fails
+    // every fetch for good: clone it again. A clone with a commit failed for another reason.
+    var whole = await git(['rev-parse', '--verify', '-q', 'HEAD'], dir).then(function () { return true; }, function () { return false; });
+    if (whole) throw e;
+    fs.rmSync(dir, { recursive: true, force: true });
+    await git(['clone', '-q', '--depth', '1', url, dir]);
+    return;
+  }
   await git(['reset', '-q', '--hard', 'FETCH_HEAD'], dir);
   await git(['clean', '-qfd'], dir);
 }
@@ -423,7 +433,9 @@ export async function drain(o) {
         var kd = path.join(o.keep, year);
         fs.mkdirSync(kd, { recursive: true });
         man.parts.forEach(function (p) { fs.copyFileSync(path.join(dir, year, p.file), path.join(kd, p.file)); });
-        fs.copyFileSync(input, path.join(kd, month + '.json'));
+        // The manifest last, and whole: `all` takes a month once its manifest is there.
+        fs.copyFileSync(input, path.join(kd, month + '.json.tmp'));
+        fs.renameSync(path.join(kd, month + '.json.tmp'), path.join(kd, month + '.json'));
         input = path.join(kd, month + '.json');
       }
       log(stamp() + ' ' + month + ': importing ' + man.games.kept + ' games from ' + repoName(url));

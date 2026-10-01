@@ -641,7 +641,9 @@ node tools/explorerdb.mjs import 2016-02.json --out feb16     # where the parts 
 manifest, and refuses more plies than were kept, or a speed or rating group that was left
 out. The filter's own `--speeds`, `--ratings` and `--plies` fix what later imports can use.
 
-**Combining months.** An index is one month by default. Two ways to make one of many:
+**Combining months.** An index is one month by default. For the whole archive, `all` (below)
+is the way: it adds filtered months to its store as they come, exactly. For a few months,
+two ways to make one index of many:
 
 ```bash
 # exact: count a folder of filtered months (drain keeps them in explorer/filtered/<year>) together
@@ -725,6 +727,14 @@ next month downloads while one imports. At the end it writes `explorer/lichess.x
 `--min-games`), which `serve` serves like any other index. Progress also goes to
 `explorer/lichess.acc/log.txt`.
 
+- **Filtered months are used when they're there.** A month whose filtered parts are in
+  `explorer/filtered/` (where `drain` keeps them; `--filtered <dir>` to look elsewhere) is
+  added from them and never downloaded. The counts are the same, and the parts are some 25×
+  smaller than the dump. Whatever month is ready goes in next, so filtered months are added
+  while a dump downloads. With the cloud's `fill` working forward from 2013 and `all` back
+  from the newest month, `--filtered-before 2024-09` (say) makes the meeting point explicit:
+  older months are never downloaded here, and `all` waits for drain to bring them. A month
+  is recorded under its dump's name either way, so it is never added twice.
 - **Stopping is safe at any point**, a crash, a reboot or Ctrl+C included. Run the same
   command again and it carries on. A month cut off mid-import is imported again, into the
   parts of the store that don't have it yet.

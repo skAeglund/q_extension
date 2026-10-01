@@ -8,6 +8,14 @@
  * disk budget is checked, and the accumulator is pruned at the lowest threshold that
  * makes room (see acc.mjs for what that costs).
  *
+ * A month whose filtered parts drain has brought home (explorer/filtered) is added from
+ * them instead, and never downloaded: the counts are the same, the parts are some 25x
+ * smaller. Whatever month is ready is added next, newest first, so filtered months go in
+ * while a dump downloads. Months before `filteredBefore` are only ever taken filtered: the
+ * cloud's fill works forward from 2013, this works back from the newest, and that is where
+ * they meet. The month is recorded under its dump's name either way, so neither way adds
+ * it twice, and a month cut off mid-add can be finished from either.
+ *
  * Stopping is safe at any point, a crash or Ctrl+C included: run the same command again
  * and it carries on (a month cut off mid-import is imported again, into the shards that
  * don't have it yet).
@@ -357,7 +365,7 @@ function freeBytes(dir) {
  * any, feb16's (1.2 and 1.4), rounded up.
  */
 function peakRatio(acc, first) {
-  var r = acc.state.ops.filter(function (op) { return op.type === 'dump' && op.size; }).slice(-3)
+  var r = acc.state.ops.filter(function (op) { return op.type === 'dump' && op.size && !op.filtered; }).slice(-3)
     .map(function (op) {
       return Math.max(op.report.spilled * 16, op.bytesAfter - op.bytesBefore) / op.size;
     });
@@ -365,10 +373,34 @@ function peakRatio(acc, first) {
 }
 
 /*
+ * Month d's filtered parts in `dir` (<dir>/YYYY/YYYY-MM.json, as drain keeps them), if they
+ * are all there: { file, games, bytes }, else null. A manifest is written after its parts,
+ * but a part copied short or a manifest cut off reads as not there yet.
+ */
+export function filteredMonth(dir, d) {
+  if (!dir) return null;
+  var file = path.join(dir, d.month.slice(0, 4), d.month + '.json');
+  try {
+    var man = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (man.source !== d.name || !man.games || !man.games.complete) return null;
+    var bytes = 0;
+    for (var i = 0; i < man.parts.length; i++) {
+      var p = man.parts[i], f = path.join(path.dirname(file), p.file);
+      if (!fs.existsSync(f) || fs.statSync(f).size !== p.bytes) return null;
+      bytes += p.bytes;
+    }
+    return { file: file, games: man.games.kept, bytes: bytes };
+  } catch (e) {
+    return null;
+  }
+}
+
+/*
  * o: { acc (dir), dumps (dir), out (index path), minGames, from, to, oldestFirst,
  *      diskBytes, reserveBytes, prefetch, keepDumps, snapshotEvery, workers, filter, plies,
- *      connections, log, and for tests: list (the dumps, instead of asking Lichess), fetchDump,
- *      marginBytes, firstRatio }
+ *      connections, filtered (dir of filtered months, or null), filteredBefore (YYYY-MM:
+ *      older months only come filtered), pollMs, log, and for tests: list (the dumps,
+ *      instead of asking Lichess), fetchDump, marginBytes, firstRatio }
  */
 export async function runAll(o) {
   var log = o.log;
@@ -408,7 +440,9 @@ export async function runAll(o) {
 
     var fetchDump = o.fetchDump || function (d, dest) { return download(d, dest, log, { connections: o.connections }); };
     var dest = function (d) { return path.join(o.dumps, d.name); };
-    var prefetched = null;       // { d, promise }
+    var pollMs = o.pollMs == null ? 300000 : o.pollMs;
+    var dl = null;               // the download under way: { d, promise, done, error }
+    var failed = {};             // month -> downloads of it that failed
 
     // Disk the run may use now: its budget, or less if the disk itself is fuller.
     function budget() {
@@ -437,48 +471,114 @@ export async function runAll(o) {
       }
     }
 
-    var added = 0;
-    for (var i = 0; i < todo.length; i++) {
-      var d = todo[i];
-      var file = null;
-      if (prefetched && prefetched.d === d) {
-        var pf = prefetched;
-        prefetched = null;
-        file = await pf.promise.catch(function (e) {
-          log('the download meanwhile failed (' + (e && e.message || e) + '); trying again');
-          return null;
-        });
-      }
-      if (!file) {
-        await sizeOf(d, log);
-        if (!fs.existsSync(dest(d))) makeRoom(d.size, 'to download ' + d.name);
-        file = await fetchDump(d, dest(d));
-      }
-      d.size = fs.statSync(file).size;
-      var need = d.size * peakRatio(acc, o.firstRatio) * 1.15 + acc.totals().bytes * 0.05 + (o.marginBytes == null ? GB : o.marginBytes);
-      makeRoom(need, 'to add ' + d.name);
+    // What a month's add needs on disk at most: its spill files or the accumulator's growth,
+    // whichever is larger, and room for the shards being rewritten.
+    function needFor(m) {
+      var margin = (o.marginBytes == null ? GB : o.marginBytes) + acc.totals().bytes * 0.05;
+      // A filtered month says how many games it kept; each spills at most a record a ply.
+      if (m.manifest) return m.manifest.games * acc.state.plies * 16 * 1.15 + margin;
+      return m.size * peakRatio(acc, o.firstRatio) * 1.15 + margin;
+    }
 
-      var next = todo[i + 1];
-      if (o.prefetch && next && !fs.existsSync(dest(next))) {
+    // Whether month d can be downloaded here, or must come filtered (from drain).
+    function downloadable(d) { return !o.filteredBefore || d.month >= o.filteredBefore; }
+
+    // What month d can be added from now: its filtered parts, or its downloaded dump.
+    function ready(d) {
+      var man = filteredMonth(o.filtered, d);
+      if (man) return { d: d, input: man.file, manifest: man, size: man.bytes };
+      if (fs.existsSync(dest(d)) && !(dl && dl.d === d)) return { d: d, input: dest(d), size: fs.statSync(dest(d)).size };
+      return null;
+    }
+
+    function startDownload(d) {
+      var x = { d: d, done: false, error: null };
+      x.promise = fetchDump(d, dest(d)).then(function () { x.done = true; }, function (e) { x.done = true; x.error = e; });
+      dl = x;
+    }
+
+    // The next month to download: the first one still wanted that isn't here filtered.
+    function nextDownload() {
+      return todo.find(function (d) { return downloadable(d) && !filteredMonth(o.filtered, d) && !fs.existsSync(dest(d)); });
+    }
+
+    var added = 0, waiting = '';
+    while (todo.length) {
+      if (dl && dl.done) {
+        var x = dl;
+        dl = null;
+        if (x.error) {
+          failed[x.d.month] = (failed[x.d.month] || 0) + 1;
+          if (failed[x.d.month] >= 2) throw x.error;
+          log('downloading ' + x.d.name + ' failed (' + (x.error && x.error.message || x.error) + '); trying again');
+        } else if (todo.indexOf(x.d) < 0 && !o.keepDumps) {
+          // Its filtered parts came and were added while it downloaded.
+          log('deleting ' + x.d.name + ', added from its filtered parts meanwhile');
+          fs.rmSync(dest(x.d), { force: true });
+        }
+      }
+      // A month cut off mid-add goes first; otherwise the newest (or oldest) that's ready.
+      var m = null;
+      if (st.pending) {
+        m = ready(todo[0]);
+        if (!m && !filteredMonth(o.filtered, todo[0]) && !downloadable(todo[0])) {
+          throw new Error('The accumulator was adding ' + todo[0].name + ', whose filtered files are gone');
+        }
+      } else {
+        for (var i = 0; i < todo.length && !m; i++) m = ready(todo[i]);
+      }
+
+      if (!m) {
+        // Nothing to add yet: download the next month, or wait for one.
+        var nd = st.pending ? todo[0] : nextDownload();
+        if (!dl && nd) {
+          await sizeOf(nd, log);
+          makeRoom(nd.size, 'to download ' + nd.name);
+          log('downloading ' + nd.name + ' (' + gb(nd.size) + ')');
+          startDownload(nd);
+        }
+        if (dl) {
+          // Filtered months arriving meanwhile are added while it downloads.
+          await Promise.race([dl.promise, sleep(pollMs)]);
+          continue;
+        }
+        var w = todo.map(function (d) { return d.month; });
+        var line = 'waiting for ' + w.length + ' filtered month' + (w.length > 1 ? 's' : '') + ' (' +
+          w[0] + (w.length > 1 ? ' .. ' + w[w.length - 1] : '') + ') from drain';
+        if (line !== waiting) { log(line); waiting = line; }
+        await sleep(pollMs);
+        continue;
+      }
+      waiting = '';
+
+      var need = needFor(m);
+      makeRoom(need, 'to add ' + m.d.name);
+
+      // The next download runs while this month is added, if the disk has room for both.
+      var next = !dl && o.prefetch && nextDownload();
+      if (next && next !== m.d) {
         await sizeOf(next, log);
         if (budget() - onDisk() - need - next.size >= 0) {
           log('downloading ' + next.name + ' (' + gb(next.size) + ') meanwhile');
-          prefetched = { d: next, promise: fetchDump(next, dest(next)) };
-          prefetched.promise.catch(function () { /* awaited, and reported, when its turn comes */ });
+          startDownload(next);
         }
       }
 
-      log('adding ' + d.name + ' (' + gb(d.size) + '; ' + (i + 1) + ' of ' + todo.length + ')');
-      var op = await addDump(acc, file, importDump, { workers: o.workers, log: log });
+      log('adding ' + m.d.name + (m.manifest ? ' from its filtered parts (' + gb(m.size) + ', ' +
+        m.manifest.games.toLocaleString('en-US') + ' games' : ' (' + gb(m.size)) + '; ' + (added + 1) + ' of ' +
+        (todo.length + added) + ')');
+      var op = await addDump(acc, m.input, importDump, { workers: o.workers, log: log,
+        source: m.d.name, size: m.size, filtered: !!m.manifest });
       var g = op.report.games;
-      log('added ' + d.name + ': ' + g.kept.toLocaleString('en-US') + ' of ' + g.read.toLocaleString('en-US') +
+      log('added ' + m.d.name + ': ' + g.kept.toLocaleString('en-US') + ' of ' + g.read.toLocaleString('en-US') +
         ' games kept, accumulator ' + gb(op.bytesBefore) + ' -> ' + gb(op.bytesAfter) + ', ' +
         Math.round(op.report.seconds / 60) + ' min');
-      if (!o.keepDumps) fs.rmSync(file, { force: true });
+      // The dump goes, also one downloaded before its filtered parts came; filtered parts stay.
+      if (!o.keepDumps && fs.existsSync(dest(m.d)) && !(dl && dl.d === m.d)) fs.rmSync(dest(m.d), { force: true });
+      todo.splice(todo.indexOf(m.d), 1);
       added++;
-      if (o.snapshotEvery && added % o.snapshotEvery === 0 && i < todo.length - 1) snapshot(false);
+      if (o.snapshotEvery && added % o.snapshotEvery === 0 && todo.length) snapshot(false);
     }
-    if (prefetched) await prefetched.promise;
     snapshot(true);
     return summary(acc);
 

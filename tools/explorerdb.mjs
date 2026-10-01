@@ -108,6 +108,10 @@ var USAGE = [
   '      --oldest-first      (default: newest first, so recent months are in soonest)',
   '      --dumps <dir>       where dumps are downloaded (default explorer/dumps)',
   '      --keep-dumps        keep a dump once it is added',
+  '      --filtered <dir>    filtered months from drain, added instead of downloading the',
+  '                          dump (default explorer/filtered; --no-filtered to ignore them)',
+  '      --filtered-before YYYY-MM   older months only come filtered: they are waited for,',
+  '                          never downloaded (where the cloud fill and this meet)',
   '      --no-prefetch       never download the next dump during an import',
   '      --connections 1     connections per download (two measured no faster)',
   '      --out <name>        the index written at the end (default: the --into name)',
@@ -551,7 +555,7 @@ function cmdFinish(argv) {
 async function cmdAll(argv) {
   var o = {}, into = null, out = null, n = DEFAULTS.minGames;
   var run = { diskBytes: 150e9, reserveBytes: 10e9, prefetch: true, keepDumps: false, snapshotEvery: 0,
-    dumps: path.join(EXPLORER, 'dumps') };
+    dumps: path.join(EXPLORER, 'dumps'), filtered: path.join(EXPLORER, 'filtered') };
   var rest = filterArgs(argv, o);
   for (var i = 0; i < rest.length; i++) {
     var a = rest[i];
@@ -565,13 +569,17 @@ async function cmdAll(argv) {
     else if (a === '--oldest-first') run.oldestFirst = true;
     else if (a === '--dumps') run.dumps = path.resolve(rest[++i]);
     else if (a === '--keep-dumps') run.keepDumps = true;
+    else if (a === '--filtered') run.filtered = path.resolve(rest[++i]);
+    else if (a === '--no-filtered') run.filtered = null;
+    else if (a === '--filtered-before') run.filteredBefore = rest[++i];
     else if (a === '--no-prefetch') run.prefetch = false;
     else if (a === '--connections') run.connections = num(rest[++i], '--connections');
     else if (a === '--snapshot-every') run.snapshotEvery = num(rest[++i], '--snapshot-every');
     else throw new Error('Unexpected argument: ' + a + '\n' + USAGE);
   }
   if (!into) throw new Error('all --into <name>\n' + USAGE);
-  [run.from, run.to].forEach(function (m) {
+  if (run.filteredBefore && !run.filtered) throw new Error('--filtered-before needs the filtered months (not --no-filtered)');
+  [run.from, run.to, run.filteredBefore].forEach(function (m) {
     if (m && !/^\d{4}-\d{2}$/.test(m)) throw new Error('Months are written 2016-02');
   });
   if (!(run.diskBytes > 0) || !(run.reserveBytes >= 0)) throw new Error('--disk-gb and --reserve-gb are numbers');
