@@ -170,63 +170,98 @@ export function mergeFiles(files, minGames, out) {
   }
 }
 
+
+// Inputs must count the same thing the same way.
+export function checkCompatible(metas, files) {
+  var a = metas[0];
+  metas.forEach(function (m, i) {
+    var what = m.hash !== a.hash ? ['the hash', m.hash, a.hash] :
+      m.plies !== a.plies ? ['plies', m.plies, a.plies] :
+      String(m.filter.speeds) !== String(a.filter.speeds) ? ['speeds', m.filter.speeds, a.filter.speeds] :
+      String(m.filter.ratings) !== String(a.filter.ratings) ? ['ratings', m.filter.ratings, a.filter.ratings] : null;
+    if (what) {
+      throw new Error('Different ' + what[0] + ': ' + path.basename(files[i]) + ' has ' + what[1] + ', ' +
+        path.basename(files[0]) + ' ' + what[2] + '. Indexes counted differently can\'t be merged.');
+    }
+  });
+}
+
 /*
- * Joins finished indexes (`explorerdb merge`) into `out`, keeping positions reached by
- * `minGames` in the sum. They must share the filter and ply limit. Each input has already
- * dropped its own positions under its own threshold, so a position can be missing games
- * here that the inputs each had too few of: the accumulator (acc.mjs) is the way round
- * that. Resolves with the new header.
+ * Joins finished indexes (`explorerdb merge`) into o.out, keeping positions reached by
+ * o.minGames in the sum. o: { inputs: [index files], out, minGames }. Resolves with the
+ * new header, whose `merged` lists every source that went in.
+ *
+ * Each input has already dropped its own positions under its own threshold, so a position
+ * can be missing games here that the inputs each had too few of: it only ever undercounts.
+ * The accumulator (acc.mjs) is the way round that. The same source twice is refused: it
+ * would count its games twice. A source is a dump's or manifest's name, or an
+ * accumulator's or folder's summary ("12 filtered months, ..."), so an index of a year and
+ * one of a month in it aren't caught; keep merges to inputs that don't overlap.
  */
-export function mergeIndexes(files, out, minGames) {
+export async function mergeIndexes(o) {
+  var files = o.inputs;
+  if (files.length < 2) throw new Error('Merging needs at least two indexes');
   var dbs = files.map(function (f) { return openIndex(f); });
   var inputs = [];
   try {
-    var m0 = dbs[0].meta;
-    dbs.forEach(function (db, i) {
-      var m = db.meta;
-      if (JSON.stringify(m.filter) !== JSON.stringify(m0.filter) || m.plies !== m0.plies) {
-        throw new Error(path.basename(files[i]) + ' has another filter or ply limit than ' +
-          path.basename(files[0]) + ' (' + JSON.stringify(m.filter) + ', ' + m.plies + ' plies)');
-      }
+    var metas = dbs.map(function (db) { return db.meta; });
+    checkCompatible(metas, files);
+    var seen = {}, sources = [];             // a merged input brings its own list
+    metas.forEach(function (m, i) {
+      var list = m.merged || [{ source: m.source, minGames: m.minGames, games: m.report.games.kept, created: m.created }];
+      list.forEach(function (x) {
+        if (seen[x.source]) throw new Error(path.basename(files[i]) + ' and ' + seen[x.source] + ' both hold ' + x.source);
+        seen[x.source] = path.basename(files[i]);
+        sources.push(x);
+      });
     });
+    var minGames = Math.max(1, o.minGames || 1);
     inputs = dbs.map(function (db, i) { return openRecords(files[i], db.start); });
     var games = { read: 0, kept: 0, replayed: 0, illegal: 0, plies: 0,
       skipped: { broken: 0, variant: 0, speed: 0, rating: 0, result: 0 } };
-    dbs.forEach(function (db) {
-      var g = db.meta.report.games;
+    metas.forEach(function (m) {
+      var g = m.report.games;
       ['read', 'kept', 'replayed', 'illegal', 'plies'].forEach(function (k) { games[k] += g[k] || 0; });
-      Object.keys(games.skipped).forEach(function (k) { games.skipped[k] += (g.skipped && g.skipped[k]) || 0; });
+      Object.keys(g.skipped || {}).forEach(function (k) { games.skipped[k] = (games.skipped[k] || 0) + g.skipped[k]; });
     });
     var meta = {
-      format: m0.format, hash: m0.hash,
-      source: dbs.map(function (db) { return db.meta.source; }).join(' + '),
-      filter: m0.filter, plies: m0.plies, minGames: minGames,
+      format: metas[0].format, hash: metas[0].hash,
+      source: 'merge of ' + sources.length + ' sources: ' +
+        sources.map(function (x) { return x.source; }).join(', ').slice(0, 200),
+      merged: sources,
+      filter: metas[0].filter, plies: metas[0].plies, minGames: minGames,
       created: new Date().toISOString(), report: null
     };
+    // Room for the header as it will be once the counts are in.
+    var pad = Math.max(HEADER_PAD, Buffer.byteLength(JSON.stringify(sources)) + 65536);
     var t0 = Date.now();
-    var part = out + '.part';
+    var part = o.out + '.part';
     var fd = fs.openSync(part, 'w+');
     try {
-      writeHeader(fd, meta, HEADER_PAD);
+      writeHeader(fd, meta, pad);
       var wr = recordWriter(fd);
       var st = mergeRecords(inputs, minGames, wr.put);
       wr.flush();
       meta.report = {
         games: games,
-        spilled: dbs.reduce(function (n, db) { return n + (db.meta.report.spilled || 0); }, 0),
+        spilled: metas.reduce(function (n, m) { return n + (m.report.spilled || 0); }, 0),
         thresholds: THRESHOLDS.map(function (t, i) {
           return { minGames: t, positions: st.positions[i], records: st.records[i], bytes: st.records[i] * REC };
         }),
         positions: st.kept, records: st.keptRecords,
-        seconds: Math.round((Date.now() - t0) / 1000),
-        inputMinGames: dbs.map(function (db) { return db.meta.minGames; })
+        seconds: Math.round((Date.now() - t0) / 1000)
       };
       rewriteHeader(fd, meta);
-    } finally {
+    } catch (e) {
       fs.closeSync(fd);
+      fd = null;
+      fs.rmSync(part, { force: true });
+      throw e;
+    } finally {
+      if (fd !== null) fs.closeSync(fd);
     }
-    fs.rmSync(out, { force: true });
-    fs.renameSync(part, out);
+    fs.rmSync(o.out, { force: true });
+    fs.renameSync(part, o.out);
     return meta;
   } finally {
     inputs.forEach(function (r) { r.close(); });

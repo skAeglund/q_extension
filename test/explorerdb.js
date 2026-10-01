@@ -305,20 +305,20 @@ module.exports = async function run(check) {
     await I.importDump({ input: monthFiles[i], out: f, plies: PLIES, minGames: 1, workers: 2 });
     monthIdx.push(f);
   }
-  await check('merging three months at N >= 1 gives the whole import\'s records, byte for byte', () => {
+  await check('merging three months at N >= 1 gives the whole import\'s records, byte for byte', async () => {
     const out = path.join(tmp, 'merged.xdb');
-    const mm = M.mergeIndexes(monthIdx, out, 1);
+    const mm = await M.mergeIndexes({ inputs: monthIdx, out, minGames: 1 });
     assert.ok(recordsOf(out).equals(whole));
     assert.strictEqual(mm.report.games.kept, wantKept);
     assert.strictEqual(mm.report.positions, want.size);
-    const m3 = M.mergeIndexes(monthIdx, path.join(tmp, 'merged3.xdb'), 3);
+    const m3 = await M.mergeIndexes({ inputs: monthIdx, out: path.join(tmp, 'merged3.xdb'), minGames: 3 });
     assert.ok(recordsOf(path.join(tmp, 'merged3.xdb')).equals(keptAt(3)));
     assert.strictEqual(m3.report.thresholds.find(t => t.minGames === 3).positions, m3.report.positions);
   });
   await check('indexes with another filter or ply limit are not merged', () => {
     const other = path.join(tmp, 'other.xdb');
     return I.importDump({ input: monthFiles[0], out: other, plies: 20, minGames: 1, workers: 1 }).then(() =>
-      assert.throws(() => M.mergeIndexes([monthIdx[0], other], path.join(tmp, 'no.xdb'), 1), /ply limit/));
+      assert.rejects(M.mergeIndexes({ inputs: [monthIdx[0], other], out: path.join(tmp, 'no.xdb') }), /Different plies/));
   });
 
   const accDir = path.join(tmp, 'a.acc');
@@ -675,6 +675,192 @@ module.exports = async function run(check) {
       /not fully downloaded/);
     assert.ok(!fs.existsSync(path.join(tmp, 'p.xdb.tmp')), 'temporary files left');
   });
+
+  await check('a download that breaks is picked up where it broke off', async () => {
+    // A stand-in for curl: serves the file from -r's offset, and breaks once 3000 bytes in.
+    const fake = path.join(tmp, 'fakecurl.js'), count = path.join(tmp, 'fakecurl.n');
+    fs.writeFileSync(fake, `const fs = require('fs');
+      const a = process.argv.slice(2), r = a.indexOf('-r'), from = r < 0 ? 0 : parseInt(a[r + 1]);
+      const n = fs.existsSync(${JSON.stringify(count)}) ? +fs.readFileSync(${JSON.stringify(count)}, 'utf8') : 0;
+      fs.writeFileSync(${JSON.stringify(count)}, String(n + 1));
+      const b = fs.readFileSync(a[a.length - 1].replace('https://x/', ''));
+      if (n === 0) { process.stdout.write(b.subarray(0, 3000), () => process.exit(56)); }
+      else process.stdout.write(b.subarray(from));`);
+    const chunks = [];
+    for await (const c of I.curlStream('https://x/' + dumpFile, { curl: [process.execPath, fake], waitMs: 1 })) chunks.push(c);
+    assert.ok(Buffer.concat(chunks).equals(fs.readFileSync(dumpFile)));
+    assert.strictEqual(fs.readFileSync(count, 'utf8'), '2');
+  });
+
+  console.log('\nexplorerdb: combining months');
+  const mdir = path.join(tmp, 'months');
+  fs.mkdirSync(mdir);
+  // The test dump as three "months".
+  const allGames = pgn.split(/(?=\[Event )/).filter(Boolean);
+  const thirds = [0, 1, 2].map(i => {
+    const f = path.join(mdir, `m${i}.pgn`);
+    fs.writeFileSync(f, allGames.filter((_, j) => j % 3 === i).join(''));
+    return f;
+  });
+  const monthIndex = async (minGames, tag) => {
+    const out = [];
+    for (let i = 0; i < 3; i++) {
+      const x = path.join(mdir, `${tag}${i}.xdb`);
+      await I.importDump({ input: thirds[i], out: x, plies: PLIES, minGames, workers: 1 });
+      out.push(x);
+    }
+    return out;
+  };
+  const sameAsWhole = (file, minGames, label) => {
+    const x = S.openIndex(file);
+    try {
+      let positions = 0;
+      for (const [k, e] of want) {
+        const n = e.tot[0] + e.tot[1] + e.tot[2];
+        const got = x.records(G.keyOf(k));
+        if (n >= minGames) { positions++; assert.deepStrictEqual(got, db.records(G.keyOf(k)), label + ' ' + k); }
+        else assert.deepStrictEqual(got, [], label + ' kept ' + k);
+      }
+      assert.strictEqual(x.meta.report.positions, positions, label);
+      assert.strictEqual(x.meta.report.games.kept, wantKept, label);
+    } finally { x.close(); }
+  };
+  const ones = await monthIndex(1, 'one');
+  await check('merging months indexed in full gives exactly the index of all their games', async () => {
+    const m1 = await M.mergeIndexes({ inputs: ones, out: path.join(mdir, 'all1.xdb'), minGames: 1 });
+    assert.strictEqual(m1.merged.length, 3);
+    sameAsWhole(path.join(mdir, 'all1.xdb'), 1, 'N>=1');
+    await M.mergeIndexes({ inputs: ones, out: path.join(mdir, 'all3.xdb'), minGames: 3 });
+    sameAsWhole(path.join(mdir, 'all3.xdb'), 3, 'N>=3');
+  });
+  await check('...months indexed at N >= 2 only ever undercount, and only where a month was thin', async () => {
+    const twos = await monthIndex(2, 'two');
+    await M.mergeIndexes({ inputs: twos, out: path.join(mdir, 'all2.xdb'), minGames: 1 });
+    const x = S.openIndex(path.join(mdir, 'all2.xdb'));
+    let short = 0;
+    try {
+      for (const k of want.keys()) {
+        const whole = db.records(G.keyOf(k));
+        for (const r of x.records(G.keyOf(k))) {
+          const w = whole.find(y => y.code === r.code);
+          assert.ok(w && r.white <= w.white && r.draws <= w.draws && r.black <= w.black, k);
+          if (r.white + r.draws + r.black < w.white + w.draws + w.black) short++;
+        }
+      }
+    } finally { x.close(); }
+    assert.ok(short > 0, 'expected some undercounts in so small a test');
+  });
+  await check('...and a merge refuses the same month twice, or another ply limit', async () => {
+    await assert.rejects(M.mergeIndexes({ inputs: [ones[0], ones[1], ones[0]], out: path.join(mdir, 'dup.xdb') }),
+      /both hold m0\.pgn/);
+    await assert.rejects(M.mergeIndexes({ inputs: [path.join(mdir, 'all1.xdb'), ones[2]], out: path.join(mdir, 'dup.xdb') }),
+      /both hold m2\.pgn/);
+    const p20 = path.join(mdir, 'p20.xdb');
+    await I.importDump({ input: thirds[0], out: p20, plies: 20, minGames: 1, workers: 1 });
+    await assert.rejects(M.mergeIndexes({ inputs: [p20, ones[1]], out: path.join(mdir, 'bad.xdb') }), /Different plies: one1\.xdb has 30, p20\.xdb 20/);
+    assert.ok(!fs.existsSync(path.join(mdir, 'dup.xdb.partial')) && !fs.existsSync(path.join(mdir, 'bad.xdb')));
+  });
+  await check('importing a folder of filtered months counts them together, exactly', async () => {
+    const year = path.join(mdir, 'year');
+    for (let i = 0; i < 3; i++) {
+      await F.filterDump({ input: thirds[i], out: path.join(year, `2019-0${i + 1}`), plies: PLIES });
+    }
+    const ym = await I.importDump({ input: year, out: path.join(mdir, 'year.xdb'), plies: PLIES, minGames: 3, workers: 2 });
+    assert.match(ym.source, /^3 filtered months, 2019-01\.\.2019-03$/);
+    sameAsWhole(path.join(mdir, 'year.xdb'), 3, 'folder');
+  });
+
+  console.log('\nexplorerdb: the relay (fill in the cloud, drain at home)');
+  const R = await load('tools/explorerdb/relay.mjs');
+  await check('months parse as ranges and lists', () => {
+    assert.deepStrictEqual(R.parseMonths('2016-11..2017-02, 2016-12,2018-05'),
+      ['2016-11', '2016-12', '2017-01', '2017-02', '2018-05']);
+    assert.throws(() => R.parseMonths('2017-13'), /No month/);
+    assert.deepStrictEqual(R.parseLedger('2017-01 5 9\n\n2017-02 1 2\n'), { '2017-01': '2017-01 5 9', '2017-02': '2017-02 1 2' });
+    assert.strictEqual(R.repoName('https://github.com/a/database_helper2.git'), 'database_helper2');
+  });
+  await check('a month goes to the repository with most room, or waits', () => {
+    const snap = (bytes, subject, loose) => ({ months: bytes ? { '2017-01': { bytes } } : {}, loose: loose || [], subject });
+    const plans = [R.repoPlan(snap(2e9, 'x'), 3e9, 0), R.repoPlan(snap(0, 'consumed: 2017-01'), 3e9, 0),
+      R.repoPlan(snap(0, 'reset: y'), 3e9, 2.5e9)];
+    assert.deepStrictEqual(plans.map(p => [p.reset, p.idle]), [[false, false], [true, true], [false, false]]);
+    assert.strictEqual(R.pickRepo(plans, 1e9), 1);
+    assert.strictEqual(R.pickRepo([plans[0], plans[2]], 0.9e9), 0);
+    assert.strictEqual(R.pickRepo([plans[0], plans[2]], 1.1e9), null);
+    assert.strictEqual(R.pickRepo([R.repoPlan(snap(0, 'reset'), 3e9, 0)], 5e9), 0);   // too big, but idle
+    assert.strictEqual(R.repoPlan(snap(0, 'consumed: x', ['2017/2017-02.1.pgn.zst']), 3e9, 0).reset, false);
+  });
+
+  const gitOk = await R.git(['--version']).then(() => true, () => false);
+  if (gitOk) {
+    const env = { GIT_AUTHOR_NAME: 'test', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 'test', GIT_COMMITTER_EMAIL: 't@t' };
+    const saved = {};
+    Object.keys(env).forEach(k => { saved[k] = process.env[k]; process.env[k] = env[k]; });
+    try {
+      const rel = path.join(tmp, 'relay');
+      const repos = [];
+      for (const name of ['helperA', 'helperB']) {
+        const bare = path.join(rel, name + '.git');
+        await R.git(['init', '-q', '--bare', '-b', 'main', bare]);
+        await R.git(['config', 'uploadpack.allowFilter', 'true'], bare);
+        const seed = path.join(rel, 'seed-' + name);
+        await R.git(['clone', '-q', bare, seed]);
+        fs.writeFileSync(path.join(seed, 'README.md'), '# ' + name + '\n');
+        await R.git(['add', 'README.md'], seed);
+        await R.git(['commit', '-q', '-m', 'README'], seed);
+        await R.git(['push', '-q', 'origin', 'HEAD:main'], seed);
+        repos.push(pathToFileURL(bare).href);
+      }
+      // One month as the filter writes it, to size the cap: each repository holds one.
+      const probe = await F.filterDump({ input: dumpFile, out: path.join(rel, 'probe', 'p'), plies: PLIES,
+        partBytes: 2000, chunkBytes: 800 });
+      const monthBytes = probe.parts.reduce((n, p) => n + p.bytes, 0);
+      const months = R.parseMonths('2020-01..2020-05');
+      const logs = [];
+      const filling = R.fill({ repos, months, work: path.join(rel, 'work'), capBytes: monthBytes * 1.5,
+        pushBytes: 4000, workers: 2, pollMs: 50, footer: 'Relay-Test: yes', log: s => logs.push(s),
+        dumpSize: m => m === '2020-04' ? 0 : monthBytes / 0.12,
+        filterMonth: (m, out) => F.filterDump({ input: dumpFile, out, source: m, plies: PLIES,
+          partBytes: 2000, chunkBytes: 800 }) });
+      const out = path.join(rel, 'home');
+      const draining = R.drain({ repos, dir: path.join(out, 'clones'), keep: path.join(out, 'kept'), out,
+        until: ['2020-01', '2020-02', '2020-03', '2020-05'], pollMs: 50, footer: 'Relay-Test: yes', log: s => logs.push(s),
+        importOptions: { plies: PLIES, minGames: 1, workers: 1 } });
+      const [filled, drained] = await Promise.all([filling, draining]);
+      await check('fill pushes months as drain makes room, and drain imports each of them', () => {
+        assert.deepStrictEqual(filled, { pushed: 4, skipped: ['2020-04'], failed: [] }, logs.join('\n'));
+        assert.deepStrictEqual(drained.slice().sort(), ['2020-01', '2020-02', '2020-03', '2020-05']);
+        assert.ok(logs.some(s => /2020-04: no dump published/.test(s)));
+        for (const m of drained) {
+          const x = S.openIndex(path.join(out, m + '.xdb'));
+          try { assert.strictEqual(x.meta.report.positions, meta.report.positions, m); } finally { x.close(); }
+          assert.ok(fs.existsSync(path.join(out, 'kept', '2020', m + '.json')), m + ' not kept');
+        }
+      });
+      await check('...a repository drained empty is reset, and the ledgers remember every month', async () => {
+        const all = {};
+        let resets = 0;
+        for (const url of repos) {
+          const s = await R.snapshot(url, path.join(rel, 'check'));
+          assert.deepStrictEqual(Object.keys(s.months), [], url);
+          Object.assign(all, s.ledger);
+          const log = await R.git(['log', '--format=%s%n%b', 'main'], require('url').fileURLToPath(url));
+          if (/^reset: /m.test(log)) resets++;
+          assert.ok(/Relay-Test: yes/.test(log), 'footer missing');
+          fs.rmSync(s.dir, { recursive: true, force: true });
+        }
+        assert.deepStrictEqual(Object.keys(all).sort(), ['2020-01', '2020-02', '2020-03', '2020-05']);
+        assert.ok(resets >= 1, 'no reset');
+      });
+      await check('...and a second fill finds nothing left to do', async () => {
+        const again = await R.fill({ repos, months, work: path.join(rel, 'work'), pollMs: 50, log: () => {},
+          dumpSize: () => { throw new Error('asked'); }, filterMonth: () => { throw new Error('asked'); } });
+        assert.deepStrictEqual(again, { pushed: 0, skipped: [], failed: ['2020-04'] });   // still unpublished, and asking throws
+      });
+    } finally {
+      Object.keys(env).forEach(k => { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; });
+    }
+  }
 
   console.log('\nexplorerdb: the server');
   const START = new Chess().fen();

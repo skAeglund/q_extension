@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 549 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 559 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -28,7 +28,7 @@ node test/harness.js          # 549 checks: main-world.js on a stubbed DOM, plus
                               # and test/cdbexplore.js (target picking, ChessDB search)
                               # and test/explorerdb.js (dump filter, fast replay, import,
                               # merge, the accumulator and the all driver, filtered
-                              # parts, the server and providers.js's local path)
+                              # parts, the relay, the server and providers.js's local path)
 node --check src/main-world.js
 python icons/make_icons.py    # regenerate PNGs (stdlib only, no Pillow)
 ```
@@ -759,6 +759,33 @@ filter dropped. The harness checks that importing the parts gives the same recor
 importing the dump. The size gain on a real month is not measured yet; the estimate was 5–10×.
 The output goes to a separate private data repo, which the user creates (the GitHub
 integration can't).
+
+**Relay (`explorerdb fill` / `drain`, 2026-09-30).** Requested for overnight runs: the cloud
+filters months into private GitHub repositories (database_helper…4) as the user's machine
+drains them. The protocol is only git (`explorerdb/relay.mjs`): a month is complete once its
+manifest is pushed (parts go first, in pushes under `pushBytes`, since GitHub refuses pushes
+over 2 GB); drain imports it, keeps the files, and commits `consumed: <month>`; fill resets a
+repository whose last commit is drain's and holds nothing (a new root commit, force-pushed
+with a lease), so the parts stop counting against its size. `LEDGER` carries the months ever
+pushed across resets; fill writes one into a repository filled before it existed. Fill's
+clones are sparse and blobless (a few hundred kB), and drain clones with `--depth 1` and
+resets to `FETCH_HEAD`, so a force-pushed reset is just the next state. Downloads resume by
+byte range (`curlStream` in `importer.mjs`): in the 2013–2016 batch Lichess's server dropped
+the connection about 1 GB in, 2016-09 three times over. That batch filtered 2016's months
+8.1–10.3× smaller, 9–10k games/s per process. The harness runs fill and drain against each
+other on local bare repositories (a cap of one month each, so both are reset).
+
+**Combining months (`merge`, import of a folder; 2026-10-01).** `merge` (`explorerdb/
+merge.mjs`) is a k-way merge over indexes' sorted records (a binary heap of buffered
+cursors), summing (hash, move) and keeping positions whose summed games reach `--min-games`.
+It writes the header last into room reserved before the records (JSON padded with spaces),
+so nothing is copied twice. It can only sum what each input kept: a position under an
+input's `minGames` loses that input's games (an undercount, never more; the harness checks
+both directions). `import <folder>` reads every `YYYY-MM.json` there as one input, which is
+exact. Inputs must share hash, plies, speeds and ratings; a source appearing twice, also
+inside a merged input (`meta.merged`), is refused. Measured here: 2016-02 at N ≥ 2 (117.6 MB,
+5.3 M records) imported in 4m51s on one worker, and merging it with a relabelled copy took
+1.6 s, with every count exactly doubled.
 
 **Repgen: blended choice (2026-09-30).** Requested: choose my move by a weighted blend of
 ChessDB's eval, the Practical value and the prepared score (`weights`, all in win% for
