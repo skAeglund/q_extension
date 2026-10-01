@@ -933,6 +933,32 @@ module.exports = async function run(check) {
         assert.ok(!dlogs.some(s => /helperA: /.test(s)), dlogs.join('\n'));
         await R.git(['rev-parse', '--verify', 'HEAD'], clone);
       });
+      await check('...and with noImport drain keeps and removes a month without indexing it', async () => {
+        const nlogs = [];
+        // A month pushed by hand, as fill lays it out: parts and manifest under its year.
+        const push = path.join(rel, 'push6');
+        await R.git(['clone', '-q', repos[0], push]);
+        fs.mkdirSync(path.join(push, '2020'), { recursive: true });
+        await F.filterDump({ input: dumpFile, out: path.join(push, '2020', '2020-06'), source: '2020-06', plies: PLIES,
+          partBytes: 2000, chunkBytes: 800 });
+        await R.git(['add', '2020'], push);
+        await R.git(['commit', '-q', '-m', 'month: 2020-06'], push);
+        await R.git(['push', '-q', 'origin', 'HEAD:main'], push);
+        const kept = path.join(rel, 'kept2');
+        await assert.rejects(R.drain({ repos, dir: path.join(out, 'clones'), out, once: true, noImport: true, keep: null }),
+          /would lose the months/);
+        const got = await R.drain({ repos, dir: path.join(out, 'clones'), keep: kept, out, once: true, noImport: true,
+          pollMs: 50, log: s => nlogs.push(s) });
+        assert.deepStrictEqual(got, ['2020-06'], nlogs.join('\n'));
+        assert.ok(fs.existsSync(path.join(kept, '2020', '2020-06.json')));
+        assert.ok(!fs.existsSync(path.join(out, '2020-06.xdb')), 'indexed anyway');
+        assert.ok(!fs.readdirSync(path.join(kept, '2020')).some(f => /\.tmp$/.test(f)));
+        for (const url of repos) {
+          const sn = await R.snapshot(url, path.join(rel, 'check2'));
+          assert.deepStrictEqual(Object.keys(sn.months), [], url);
+          fs.rmSync(sn.dir, { recursive: true, force: true });
+        }
+      });
     } finally {
       Object.keys(env).forEach(k => { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; });
     }

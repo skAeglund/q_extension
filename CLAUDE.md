@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 563 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 564 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -814,7 +814,11 @@ duplicate-source refusal and `merged` list.
   when its clone has no valid HEAD (found on 2026-10-01: database_helper2's clone was cut
   off at 01:12 with a stale `shallow.lock`, so every fetch failed and its 6 months sat
   unconsumed for 8 hours).
-Covered by the harness (563 checks). Checked against the real `explorer/filtered/`: 76
+- `drain --no-import` only checks, keeps and consumes: with `all` taking the kept files,
+  drain's index per month was the same replay twice, and 2026-07's add took 129 min beside
+  it against 2026-08's 60 alone. It needs `--keep` (refused otherwise), and re-copies a
+  month cut off before its consume.
+Covered by the harness (564 checks). Checked against the real `explorer/filtered/`: 76
 months recognised (2013-01..2019-08, 2017-02..05 still arriving), the others not.
 
 **Repgen: blended choice (2026-09-30).** Requested: choose my move by a weighted blend of

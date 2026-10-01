@@ -376,6 +376,7 @@ async function update(url, dir) {
  */
 export async function drain(o) {
   o = Object.assign({ pollMs: 300000, tries: 5 }, o);
+  if (o.noImport && !o.keep) throw new Error('Not importing and not keeping would lose the months');
   var log = o.log || function () {};
   var footer = o.footer ? '\n\n' + o.footer : '';
   var importMonth = o.importMonth || function (input, out) {
@@ -414,7 +415,7 @@ export async function drain(o) {
         await git(['reflog', 'expire', '--expire=now', '--all'], dir).catch(function () {});
         await git(['gc', '-q', '--prune=now'], dir).catch(function () {});
       }
-      if (o.until && o.until.every(function (m) { return fs.existsSync(path.join(o.out, m + '.xdb')); })) {
+      if (o.until && o.until.every(have)) {
         return imported;
       }
     }
@@ -422,8 +423,15 @@ export async function drain(o) {
     if (!worked) await sleep(o.pollMs);
   }
 
+  // Whether a month is done here: its index, or with noImport its kept manifest.
+  function have(m) {
+    return o.noImport ? fs.existsSync(path.join(o.keep, m.slice(0, 4), m + '.json')) : fs.existsSync(path.join(o.out, m + '.xdb'));
+  }
+
   async function drainMonth() {
-    if (!fs.existsSync(index)) {
+    // With noImport the files are checked and kept again after a crash: cheap, and the copy
+    // is then known whole.
+    if (o.noImport || !fs.existsSync(index)) {
       var man = JSON.parse(fs.readFileSync(path.join(dir, year, month + '.json'), 'utf8'));
       man.parts.forEach(function (p) {
         if (sha256(path.join(dir, year, p.file)) !== p.sha256) throw new Error(p.file + ' does not match its sha256');
@@ -438,11 +446,17 @@ export async function drain(o) {
         fs.renameSync(path.join(kd, month + '.json.tmp'), path.join(kd, month + '.json'));
         input = path.join(kd, month + '.json');
       }
-      log(stamp() + ' ' + month + ': importing ' + man.games.kept + ' games from ' + repoName(url));
-      var t0 = Date.now();
-      await importMonth(input, index + '.partial');
-      fs.renameSync(index + '.partial', index);
-      log(stamp() + ' ' + month + ': imported in ' + Math.round((Date.now() - t0) / 1000) + ' s -> ' + index);
+      if (o.noImport) {
+        // `all` adds the kept files to its accumulator: an index per month would only
+        // compete with it for the cores.
+        log(stamp() + ' ' + month + ': kept ' + man.games.kept + ' games from ' + repoName(url) + ' in ' + path.dirname(input));
+      } else {
+        log(stamp() + ' ' + month + ': importing ' + man.games.kept + ' games from ' + repoName(url));
+        var t0 = Date.now();
+        await importMonth(input, index + '.partial');
+        fs.renameSync(index + '.partial', index);
+        log(stamp() + ' ' + month + ': imported in ' + Math.round((Date.now() - t0) / 1000) + ' s -> ' + index);
+      }
       imported.push(month);
     }
     await consume(url, dir, month, footer, o.tries);

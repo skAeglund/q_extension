@@ -678,7 +678,9 @@ node tools/explorerdb.mjs drain --repos you/database_helper,you/database_helper2
 its history and fills it again (up to `--cap-gb`, 3 by default). A `LEDGER` file in each
 repository lists the months it has carried, so either side can be stopped and started again.
 `drain` runs until Ctrl+C, or until every month from 2013-01 to `--until` is imported. It
-pushes with your own git credentials.
+pushes with your own git credentials. Alongside `all` (below), run it with `--no-import`: it then only checks,
+keeps and removes each month, and `all` adds the kept files to its store, so the cores aren't
+spent twice.
 
 **Serving it.** To have the Practical column and repgen use the index instead of Lichess:
 

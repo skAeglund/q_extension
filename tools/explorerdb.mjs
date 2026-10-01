@@ -86,6 +86,8 @@ var USAGE = [
   '      it from the repository so fill can use the room; runs until stopped',
   '      --keep <dir>        where the months\' files are kept (default explorer/filtered;',
   '                          --no-keep to drop them after importing)',
+  '      --no-import         only check, keep and remove each month: `all` adds the kept',
+  '                          files to its accumulator, so an index per month is spare work',
   '      --until YYYY-MM     stop once every month from 2013-01 to this one is imported',
   '      --once              one pass, then stop',
   '      --poll-min 5        how often to look when there is nothing new',
@@ -302,6 +304,7 @@ async function cmdDrain(argv) {
     if (a === '--repos') o.repos = repoUrls(argv[++i]);
     else if (a === '--keep') o.keep = path.resolve(argv[++i]);
     else if (a === '--no-keep') o.keep = null;
+    else if (a === '--no-import') o.noImport = true;
     else if (a === '--dir') o.dir = path.resolve(argv[++i]);
     else if (a === '--out') o.out = path.resolve(argv[++i]);
     else if (a === '--until') o.until = parseMonths('2013-01..' + parseMonths(argv[++i])[0]);
@@ -316,7 +319,7 @@ async function cmdDrain(argv) {
   if (!o.repos) repoUrls('');
   o.log = function (s) { console.log(s); };
   var got = await drain(o);
-  console.log(got.length + ' months imported');
+  console.log(got.length + ' months ' + (o.noImport ? 'kept' : 'imported'));
   return 0;
 }
 
