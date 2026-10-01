@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 570 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 571 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -834,6 +834,18 @@ duplicate-source refusal and `merged` list.
   there. A recycle now costs at most a part plus re-reading the dump. The manifest commit
   removes the checkpoint and any parts of an earlier attempt it didn't use. drain is
   unchanged: it never looks at a month without a manifest.
+- Resuming at a byte offset (requested the same day): re-reading up to the checkpoint took
+  about 20 minutes for three months 21–34 M games in, three dumps downloading at once, and a
+  container lived about 6 minutes after a turn. The filter now decompresses a .zst dump a
+  whole frame at a time (`zstdFrames({whole})`, `zlib.zstdDecompress`, the next frame while
+  this one is filtered), so each checkpoint also says where its next game is: `at: {offset,
+  skip}`, the byte offset of its frame and how far into the frame's text the game starts. A
+  resume downloads from that frame (`curlStream`'s `start`, a byte range), drops `skip`
+  characters, and checks the game is the checkpoint's. A checkpoint without `at`, or an `at`
+  that lands elsewhere or fails before that check (a server ignoring ranges sends byte 0),
+  falls back to counting from the start. fill and the relay pass the checkpoint through
+  unchanged. Real frames are about 6.4 MB compressed and 30–45 MB of text, so a filter now
+  holds two or three frames at a time.
 - `fill --part-mb N` (requested the same day): the cloud containers were recycled about
   5 minutes after each keep-alive turn, and a 95 MB part takes about 10 minutes to write, so
   part 2 of three months was retried for hours without finishing. Smaller parts lose less.
@@ -843,7 +855,7 @@ duplicate-source refusal and `merged` list.
   start any whose month is already in (requested the same day, for disk: kept months were
   about 1 GB each, a second copy of what the accumulator holds). `--keep-filtered` keeps
   them. 2020-01..05's, and the old per-month `.xdb` indexes, were deleted by hand that day.
-Covered by the harness (570 checks). Checked against the real `explorer/filtered/`: 76
+Covered by the harness (571 checks). Checked against the real `explorer/filtered/`: 76
 months recognised (2013-01..2019-08, 2017-02..05 still arriving), the others not.
 
 **Repgen: blended choice (2026-09-30).** Requested: choose my move by a weighted blend of

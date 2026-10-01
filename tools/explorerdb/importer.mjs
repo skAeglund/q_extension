@@ -48,19 +48,30 @@ var NO_ZSTD = 'This Node (' + process.version + ') has no zstd built in (22.15 a
  * last block, the optional checksum), drops the skippable ones, and never passes on a chunk
  * that crosses from one frame into the next. Bytes that aren't a frame, or a file that ends
  * inside one, are an error here, since the decoder can't be trusted to say so.
+ *
+ * With `whole`, it passes on each frame whole, as {offset (its first byte, counted from
+ * `start`), data}: what filter.mjs records so that a resumed month can start downloading
+ * at the frame its checkpoint is in.
  */
 var ZSTD_MAGIC = 0xFD2FB528;
-export function zstdFrames() {
-  var left = null, copy = 0, skip = 0, inFrame = false, sum = 0, at = 0;
+export function zstdFrames(o) {
+  o = o || {};
+  var left = null, copy = 0, skip = 0, inFrame = false, sum = 0, at = o.start || 0;
+  var frame = null;           // with `whole`: the frame being collected
   return new Transform({
+    readableObjectMode: !!o.whole,
     transform: function (chunk, enc, cb) {
       var b = left ? Buffer.concat([left, chunk]) : chunk, i = 0;
       left = null;
       while (i < b.length) {
         if (copy || skip) {
           var c = Math.min(copy || skip, b.length - i);
-          if (copy) { this.push(b.subarray(i, i + c)); copy -= c; } else skip -= c;
+          if (copy) {
+            if (frame) frame.data.push(b.subarray(i, i + c)); else this.push(b.subarray(i, i + c));
+            copy -= c;
+          } else skip -= c;
           i += c; at += c;
+          if (frame && !copy && !inFrame) { this.push({ offset: frame.offset, data: Buffer.concat(frame.data) }); frame = null; }
           continue;
         }
         var have = b.length - i;
@@ -79,6 +90,7 @@ export function zstdFrames() {
         copy = 5 + (single ? 0 : 1) + [0, 1, 2, 4][fhd & 3] + [single ? 1 : 0, 2, 4, 8][fhd >> 6];
         sum = (fhd >> 2) & 1 ? 4 : 0;
         inFrame = true;
+        if (o.whole) frame = { offset: at, data: [] };
       }
       if (i < b.length) left = Buffer.from(b.subarray(i));
       cb();
@@ -115,11 +127,12 @@ function openRaw(files, onBytes) {
  * downloads now and then (twice about 1 GB into a 1 GB dump on 2026-09-30), and starting a
  * month again from byte 0 can fail the same way; it serves byte ranges, so each retry asks
  * for the rest (-r <bytes so far>-). curl, not fetch: it follows the environment's proxy.
+ * `start` downloads from that byte on (a resumed filter, filter.mjs).
  */
 export function curlStream(url, o) {
-  o = Object.assign({ tries: 20, waitMs: 2000, curl: 'curl' }, o);
+  o = Object.assign({ tries: 20, waitMs: 2000, curl: 'curl', start: 0 }, o);
   var out = new PassThrough({ highWaterMark: 1 << 20 });
-  var got = 0, fails = 0, child = null, stopped = false;
+  var got = o.start, fails = 0, child = null, stopped = false;
   function attempt() {
     if (stopped) return;
     var args = ['-sSfL'].concat(got ? ['-r', got + '-'] : [], [url]);

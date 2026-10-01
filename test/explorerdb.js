@@ -780,6 +780,87 @@ module.exports = async function run(check) {
     await assert.rejects(F.filterDump({ input: dumpFile, out: path.join(tmp, 'cp3', 'm'), plies: PLIES + 1, resume: cps[1] }),
       e => e.resumeMismatch);
   });
+  await check('a checkpoint names its place in the dump, and a resume starts there', async () => {
+    const opts = { plies: PLIES, partBytes: 1200, chunkBytes: 500 };
+    const run = async (input, dir, more) => {
+      const cps = [], logs = [];
+      const man = await F.filterDump(Object.assign({ input, out: path.join(tmp, dir, 'm'), log: s => logs.push(s),
+        onPart: async (p, cp) => { cps.push(JSON.parse(JSON.stringify(cp))); } }, opts, more));
+      return { man, cps, logs: logs.join('\n'), dir: path.join(tmp, dir) };
+    };
+    const whole = await run(dumpFile, 'at1');
+    const text = fs.readFileSync(dumpFile, 'latin1');
+    assert.ok(whole.cps.length >= 3, whole.cps.length + ' checkpoints');
+    for (const cp of whole.cps) assert.strictEqual(text.indexOf(cp.next, cp.at.offset + cp.at.skip), cp.at.offset + cp.at.skip);
+    // A resumed run must end with exactly the uninterrupted run's parts.
+    const same = async (input, cp, dir, from) => {
+      const res = await run(input, dir, { resume: cp, curl: from.curl });
+      assert.deepStrictEqual(res.man.games, whole.man.games, dir);
+      assert.strictEqual(res.man.resumed, cp.parts.length, dir);
+      for (const p of cp.parts) fs.copyFileSync(path.join(from.dir, p.file), path.join(res.dir, p.file));
+      assert.strictEqual(partsText(res.dir, res.man), partsText(whole.dir, whole.man), dir);
+      // Its checkpoints are the uninterrupted run's from there on.
+      assert.deepStrictEqual(res.cps.map(c => c.at), from.cps.slice(cp.parts.length).map(c => c.at), dir);
+      return res.logs;
+    };
+    let logs = await same(dumpFile, whole.cps[1], 'at2', whole);
+    assert.match(logs, /going on from game \d+/);
+    assert.doesNotMatch(logs, /counting the games/);
+    // From before checkpoints had `at`: counted from the start, as before.
+    const old = Object.assign({}, whole.cps[1]);
+    delete old.at;
+    logs = await same(dumpFile, old, 'at3', whole);
+    assert.doesNotMatch(logs, /going on from game/);
+    // An `at` that lands on another game: counted from the start instead.
+    const off = Object.assign({}, whole.cps[2], { at: { offset: whole.cps[2].at.offset, skip: whole.cps[2].at.skip + 1 } });
+    logs = await same(dumpFile, off, 'at4', whole);
+    assert.match(logs, /byte offset failed .*counting the games from the start instead/);
+    // A changed dump still fails, whichever way it is read.
+    await assert.rejects(F.filterDump(Object.assign({ input: dumpFile, out: path.join(tmp, 'at4b', 'm'),
+      resume: Object.assign({}, whole.cps[1], { next: '[Event "Rated Bullet game"]\n[Site "https://lichess.org/xxxxxxxx"]' }) }, opts)),
+      e => e.resumeMismatch && /changed since the checkpoint/.test(e.message));
+
+    if (typeof zlib.zstdCompressSync !== 'function') return;
+    // Like a Lichess dump: frames cut anywhere in the text, each behind a skippable frame.
+    const raw = fs.readFileSync(dumpFile), step = Math.ceil(raw.length / 12), frames = [], starts = [];
+    let pos = 0;
+    for (let i = 0; i < raw.length; i += step) {
+      const f = zlib.zstdCompressSync(raw.subarray(i, i + step)), skip = Buffer.alloc(12);
+      skip.writeUInt32LE(0x184D2A50, 0); skip.writeUInt32LE(4, 4); skip.writeUInt32LE(f.length, 8);
+      frames.push(skip, f);
+      starts.push(pos + 12);
+      pos += 12 + f.length;
+    }
+    const zfile = path.join(tmp, 'frames.pgn.zst');
+    fs.writeFileSync(zfile, Buffer.concat(frames));
+    const z = await run(zfile, 'at5');
+    assert.deepStrictEqual(z.man.games, whole.man.games);
+    assert.strictEqual(partsText(z.dir, z.man), partsText(whole.dir, whole.man));
+    for (const cp of z.cps) assert.ok(starts.includes(cp.at.offset), cp.at.offset + ' is not a frame');
+    assert.ok(new Set(z.cps.map(c => c.at.offset)).size >= 3, 'checkpoints in ' + new Set(z.cps.map(c => c.at.offset)).size + ' frames');
+    for (let i = 0; i < z.cps.length; i++) {
+      logs = await same(zfile, z.cps[i], 'at6-' + i, z);
+      assert.match(logs, /going on from game/);
+      assert.doesNotMatch(logs, /counting the games/);
+    }
+    // Downloaded: the range starts at the checkpoint's frame. A server that ignores the
+    // range sends the dump from byte 0, and the resume counts from the start instead.
+    const fake = (name, ranges) => {
+      const f = path.join(tmp, name), asked = f + '.log';
+      fs.writeFileSync(f, `const fs = require('fs');
+        const a = process.argv.slice(2), r = a.indexOf('-r'), from = r < 0 ? 0 : parseInt(a[r + 1]);
+        fs.appendFileSync(${JSON.stringify(asked)}, from + '\\n');
+        process.stdout.write(fs.readFileSync(a[a.length - 1].replace('https://x/', '')).subarray(${ranges ? 'from' : '0'}));`);
+      return { curl: [process.execPath, f], asked: () => fs.readFileSync(asked, 'utf8').trim().split('\n').map(Number) };
+    };
+    const cp = z.cps[z.cps.length - 1], good = fake('rangecurl.js', true), deaf = fake('deafcurl.js', false);
+    logs = await same('https://x/' + zfile, cp, 'at7', Object.assign({}, z, { curl: good.curl }));
+    assert.deepStrictEqual(good.asked(), [cp.at.offset]);
+    assert.match(logs, /going on from game/);
+    logs = await same('https://x/' + zfile, cp, 'at8', Object.assign({}, z, { curl: deaf.curl }));
+    assert.deepStrictEqual(deaf.asked(), [cp.at.offset, 0]);
+    assert.match(logs, /counting the games from the start instead/);
+  });
 
   await check('a download that breaks is picked up where it broke off', async () => {
     // A stand-in for curl: serves the file from -r's offset, and breaks once 3000 bytes in.

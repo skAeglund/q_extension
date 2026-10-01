@@ -687,8 +687,11 @@ both; drain and `all` still take it once. `drain` takes all the repositories.
 
 `fill` pushes each part as soon as it's written, with a checkpoint beside it. If the session
 stops in the middle of a month (a recycled container, Ctrl+C), running the same command again
-goes on from the last pushed part: it reads the dump from the start, only counting games up to
-the checkpoint, and filters on from there. Where the session is stopped often, `--part-mb 20`
+goes on from the last pushed part: it downloads the dump from the zstd frame the checkpoint
+names (one frame of about 6 MB before the checkpoint's game), checks it is the same game, and
+filters on from there. A checkpoint from before byte offsets were recorded, or a server that
+ignores byte ranges, reads the dump from the start, only counting games up to the checkpoint
+(about 20 minutes for 30 M games). Where the session is stopped often, `--part-mb 20`
 (instead of 95) makes each part, and so what a stop loses, smaller.
 
 `drain` pulls each repository, checks each part's sha256, copies the month to

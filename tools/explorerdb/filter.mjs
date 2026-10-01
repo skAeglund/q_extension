@@ -11,10 +11,16 @@
  * their sizes and sha256. `import <base>.json` reads the parts back to back.
  *
  * A month takes hours, and a cloud container can be recycled in the middle of one. So each
- * closed part comes with a checkpoint (`onPart`): the counts up to its last game, and the
- * start of the game after it. A run given that checkpoint (`resume`) reads the dump from the
- * start again but only counts games up to there, checks it arrived at the same game, and
- * goes on with the next part. Counting is cheap next to filtering and compressing.
+ * closed part comes with a checkpoint (`onPart`): the counts up to its last game, the start
+ * of the game after it, and where that game is in the dump (`at`: the byte offset of its
+ * zstd frame, and how far into the frame's text it starts). A run given that checkpoint
+ * (`resume`) downloads the dump from that frame on, checks it arrived at the same game, and
+ * goes on with the next part. Lichess's dumps are frames of about 6 MB, so that costs one
+ * frame, wherever in the month the checkpoint is.
+ *
+ * A checkpoint without `at` (from before it existed), or an `at` that doesn't land on its
+ * game (a server that ignores byte ranges, say), falls back to reading the dump from the
+ * start and counting games up to the checkpoint: about 20 minutes for 30 M games.
  */
 
 import fs from 'node:fs';
@@ -22,8 +28,9 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import crypto from 'node:crypto';
 import { once } from 'node:events';
+import { promisify } from 'node:util';
 import { makeFilter, header, movetextSans, FILTERED_FORMAT } from './games.mjs';
-import { openText, DEFAULTS } from './importer.mjs';
+import { curlStream, zstdFrames, DEFAULTS } from './importer.mjs';
 
 export var FILTER_DEFAULTS = {
   speeds: DEFAULTS.speeds,
@@ -100,17 +107,107 @@ function samePrefix(a, b) {
   return typeof b === 'string' && b.length > 0 && (a.indexOf(b) === 0 || b.indexOf(a) === 0);
 }
 
+var unzstd = typeof zlib.zstdDecompress === 'function' ? promisify(zlib.zstdDecompress) : null;
+
+/*
+ * The dump's text in pieces, each with where it starts: {offset, skip, text} is text from
+ * `skip` bytes into the decompressed frame at byte `offset` of the dump. A .zst dump is
+ * decompressed one whole frame at a time (the next while this one is filtered), which is what
+ * lets a checkpoint name the frame a game is in; zstdFrames already walks the frames, since
+ * Node's streaming decoder can't be trusted with pzstd's. In a plain PGN a piece's offset is
+ * just its first byte. From `at` ({offset, skip}), it starts there. Text is latin1, one
+ * character a byte, so a position in the text is a byte count.
+ */
+function openPieces(input, at, onBytes, curl) {
+  var start = at ? at.offset : 0;
+  var raw = input === '-' ? process.stdin
+    : /^https?:\/\//i.test(input) ? curlStream(input, { start: start, curl: curl || 'curl' })
+    : fs.createReadStream(input, { start: start, highWaterMark: 1 << 20 });
+  raw.on('data', function (b) { onBytes(b.length); });
+  var zst = input === '-' || /\.zst$/i.test(input.replace(/[?#].*$/, ''));
+  var frames = null;
+  if (zst) {
+    if (!unzstd) throw new Error('This Node has no zstd (Node 22.15 or later has)');
+    frames = zstdFrames({ whole: true, start: start });
+    raw.on('error', function (e) { frames.destroy(e); });
+    raw.pipe(frames);
+  }
+  async function* whole() {
+    if (!zst) {
+      var pos = start;
+      for await (var b of raw) { yield { offset: pos, skip: 0, text: b.toString('latin1') }; pos += b.length; }
+      return;
+    }
+    var queue = [];
+    var take = async function () {
+      var q = queue.shift();
+      return { offset: q.offset, skip: 0, text: (await q.p).toString('latin1') };
+    };
+    for await (var f of frames) {
+      var p = unzstd(f.data);
+      p.catch(function () {});
+      queue.push({ offset: f.offset, p: p });
+      if (queue.length > 1) yield await take();
+    }
+    while (queue.length) yield await take();
+  }
+  async function* pieces() {
+    var drop = at ? at.skip : 0;
+    for await (var c of whole()) {
+      if (drop) {
+        if (drop >= c.text.length) { drop -= c.text.length; continue; }
+        c = { offset: c.offset, skip: c.skip + drop, text: c.text.slice(drop) };
+        drop = 0;
+      }
+      yield c;
+    }
+  }
+  return {
+    pieces: pieces(),
+    stop: function () { raw.destroy(); if (frames) frames.destroy(); }
+  };
+}
+
+// Where position p of the text is in the dump, given the pieces it is made of (`segs`: each
+// piece's position in the text, ascending).
+function locate(segs, p) {
+  for (var i = segs.length - 1; i > 0 && segs[i].pos > p; i--);
+  return { offset: segs[i].offset, skip: segs[i].skip + p - segs[i].pos };
+}
+// The pieces of the text from position p on.
+function segsFrom(segs, p) {
+  var first = locate(segs, p);
+  return [{ pos: 0, offset: first.offset, skip: first.skip }].concat(segs.filter(function (g) { return g.pos > p; })
+    .map(function (g) { return { pos: g.pos - p, offset: g.offset, skip: g.skip }; }));
+}
+
 /*
  * o: { input (a dump, an https URL of one, or '-' for a .zst on stdin), size (a URL's), out (path without extension), source,
- *      speeds, ratings, plies, partBytes, chunkBytes, level, windowLog, maxGames, log,
+ *      speeds, ratings, plies, partBytes, chunkBytes, level, windowLog, maxGames, log, curl (tests),
  *      onPart(part, checkpoint) (awaited after each part but the last closes),
  *      resume (a checkpoint: its parts are not written again, and are not in `out`'s directory) }
  * Resolves with the manifest written to <out>.json. A resume that doesn't arrive at the
- * checkpoint's game rejects with `resumeMismatch` set.
+ * checkpoint's game, even counting from the start, rejects with `resumeMismatch` set.
  */
 export async function filterDump(o) {
   o = Object.assign({}, FILTER_DEFAULTS, o);
   var log = o.log || function () {};
+  var r = o.resume;
+  if (r && (r.plies !== o.plies || JSON.stringify(r.filter) !== JSON.stringify({ speeds: o.speeds, ratings: o.ratings }))) {
+    throw Object.assign(new Error('The checkpoint is for another filter'), { resumeMismatch: true });
+  }
+  if (!r || !r.at || o.input === '-') return filterRun(o, log, null);
+  try {
+    return await filterRun(o, log, r.at);
+  } catch (e) {
+    if (!e || !e.atMiss) throw e;
+    log('resuming at the checkpoint\'s byte offset failed (' + e.message + '); counting the games from the start instead');
+    return filterRun(o, log, null);
+  }
+}
+
+// One go at it: from `from` (the checkpoint's `at`, its place in the dump), or from the start.
+async function filterRun(o, log, from) {
   var filter = makeFilter(o);
   var why = { broken: 0, variant: 0, speed: 0, rating: 0, result: 0 };
   var n = { read: 0, kept: 0, bytesIn: 0, textOut: 0 };
@@ -122,18 +219,17 @@ export async function filterDump(o) {
   var parts = [], part = null, lastRatio = 0, t0 = Date.now(), lastLog = t0;
   var r = o.resume, skip = 0, earlier = 0;
   if (r) {
-    if (r.plies !== o.plies || JSON.stringify(r.filter) !== JSON.stringify({ speeds: o.speeds, ratings: o.ratings })) {
-      throw Object.assign(new Error('The checkpoint is for another filter'), { resumeMismatch: true });
-    }
     parts = r.parts.map(function (p) { return Object.assign({ done: true }, p); });
-    skip = r.read;
+    // From `at` the games before it are already behind; otherwise they are counted again.
+    if (from) n.read = r.read; else skip = r.read;
     n.kept = r.kept;
     n.textOut = r.textOut;
     Object.assign(why, r.why);
     earlier = r.seconds || 0;
   }
   // The counts after the last chunk written: when a part closes, they are its end.
-  var mark = { read: skip, kept: n.kept, why: Object.assign({}, why), textOut: n.textOut, next: null };
+  var mark = { read: r ? r.read : 0, kept: n.kept, why: Object.assign({}, why), textOut: n.textOut,
+    next: r ? r.next : null, at: r && r.at || null };
 
   async function flush(s, games) {
     if (!s) return;
@@ -161,18 +257,27 @@ export async function filterDump(o) {
       filter: { speeds: o.speeds, ratings: o.ratings },
       plies: o.plies,
       parts: parts.map(function (p) { return { file: path.basename(p.file), bytes: p.bytes, games: p.games, sha256: p.sha256 }; }),
-      read: mark.read, kept: mark.kept, why: mark.why, textOut: mark.textOut, next: mark.next,
+      read: mark.read, kept: mark.kept, why: mark.why, textOut: mark.textOut, next: mark.next, at: mark.at,
       seconds: earlier + Math.round((Date.now() - t0) / 1000)
     };
   }
 
-  var src = openText(o.input, function (b) { n.bytesIn += b; });
-  var text = src.stream;
-  text.setEncoding('latin1');
-  var carry = '', buf = '', bufGames = 0, stopped = false;
+  var carry = '', carrySegs = [], buf = '', bufGames = 0, stopped = false, checked = !from, src = null;
+  if (from) {
+    n.bytesIn = from.offset;
+    log('going on from game ' + fmt(r.read + 1) + ', ' + mb(from.offset) + ' into the dump');
+  }
   try {
-    for await (var chunk of text) {
-      var s = carry + chunk, at = 0, next;
+    src = openPieces(o.input, from, function (b) { n.bytesIn += b; }, o.curl);
+    for await (var piece of src.pieces) {
+      var segs = carrySegs.concat([{ pos: carry.length, offset: piece.offset, skip: piece.skip }]);
+      var s = carry + piece.text, at = 0, next;
+      if (!checked) {
+        if (!samePrefix(gameStart(s, 0), r.next)) {
+          throw Object.assign(new Error('it starts ' + JSON.stringify(gameStart(s, 0).slice(0, 80))), { atMiss: true });
+        }
+        checked = true;
+      }
       while ((next = s.indexOf('\n[Event ', at + 1)) >= 0) {
         if (o.maxGames && n.read >= o.maxGames) { stopped = true; break; }
         if (n.read < skip) {
@@ -192,10 +297,12 @@ export async function filterDump(o) {
         if (buf.length >= o.chunkBytes) {
           await flush(buf, bufGames);
           buf = ''; bufGames = 0;
-          mark = { read: n.read, kept: n.kept, why: Object.assign({}, why), textOut: n.textOut, next: gameStart(s, at) };
+          mark = { read: n.read, kept: n.kept, why: Object.assign({}, why), textOut: n.textOut, next: gameStart(s, at),
+            at: locate(segs, at) };
         }
       }
       carry = stopped ? '' : s.slice(at);
+      carrySegs = stopped ? [] : segsFrom(segs, at);
       if (Date.now() - lastLog > 10000) {
         lastLog = Date.now();
         if (n.read < skip) log('counted ' + fmt(n.read) + ' of the ' + fmt(skip) + ' games filtered before (' + mb(n.bytesIn) + ')');
@@ -205,9 +312,9 @@ export async function filterDump(o) {
       }
       if (stopped) break;
     }
-    if (stopped) { src.raw.destroy(); src.stop(); }
+    if (stopped) src.stop();
     else {
-      await src.finished;
+      if (!checked) throw Object.assign(new Error('nothing there'), { atMiss: true });
       if (n.read < skip) throw Object.assign(new Error('The dump ended at game ' + n.read + ', before the checkpoint at ' + skip), { resumeMismatch: true });
       if (carry.trim() && !(o.maxGames && n.read >= o.maxGames)) {
         n.read++;
@@ -219,8 +326,8 @@ export async function filterDump(o) {
     await flush(buf, bufGames);
     await part.close();
   } catch (e) {
-    src.raw.destroy();
-    src.stop();
+    if (src) src.stop();
+    if (!checked && e) e.atMiss = true;
     // Closed parts handed to onPart are the caller's (one may be on its way to a repository).
     parts.forEach(function (p) {
       if (p.done || (o.onPart && p !== part)) return;
