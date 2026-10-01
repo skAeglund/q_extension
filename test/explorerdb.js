@@ -890,7 +890,7 @@ module.exports = async function run(check) {
         importOptions: { plies: PLIES, minGames: 1, workers: 1 } });
       const [filled, drained] = await Promise.all([filling, draining]);
       await check('fill pushes months as drain makes room, and drain imports each of them', () => {
-        assert.deepStrictEqual(filled, { pushed: 4, skipped: ['2020-04'], failed: [] }, logs.join('\n'));
+        assert.deepStrictEqual(filled, { pushed: 4, skipped: ['2020-04'], failed: [], elsewhere: [] }, logs.join('\n'));
         assert.deepStrictEqual(drained.slice().sort(), ['2020-01', '2020-02', '2020-03', '2020-05']);
         assert.ok(logs.some(s => /2020-04: no dump published/.test(s)));
         for (const m of drained) {
@@ -917,7 +917,7 @@ module.exports = async function run(check) {
       await check('...and a second fill finds nothing left to do', async () => {
         const again = await R.fill({ repos, months, work: path.join(rel, 'work'), pollMs: 50, log: () => {},
           dumpSize: () => { throw new Error('asked'); }, filterMonth: () => { throw new Error('asked'); } });
-        assert.deepStrictEqual(again, { pushed: 0, skipped: [], failed: ['2020-04'] });   // still unpublished, and asking throws
+        assert.deepStrictEqual(again, { pushed: 0, skipped: [], failed: ['2020-04'], elsewhere: [] });   // still unpublished, and asking throws
       });
       await check('...and drain clones again a clone left broken by a crash', async () => {
         // As found on 2026-10-01: HEAD at refs/heads/.invalid, no refs, a stale shallow.lock.
@@ -958,6 +958,45 @@ module.exports = async function run(check) {
           assert.deepStrictEqual(Object.keys(sn.months), [], url);
           fs.rmSync(sn.dir, { recursive: true, force: true });
         }
+      });
+      await check('a second fill from the other end leaves the first one\'s months to it, also ones it pushes meanwhile', async () => {
+        // The first session (helperA/B) has 2020-01..03 and 05 in its LEDGERs; the second
+        // has its own repository and goes newest first.
+        const bareC = path.join(rel, 'helperC.git');
+        await R.git(['init', '-q', '--bare', '-b', 'main', bareC]);
+        await R.git(['config', 'uploadpack.allowFilter', 'true'], bareC);
+        const seed = path.join(rel, 'seed-helperC');
+        await R.git(['clone', '-q', bareC, seed]);
+        fs.writeFileSync(path.join(seed, 'README.md'), '# helperC\n');
+        await R.git(['add', 'README.md'], seed);
+        await R.git(['commit', '-q', '-m', 'README'], seed);
+        await R.git(['push', '-q', 'origin', 'HEAD:main'], seed);
+        const repoC = pathToFileURL(bareC).href;
+        const filtered = [], clogs = [];
+        const res = await R.fill({ repos: [repoC], others: repos, newestFirst: true,
+          months: R.parseMonths('2020-03,2020-04,2020-05,2020-07,2020-08'), work: path.join(rel, 'workC'),
+          capBytes: monthBytes * 10, pushBytes: 4000, workers: 1, pollMs: 50, log: s => clogs.push(s),
+          dumpSize: () => monthBytes / 0.12,
+          filterMonth: async (m, o2) => {
+            filtered.push(m);
+            const man = await F.filterDump({ input: dumpFile, out: o2, source: m, plies: PLIES,
+              partBytes: 2000, chunkBytes: 800 });
+            // Meanwhile the first session pushes 2020-04, which this one hasn't reached yet.
+            if (m === '2020-08') {
+              const src = path.join(rel, 'other04');
+              await F.filterDump({ input: dumpFile, out: path.join(src, '2020-04'), source: '2020-04', plies: PLIES,
+                partBytes: 2000, chunkBytes: 800 });
+              await R.pushMonth(repos[1], '2020-04', src, path.join(rel, 'workO'), { pushBytes: 4000, tries: 3, log: () => {} });
+            }
+            return man;
+          } });
+        assert.deepStrictEqual(filtered, ['2020-08', '2020-07'], clogs.join('\n'));
+        assert.strictEqual(res.pushed, 2);
+        assert.deepStrictEqual(res.elsewhere.slice().sort(), ['2020-03', '2020-04', '2020-05']);
+        assert.ok(clogs.some(s => /2020-04: done by the other session \(helperB\), skipped/.test(s)), clogs.join('\n'));
+        const sn = await R.snapshot(repoC, path.join(rel, 'checkC'));
+        assert.deepStrictEqual(Object.keys(sn.ledger).sort(), ['2020-07', '2020-08']);
+        fs.rmSync(sn.dir, { recursive: true, force: true });
       });
     } finally {
       Object.keys(env).forEach(k => { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; });

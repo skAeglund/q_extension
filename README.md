@@ -672,6 +672,19 @@ node tools/explorerdb.mjs fill --repos you/database_helper,you/database_helper2 
 node tools/explorerdb.mjs drain --repos you/database_helper,you/database_helper2
 ```
 
+Two cloud sessions can share the archive from both ends, each with its own repositories:
+
+```bash
+# session A: oldest first, leaving to B what B has pushed
+node tools/explorerdb.mjs fill --repos you/database_helper,you/database_helper2 --skip-done-in you/database_helper5,you/database_helper6
+# session B: newest first, leaving to A what A has pushed
+node tools/explorerdb.mjs fill --repos you/database_helper5,you/database_helper6 --newest-first --skip-done-in you/database_helper,you/database_helper2
+```
+
+Before each month, each session reads the other's LEDGERs and skips what is there, so they
+meet wherever their speeds put them. At the meeting point a month or two may be filtered by
+both; drain and `all` still take it once. `drain` takes all the repositories.
+
 `drain` pulls each repository, checks each part's sha256, copies the month to
 `explorer/filtered/`, imports it as `explorer/<month>.xdb` (one index per month; `--workers`,
 `--min-games` as for import), and pushes its removal. Once a repository is empty, `fill` resets

@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 564 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 565 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -818,7 +818,14 @@ duplicate-source refusal and `merged` list.
   drain's index per month was the same replay twice, and 2026-07's add took 129 min beside
   it against 2026-08's 60 alone. It needs `--keep` (refused otherwise), and re-copies a
   month cut off before its consume.
-Covered by the harness (564 checks). Checked against the real `explorer/filtered/`: 76
+- `fill --newest-first --skip-done-in <repos>` (requested the same day): a second cloud
+  session works from the newest month back, into its own repositories, and leaves to the
+  first session every month in that session's LEDGERs, checked at the start and again before
+  each month. No split month has to be guessed, and neither session needs a restart to
+  rebalance. Months the other side is filtering at that moment aren't in its LEDGER yet, so
+  at most `--workers` months are done twice at the meeting point; `all` takes each once.
+  `fill`'s result carries `elsewhere`.
+Covered by the harness (565 checks). Checked against the real `explorer/filtered/`: 76
 months recognised (2013-01..2019-08, 2017-02..05 still arriving), the others not.
 
 **Repgen: blended choice (2026-09-30).** Requested: choose my move by a weighted blend of

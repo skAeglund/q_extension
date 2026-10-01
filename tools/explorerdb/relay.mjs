@@ -257,9 +257,16 @@ function pushHead(dir, lease) {
 
 /*
  * o: { repos: [url], months: [YYYY-MM], work, capBytes, pushBytes, ratio, workers, pollMs,
- *      footer (appended to commit messages), log,
+ *      footer (appended to commit messages), log, newestFirst, others: [url],
  *      dumpSize(month) -> bytes or 0 (not published), filterMonth(month, outBase) -> manifest }
- * Resolves with { pushed, skipped (not published), failed } once no month is left to try.
+ * Resolves with { pushed, skipped (not published), failed, elsewhere } once no month is left
+ * to try.
+ *
+ * Two sessions can share the archive from both ends: each with its own repositories, one
+ * oldest first and one `newestFirst`, each naming the other's as `others`. A month in their
+ * LEDGERs (checked at the start and again before each month) is left to them, so the two
+ * meet wherever their speeds put them. Months the other side is filtering at that moment
+ * aren't in its LEDGER yet: at most a few are done twice, and drain and `all` take each once.
  */
 export async function fill(o) {
   o = Object.assign({}, RELAY_DEFAULTS, o);
@@ -290,10 +297,28 @@ export async function fill(o) {
   }
   var done = {};
   snaps.forEach(function (s) { Object.assign(done, doneIn(s)); });
-  var queue = o.months.filter(function (m) { return !done[m]; });
-  log(stamp() + ' ' + (o.months.length - queue.length) + ' of ' + o.months.length + ' months already done; ' +
-    queue.length + ' to go');
-  var failed = [], skipped = [];
+  var others = o.others || [];
+  // The months the other session's repositories hold or have held.
+  async function doneElsewhere() {
+    var d = {}, n = ++looks;
+    for (var i = 0; i < others.length; i++) {
+      var s = await snapshot(others[i], path.join(work, 'other-' + n + '-' + i));
+      fs.rmSync(s.dir, { recursive: true, force: true });
+      Object.keys(doneIn(s)).forEach(function (m) { d[m] = repoName(others[i]); });
+    }
+    return d;
+  }
+  var failed = [], skipped = [], elsewhere = [];
+  var away = others.length ? await doneElsewhere() : {};
+  var queue = o.months.filter(function (m) {
+    if (done[m]) return false;
+    if (away[m]) { elsewhere.push(m); return false; }
+    return true;
+  });
+  if (o.newestFirst) queue.reverse();
+  log(stamp() + ' ' + (o.months.length - queue.length - elsewhere.length) + ' of ' + o.months.length + ' months already done' +
+    (others.length ? ', ' + elsewhere.length + ' done by the other session' : '') + '; ' + queue.length + ' to go' +
+    (queue.length ? ' (' + queue[0] + (queue.length > 1 ? ' .. ' + queue[queue.length - 1] : '') + ')' : ''));
 
   async function one(month) {
     var size = await o.dumpSize(month);
@@ -327,6 +352,11 @@ export async function fill(o) {
   await Promise.all(Array.from({ length: Math.min(o.workers, queue.length) }, async function () {
     while (next < queue.length) {
       var m = queue[next++];
+      if (others.length) {
+        // The other session may have got here meanwhile: from now on, every month it has.
+        var where = (await doneElsewhere().catch(function () { return {}; }))[m];
+        if (where) { log(stamp() + ' ' + m + ': done by the other session (' + where + '), skipped'); elsewhere.push(m); continue; }
+      }
       for (var t = 1; ; t++) {
         try { await one(m); break; } catch (e) {
           log(stamp() + ' ' + m + ': ' + (e && e.message || e) + (t < 3 ? '; trying again' : '; giving up'));
@@ -336,7 +366,9 @@ export async function fill(o) {
       }
     }
   }));
-  return { pushed: queue.length - failed.length - skipped.length, skipped: skipped, failed: failed };
+  var late = elsewhere.filter(function (m) { return queue.indexOf(m) >= 0; }).length;
+  return { pushed: queue.length - failed.length - skipped.length - late, skipped: skipped, failed: failed,
+    elsewhere: elsewhere };
 }
 
 function sha256(file) {

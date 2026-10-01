@@ -98,6 +98,9 @@ var USAGE = [
   '      --cap-gb 3          filtered months a repository holds at once',
   '      --workers 3         months filtered at once (one core each)',
   '      --footer <text>     appended to commit messages',
+  '      --newest-first      newest month first (the other end of the archive)',
+  '      --skip-done-in <owner/name,...>   another session\'s repositories: months in their',
+  '                          LEDGERs are left to it, so two sessions meet in the middle',
   '  node tools/explorerdb.mjs query <index> (--moves "1.e4 c5" | --fen "<fen>")',
   '  node tools/explorerdb.mjs info <index>',
   '  node tools/explorerdb.mjs serve <index> [--port 9337] [--host 127.0.0.1]',
@@ -283,16 +286,22 @@ async function cmdFill(argv) {
     else if (a === '--workers') o.workers = num(argv[++i], '--workers');
     else if (a === '--work') o.work = argv[++i];
     else if (a === '--footer') o.footer = argv[++i];
+    else if (a === '--newest-first') o.newestFirst = true;
+    else if (a === '--skip-done-in') o.others = repoUrls(argv[++i]);
     else throw new Error('Unexpected argument: ' + a + '\n' + USAGE);
   }
   if (!o.repos) repoUrls('');
+  if (o.others && o.others.some(function (u) { return o.repos.indexOf(u) >= 0; })) {
+    throw new Error('--skip-done-in names the other session\'s repositories, not this one\'s');
+  }
   if (!(o.capBytes === undefined || o.capBytes >= 1e8)) throw new Error('--cap-gb is at least 0.1');
   o.dumpSize = lichessDumpSize;
   o.filterMonth = lichessFilter({ log: function () {} });
   o.log = function (s) { console.log(s); };
   var r = await fill(o);
   console.log(r.pushed + ' months pushed' + (r.skipped.length ? '; not published yet: ' + r.skipped.join(', ') : '') +
-    (r.failed.length ? '; failed: ' + r.failed.join(', ') : ''));
+    (r.failed.length ? '; failed: ' + r.failed.join(', ') : '') +
+    (r.elsewhere.length ? '; ' + r.elsewhere.length + ' left to the other session' : ''));
   return r.failed.length ? 1 : 0;
 }
 
