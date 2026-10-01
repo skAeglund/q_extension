@@ -97,6 +97,8 @@ var USAGE = [
   '      --months 2013-01..2026-12   which months (months not published yet are skipped)',
   '      --cap-gb 3          filtered months a repository holds at once',
   '      --workers 3         months filtered at once (one core each)',
+  '      --part-mb 95        parts under this size; each is pushed with a checkpoint as it closes,',
+  '                          so smaller parts lose less when the session is stopped mid-month',
   '      --footer <text>     appended to commit messages',
   '      --newest-first      newest month first (the other end of the archive)',
   '      --skip-done-in <owner/name,...>   another session\'s repositories: months in their',
@@ -277,13 +279,14 @@ function repoUrls(s) {
 }
 
 async function cmdFill(argv) {
-  var o = { months: parseMonths('2013-01..' + (new Date().getFullYear()) + '-12') };
+  var o = { months: parseMonths('2013-01..' + (new Date().getFullYear()) + '-12') }, partBytes;
   for (var i = 0; i < argv.length; i++) {
     var a = argv[i];
     if (a === '--repos') o.repos = repoUrls(argv[++i]);
     else if (a === '--months') o.months = parseMonths(argv[++i]);
     else if (a === '--cap-gb') o.capBytes = Number(argv[++i]) * 1e9;
     else if (a === '--workers') o.workers = num(argv[++i], '--workers');
+    else if (a === '--part-mb') partBytes = num(argv[++i], '--part-mb') * 1e6;
     else if (a === '--work') o.work = argv[++i];
     else if (a === '--footer') o.footer = argv[++i];
     else if (a === '--newest-first') o.newestFirst = true;
@@ -295,8 +298,9 @@ async function cmdFill(argv) {
     throw new Error('--skip-done-in names the other session\'s repositories, not this one\'s');
   }
   if (!(o.capBytes === undefined || o.capBytes >= 1e8)) throw new Error('--cap-gb is at least 0.1');
+  if (!(partBytes === undefined || partBytes >= 1e6)) throw new Error('--part-mb is at least 1');
   o.dumpSize = lichessDumpSize;
-  o.filterMonth = lichessFilter({ log: function () {} });
+  o.filterMonth = lichessFilter(partBytes ? { log: function () {}, partBytes: partBytes } : { log: function () {} });
   o.log = function (s) { console.log(s); };
   var r = await fill(o);
   console.log(r.pushed + ' months pushed' + (r.skipped.length ? '; not published yet: ' + r.skipped.join(', ') : '') +

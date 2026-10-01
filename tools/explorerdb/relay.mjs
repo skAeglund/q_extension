@@ -637,9 +637,11 @@ export function lichessDumpSize(month) {
   });
 }
 
+// o: filterDump's options for every month (partBytes, log, ...); o.url replaces dumpUrl
+// as where a month is read from, for tests.
 export function lichessFilter(o) {
   return function (month, outBase, more) {
-    return filterDump(Object.assign({}, o, more, { input: dumpUrl(month), out: outBase,
+    return filterDump(Object.assign({}, o, more, { input: (o.url || dumpUrl)(month), out: outBase,
       source: path.basename(dumpUrl(month)) }));
   };
 }

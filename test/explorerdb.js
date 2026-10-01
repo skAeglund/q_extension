@@ -1081,6 +1081,87 @@ module.exports = async function run(check) {
         }
         assert.strictEqual(partsText(path.join(full, '2020'), man), partsText(ref, whole));
       });
+
+      const bareRepo = async name => {
+        const bare = path.join(rel, name + '.git');
+        await R.git(['init', '-q', '--bare', '-b', 'main', bare]);
+        await R.git(['config', 'uploadpack.allowFilter', 'true'], bare);
+        const seed = path.join(rel, 'seed-' + name);
+        await R.git(['clone', '-q', bare, seed]);
+        fs.writeFileSync(path.join(seed, 'README.md'), '# ' + name + '\n');
+        await R.git(['add', 'README.md'], seed);
+        await R.git(['commit', '-q', '-m', 'README'], seed);
+        await R.git(['push', '-q', 'origin', 'HEAD:main'], seed);
+        return pathToFileURL(bare).href;
+      };
+      // The month as the default part size gives it, imported: what every other run must count.
+      const refDir = path.join(rel, 'refSize');
+      const refMan = await R.lichessFilter({ plies: PLIES, url: () => dumpFile })('2020-10', path.join(refDir, '2020-10'), {});
+      const refX = path.join(rel, 'refSize.xdb');
+      await I.importDump({ input: path.join(refDir, '2020-10.json'), out: refX, plies: PLIES, minGames: 1, workers: 1 });
+      const sameRecords = async (repo, month, label) => {
+        const full = path.join(rel, 'full-' + label);
+        await R.git(['clone', '-q', repo, full]);
+        const man = JSON.parse(fs.readFileSync(path.join(full, '2020', month + '.json'), 'utf8'));
+        const x = path.join(rel, label + '.xdb');
+        await I.importDump({ input: path.join(full, '2020', month + '.json'), out: x, plies: PLIES, minGames: 1, workers: 1 });
+        const a = S.openIndex(x), b = S.openIndex(refX);
+        try {
+          assert.strictEqual(a.meta.report.positions, b.meta.report.positions, label);
+          for (const k of want.keys()) assert.deepStrictEqual(a.records(G.keyOf(k)), b.records(G.keyOf(k)), label + ' ' + k);
+        } finally { a.close(); b.close(); }
+        return { man, full };
+      };
+      await check('fill --part-mb: smaller parts, each pushed with a valid checkpoint, and the same records', async () => {
+        const cli = require('child_process').spawnSync(process.execPath, [path.join(__dirname, '..', 'tools', 'explorerdb.mjs'),
+          'fill', '--repos', 'a/b', '--part-mb', '0'], { encoding: 'utf8' });
+        assert.match(cli.stderr, /--part-mb is at least 1/);
+        assert.strictEqual(refMan.parts.length, 1);
+        const repoE = await bareRepo('helperE');
+        const elogs = [];
+        const res = await R.fill({ repos: [repoE], months: ['2020-10'], work: path.join(rel, 'workE'), capBytes: 1e9,
+          pushBytes: 4000, workers: 1, pollMs: 1, log: s => elogs.push(s), dumpSize: () => 1e6,
+          filterMonth: R.lichessFilter({ plies: PLIES, partBytes: 1200, chunkBytes: 500, url: () => dumpFile }) });
+        assert.strictEqual(res.pushed, 1, elogs.join('\n'));
+        const { man, full } = await sameRecords(repoE, '2020-10', 'smallParts');
+        assert.ok(man.parts.length >= 4, man.parts.length + ' parts');
+        assert.ok(man.parts.every(p => p.bytes <= 1200), JSON.stringify(man.parts));
+        assert.deepStrictEqual(man.games, refMan.games);
+        // One commit per part but the last, each with the checkpoint after it.
+        const log = (await R.git(['log', '--format=%H %s', 'main'], full)).trim().split('\n').reverse();
+        const partCommits = log.filter(l => / 2020-10: part \d+, /.test(l));
+        assert.strictEqual(partCommits.length, man.parts.length - 1);
+        for (let i = 0; i < partCommits.length; i++) {
+          const cp = JSON.parse(await R.git(['show', partCommits[i].split(' ')[0] + ':' + R.progressFile('2020-10')], full));
+          assert.deepStrictEqual(cp.parts, man.parts.slice(0, i + 1));
+          assert.strictEqual(cp.kept, man.parts.slice(0, i + 1).reduce((n, p) => n + p.games, 0));
+        }
+      });
+      await check('...and a month started with one part size goes on with another, to the same records', async () => {
+        const repoF = await bareRepo('helperF');
+        let calls = 0;
+        const small = R.lichessFilter({ plies: PLIES, partBytes: 1200, chunkBytes: 500, url: () => dumpFile });
+        const flogs = [];
+        await R.fill({ repos: [repoF], months: ['2020-10'], work: path.join(rel, 'workF1'), capBytes: 1e9,
+          pushBytes: 4000, workers: 1, pollMs: 1, log: s => flogs.push(s), dumpSize: () => 1e6,
+          filterMonth: async (m, out, more) => {
+            if (calls++) throw new Error('container gone');
+            let n = 0;
+            await small(m, out, { onPart: async (p, cp) => {
+              await more.onPart(p, cp);
+              if (++n === 2) throw new Error('container recycled');
+            } });
+          } });
+        const res = await R.fill({ repos: [repoF], months: ['2020-10'], work: path.join(rel, 'workF2'), capBytes: 1e9,
+          pushBytes: 4000, workers: 1, pollMs: 1, log: s => flogs.push(s), dumpSize: () => 1e6,
+          filterMonth: R.lichessFilter({ plies: PLIES, partBytes: 3000, chunkBytes: 500, url: () => dumpFile }) });
+        assert.strictEqual(res.pushed, 1, flogs.join('\n'));
+        assert.ok(flogs.some(s => /2020-10: going on from part 3 \(/.test(s)), flogs.join('\n'));
+        const { man } = await sameRecords(repoF, '2020-10', 'mixedParts');
+        assert.ok(man.parts.slice(0, 2).every(p => p.bytes <= 1200) && man.parts.slice(2).some(p => p.bytes > 1200),
+          JSON.stringify(man.parts));
+        assert.deepStrictEqual(man.games, refMan.games);
+      });
     } finally {
       Object.keys(env).forEach(k => { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; });
     }

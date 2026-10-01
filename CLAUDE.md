@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 567 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 569 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -834,7 +834,12 @@ duplicate-source refusal and `merged` list.
   there. A recycle now costs at most a part plus re-reading the dump. The manifest commit
   removes the checkpoint and any parts of an earlier attempt it didn't use. drain is
   unchanged: it never looks at a month without a manifest.
-Covered by the harness (567 checks). Checked against the real `explorer/filtered/`: 76
+- `fill --part-mb N` (requested the same day): the cloud containers were recycled about
+  5 minutes after each keep-alive turn, and a 95 MB part takes about 10 minutes to write, so
+  part 2 of three months was retried for hours without finishing. Smaller parts lose less.
+  Default still 95. A month can resume with another part size than it started with (the
+  resume check compares plies and filter only); the harness pins that down.
+Covered by the harness (569 checks). Checked against the real `explorer/filtered/`: 76
 months recognised (2013-01..2019-08, 2017-02..05 still arriving), the others not.
 
 **Repgen: blended choice (2026-09-30).** Requested: choose my move by a weighted blend of
