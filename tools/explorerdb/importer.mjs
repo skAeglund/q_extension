@@ -223,26 +223,39 @@ function mins(ms) {
 }
 
 /*
- * What an import reads: a dump, or a filtered month's manifest (filter.mjs), whose parts
- * are read back to back. A part whose size differs from the manifest's is a download that
- * didn't finish.
+ * What an import reads: a dump, a filtered month's manifest (filter.mjs), or a folder of
+ * manifests (a year of drain's kept months, say), whose parts are all read back to back as
+ * one input. Counting several months in one import is exact: a position rare in each month
+ * still counts all its games, which a merge of monthly indexes can't do (merge.mjs). A part
+ * whose size differs from its manifest's is a download that didn't finish.
  */
 export function readInputs(input) {
-  if (!/\.json$/i.test(input)) {
-    return { files: [input], size: fs.statSync(input).size, source: path.basename(input), filtered: null };
-  }
-  var m = JSON.parse(fs.readFileSync(input, 'utf8'));
-  if (m.format !== FILTERED_FORMAT) throw new Error(path.basename(input) + ' is not a filtered month\'s manifest');
-  var dir = path.dirname(input), size = 0;
-  var files = m.parts.map(function (p) {
-    var f = path.join(dir, p.file);
-    if (!fs.existsSync(f)) throw new Error('Missing part ' + p.file + ' of ' + path.basename(input));
-    var b = fs.statSync(f).size;
-    if (b !== p.bytes) throw new Error(p.file + ' is ' + b + ' bytes, the manifest says ' + p.bytes + ' (not fully downloaded?)');
-    size += b;
-    return f;
+  var manifests;
+  if (fs.statSync(input).isDirectory()) {
+    manifests = fs.readdirSync(input).filter(function (f) { return /^\d{4}-\d{2}\.json$/.test(f); }).sort()
+      .map(function (f) { return path.join(input, f); });
+    if (!manifests.length) throw new Error('No filtered months (YYYY-MM.json) in ' + input);
+  } else if (/\.json$/i.test(input)) manifests = [input];
+  else return { files: [input], size: fs.statSync(input).size, source: path.basename(input), filtered: [] };
+  var files = [], size = 0, filtered = [];
+  manifests.forEach(function (mf) {
+    var m = JSON.parse(fs.readFileSync(mf, 'utf8'));
+    if (m.format !== FILTERED_FORMAT) throw new Error(path.basename(mf) + ' is not a filtered month\'s manifest');
+    var dir = path.dirname(mf);
+    m.parts.forEach(function (p) {
+      var f = path.join(dir, p.file);
+      if (!fs.existsSync(f)) throw new Error('Missing part ' + p.file + ' of ' + path.basename(mf));
+      var b = fs.statSync(f).size;
+      if (b !== p.bytes) throw new Error(p.file + ' is ' + b + ' bytes, the manifest says ' + p.bytes + ' (not fully downloaded?)');
+      size += b;
+      files.push(f);
+    });
+    filtered.push(m);
   });
-  return { files: files, size: size, source: m.source, filtered: m };
+  var source = filtered.length === 1 ? filtered[0].source :
+    filtered.length + ' filtered months, ' + path.basename(manifests[0], '.json') + '..' +
+    path.basename(manifests[manifests.length - 1], '.json');
+  return { files: files, size: size, source: source, filtered: filtered };
 }
 
 // A filtered month holds only what its filter kept, and each game only its first plies + 1.
@@ -268,7 +281,7 @@ export async function importDump(o) {
   var log = o.log || function () {};
   var nWorkers = o.workers || Math.max(1, Math.min(8, os.cpus().length - 1));
   var inputs = readInputs(o.input);
-  if (inputs.filtered) checkFiltered(o, inputs.filtered);
+  inputs.filtered.forEach(function (m) { checkFiltered(o, m); });
   var tmp = o.tmp || o.out + '.tmp';
   fs.rmSync(tmp, { recursive: true, force: true });
   fs.mkdirSync(tmp, { recursive: true });

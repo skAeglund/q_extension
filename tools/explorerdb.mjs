@@ -38,6 +38,7 @@ import path from 'node:path';
 import { Chess } from '../src/vendor/chess.js';
 import { importDump, DEFAULTS } from './explorerdb/importer.mjs';
 import { filterDump, FILTER_DEFAULTS } from './explorerdb/filter.mjs';
+import { mergeIndexes } from './explorerdb/merge.mjs';
 import { fill, drain, parseMonths, lichessDumpSize, lichessFilter } from './explorerdb/relay.mjs';
 import { openIndex, explorerAnswer } from './explorerdb/store.mjs';
 import { createServer, indexInfo } from './explorerdb/server.mjs';
@@ -57,7 +58,11 @@ var USAGE = [
   '      --max-games N       stop after N games of the dump (a quick trial)',
   '      --tmp <dir>         temporary files (default <out>.tmp; a month needs 10-15 GB)',
   '      --keep-tmp          leave them there',
-  '      (or a filtered month\'s manifest, <month>.json, in place of the dump)',
+  '      (or a filtered month\'s manifest, <month>.json, or a folder of them, in place of',
+  '      the dump: a folder\'s months are counted together, exactly)',
+  '  node tools/explorerdb.mjs merge <index> <index>... --out <name> [--min-games 10]',
+  '      sums indexes (a month each, say) into one; --months 2016-01..2018-12 takes',
+  '      explorer/<month>.xdb for each month (--skip-missing to leave out the absent ones)',
   '  node tools/explorerdb.mjs filter <dump.pgn.zst|url|-> [--out <path>] [options]',
   '      keeps what an import would, each game cut to --plies + 1; - reads a .zst on stdin;',
   '      a URL is read as it downloads, resuming where the connection breaks',
@@ -276,6 +281,45 @@ async function cmdDrain(argv) {
   return 0;
 }
 
+async function cmdMerge(argv) {
+  var inputs = [], out = null, minGames = DEFAULTS.minGames, skipMissing = false, months = null;
+  for (var i = 0; i < argv.length; i++) {
+    var a = argv[i];
+    if (a === '--out') out = argv[++i];
+    else if (a === '--min-games') minGames = Math.max(1, num(argv[++i], '--min-games'));
+    else if (a === '--months') months = parseMonths(argv[++i]);
+    else if (a === '--skip-missing') skipMissing = true;
+    else if (!/^--/.test(a)) inputs.push(indexPath(a, false));
+    else throw new Error('Unexpected argument: ' + a + '\n' + USAGE);
+  }
+  if (months) {
+    var missing = [];
+    months.forEach(function (m) {
+      var f = indexPath(m, false);
+      if (fs.existsSync(f)) inputs.push(f); else missing.push(m);
+    });
+    if (missing.length && !skipMissing) {
+      throw new Error('No index for ' + missing.join(', ') + ' (--skip-missing to merge the others)');
+    }
+    if (missing.length) console.error('Left out (no index): ' + missing.join(', '));
+  }
+  if (!out) throw new Error('--out is needed (a name, e.g. --out all)');
+  inputs.forEach(function (f) { if (!fs.existsSync(f)) throw new Error('No such index: ' + f); });
+  var o = { inputs: inputs, out: indexPath(out, true), minGames: minGames, log: function (s) { console.error(s); } };
+  fs.mkdirSync(path.dirname(o.out), { recursive: true });
+  var meta = await mergeIndexes(o);
+  console.log('Wrote ' + o.out + ' (' + size(fs.statSync(o.out).size) + ') from ' + inputs.length + ' indexes\n');
+  printReport(meta);
+  var under = meta.merged.filter(function (m) { return m.minGames > 1; });
+  if (under.length) {
+    console.log('\nThe inputs kept positions reached by at least ' +
+      Array.from(new Set(under.map(function (m) { return m.minGames; }))).join('/') + ' games each, so a position ' +
+      'rarer than that in some of them is missing those games here. Importing their filtered months together ' +
+      '(import <folder>) counts them exactly.');
+  }
+  return 0;
+}
+
 function cmdQuery(argv) {
   var name = null, fen = null, moves = null;
   for (var i = 0; i < argv.length; i++) {
@@ -361,6 +405,7 @@ async function main(argv) {
   if (cmd === 'import') return cmdImport(argv.slice(1));
   if (cmd === 'filter') return cmdFilter(argv.slice(1));
   if (cmd === 'fill') return cmdFill(argv.slice(1));
+  if (cmd === 'merge') return cmdMerge(argv.slice(1));
   if (cmd === 'drain') return cmdDrain(argv.slice(1));
   if (cmd === 'query') return cmdQuery(argv.slice(1));
   if (cmd === 'info') return cmdInfo(argv.slice(1));

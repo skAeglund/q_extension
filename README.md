@@ -641,6 +641,25 @@ node tools/explorerdb.mjs import 2016-02.json --out feb16     # where the parts 
 manifest, and refuses more plies than were kept, or a speed or rating group that was left
 out. The filter's own `--speeds`, `--ratings` and `--plies` fix what later imports can use.
 
+**Combining months.** An index is one month by default. Two ways to make one of many:
+
+```bash
+# exact: count a folder of filtered months (drain keeps them in explorer/filtered/<year>) together
+node tools/explorerdb.mjs import explorer/filtered/2019 --out y2019
+# fast: sum finished indexes (years, or drain's monthly <month>.xdb)
+node tools/explorerdb.mjs merge y2017 y2018 y2019 --out all
+node tools/explorerdb.mjs merge --months 2013-01..2016-12 --out early --skip-missing
+```
+
+`merge` streams the indexes once (seconds for a few, minutes for many) and keeps positions
+whose summed games reach `--min-games` (10). It can only sum what each index kept, so a
+position reached fewer than its index's `--min-games` times in some month is missing that
+month's games: it counts too few, never too many. Importing a folder has no such loss, but
+needs the temporary space of all its months at once (about 1 GB per 2 million games kept).
+Importing a year at a time and merging the years keeps that loss to positions rare in a
+whole year. `merge` refuses indexes made with a different filter or ply limit, and the same
+month twice, also inside an index that is itself a merge.
+
 **Overnight, through GitHub.** `fill` (run where the line is fast) and `drain` (run at home)
 pass filtered months through a few private GitHub repositories, used as a queue:
 
@@ -817,7 +836,8 @@ tools/repgen/       their plan, PGN reader/writers, file cache, root search adap
                     ChessDB exploration (explore.mjs) and Maia 3 (maia.mjs)
 tools/explorerdb/   the dump reader and fast replay (games.mjs), shard counting and the
                     index file (store.mjs), the importer and its worker threads,
-                    the filter that shrinks a dump for download (filter.mjs), and the
-                    relay that carries filtered months home through GitHub (relay.mjs)
+                    the filter that shrinks a dump for download (filter.mjs), the
+                    relay that carries filtered months home through GitHub (relay.mjs),
+                    and the merge of several indexes into one (merge.mjs)
 tools/package.json  onnxruntime-node, for repgen --maia only
 ```

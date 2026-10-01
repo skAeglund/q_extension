@@ -336,6 +336,85 @@ module.exports = async function run(check) {
     assert.strictEqual(fs.readFileSync(count, 'utf8'), '2');
   });
 
+  console.log('\nexplorerdb: combining months');
+  const M = await load('tools/explorerdb/merge.mjs');
+  const mdir = path.join(tmp, 'months');
+  fs.mkdirSync(mdir);
+  // The test dump as three "months".
+  const allGames = pgn.split(/(?=\[Event )/).filter(Boolean);
+  const monthFiles = [0, 1, 2].map(i => {
+    const f = path.join(mdir, `m${i}.pgn`);
+    fs.writeFileSync(f, allGames.filter((_, j) => j % 3 === i).join(''));
+    return f;
+  });
+  const monthIndex = async (minGames, tag) => {
+    const out = [];
+    for (let i = 0; i < 3; i++) {
+      const x = path.join(mdir, `${tag}${i}.xdb`);
+      await I.importDump({ input: monthFiles[i], out: x, plies: PLIES, minGames, workers: 1 });
+      out.push(x);
+    }
+    return out;
+  };
+  const sameAsWhole = (file, minGames, label) => {
+    const x = S.openIndex(file);
+    try {
+      let positions = 0;
+      for (const [k, e] of want) {
+        const n = e.tot[0] + e.tot[1] + e.tot[2];
+        const got = x.records(G.keyOf(k));
+        if (n >= minGames) { positions++; assert.deepStrictEqual(got, db.records(G.keyOf(k)), label + ' ' + k); }
+        else assert.deepStrictEqual(got, [], label + ' kept ' + k);
+      }
+      assert.strictEqual(x.meta.report.positions, positions, label);
+      assert.strictEqual(x.meta.report.games.kept, wantKept, label);
+    } finally { x.close(); }
+  };
+  const ones = await monthIndex(1, 'one');
+  await check('merging months indexed in full gives exactly the index of all their games', async () => {
+    const m1 = await M.mergeIndexes({ inputs: ones, out: path.join(mdir, 'all1.xdb'), minGames: 1 });
+    assert.strictEqual(m1.merged.length, 3);
+    sameAsWhole(path.join(mdir, 'all1.xdb'), 1, 'N>=1');
+    await M.mergeIndexes({ inputs: ones, out: path.join(mdir, 'all3.xdb'), minGames: 3 });
+    sameAsWhole(path.join(mdir, 'all3.xdb'), 3, 'N>=3');
+  });
+  await check('...months indexed at N >= 2 only ever undercount, and only where a month was thin', async () => {
+    const twos = await monthIndex(2, 'two');
+    await M.mergeIndexes({ inputs: twos, out: path.join(mdir, 'all2.xdb'), minGames: 1 });
+    const x = S.openIndex(path.join(mdir, 'all2.xdb'));
+    let short = 0;
+    try {
+      for (const k of want.keys()) {
+        const whole = db.records(G.keyOf(k));
+        for (const r of x.records(G.keyOf(k))) {
+          const w = whole.find(y => y.code === r.code);
+          assert.ok(w && r.white <= w.white && r.draws <= w.draws && r.black <= w.black, k);
+          if (r.white + r.draws + r.black < w.white + w.draws + w.black) short++;
+        }
+      }
+    } finally { x.close(); }
+    assert.ok(short > 0, 'expected some undercounts in so small a test');
+  });
+  await check('...and a merge refuses the same month twice, or another ply limit', async () => {
+    await assert.rejects(M.mergeIndexes({ inputs: [ones[0], ones[1], ones[0]], out: path.join(mdir, 'dup.xdb') }),
+      /both hold m0\.pgn/);
+    await assert.rejects(M.mergeIndexes({ inputs: [path.join(mdir, 'all1.xdb'), ones[2]], out: path.join(mdir, 'dup.xdb') }),
+      /both hold m2\.pgn/);
+    const p20 = path.join(mdir, 'p20.xdb');
+    await I.importDump({ input: monthFiles[0], out: p20, plies: 20, minGames: 1, workers: 1 });
+    await assert.rejects(M.mergeIndexes({ inputs: [p20, ones[1]], out: path.join(mdir, 'bad.xdb') }), /Different plies: one1\.xdb has 30, p20\.xdb 20/);
+    assert.ok(!fs.existsSync(path.join(mdir, 'dup.xdb.partial')) && !fs.existsSync(path.join(mdir, 'bad.xdb')));
+  });
+  await check('importing a folder of filtered months counts them together, exactly', async () => {
+    const year = path.join(mdir, 'year');
+    for (let i = 0; i < 3; i++) {
+      await F.filterDump({ input: monthFiles[i], out: path.join(year, `2019-0${i + 1}`), plies: PLIES });
+    }
+    const ym = await I.importDump({ input: year, out: path.join(mdir, 'year.xdb'), plies: PLIES, minGames: 3, workers: 2 });
+    assert.match(ym.source, /^3 filtered months, 2019-01\.\.2019-03$/);
+    sameAsWhole(path.join(mdir, 'year.xdb'), 3, 'folder');
+  });
+
   console.log('\nexplorerdb: the relay (fill in the cloud, drain at home)');
   const R = await load('tools/explorerdb/relay.mjs');
   await check('months parse as ranges and lists', () => {
