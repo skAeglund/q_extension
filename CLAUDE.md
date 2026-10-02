@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 549 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 560 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -29,6 +29,8 @@ node test/harness.js          # 549 checks: main-world.js on a stubbed DOM, plus
                               # and test/explorerdb.js (dump filter, fast replay, import,
                               # merge, the accumulator and the all driver, filtered
                               # parts, the server and providers.js's local path)
+                              # and test/deeprep.js (fenced lookups, the deep score
+                              # against a plain recursive version, the tree and PGN)
 node --check src/main-world.js
 python icons/make_icons.py    # regenerate PNGs (stdlib only, no Pillow)
 ```
@@ -283,6 +285,14 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
   index keeps games the ply limit cut off (`CUT`) apart from ended ones (`ENDED`). The answer's
   totals leave the cut games out, because the search reads moves as shares of the total and
   those games' next moves are unknown. Index format 2; format 1 files must be re-imported.
+- `tools/deeprep.mjs` scores moves from the local index alone (`deeprep/search.mjs`): an
+  expectimax over games, mine the max by score, theirs the games-weighted mean, leaves the
+  results of the games through a position. It walks one chess.js board with
+  `_makeMove`/`_undoMove` and the incremental hash (with `legalEp`, exported from games.mjs
+  for this), memoised by (hash, plies left); test/deeprep.js checks it against a plain
+  recursive version with `move()` and FEN keys. Its lookups go through
+  `explorerdb/fence.mjs`: the first hash of every 1,024 records in memory, saved as
+  `<index>.fence`, so a lookup is one block read instead of ~32 small ones.
 - `explorerdb.mjs all` (`explorerdb/all.mjs`) runs the whole archive into an accumulator
   (`explorerdb/acc.mjs`, `explorer/<name>.acc/`): every month at N >= 1, added shard by
   shard in the import's own workers (`importDump`'s `intoShard`), so a month's full count is
@@ -876,6 +886,21 @@ took 60 minutes for 2026-08 (92 M games read, 28.8 M kept, accumulator 15.1 GB).
   a second connection only helps when it has room to spare. The saved progress is written
   from the data loop, not a `setInterval`: the harness replaces the global `setInterval`
   (`harness.js`) for main-world.js.
+
+**Deep win rates (`tools/deeprep.mjs`, 2026-10-02).** Requested: from a position, the
+continuations with the best win rate deep in the line, covering the common replies less
+each ply, from the local explorer index (600 M+ games). Decided with the user: score is
+W + D/2. There's no shrinkage, because the user wants a 70% move on 60 games kept beside a
+56% one on 8,000, not merged away. So the tree keeps the best lower bound as well as the
+best score, and `--min-games` (50) ends lines. ChessDB is to come as an option, both as a veto
+and as a blend, on the output's positions only, not inside the search. Checked here on synthetic indexes only: the
+fenced reader equals `openIndex` at every block size, and the search equals the plain version.
+On 30,000 random games (coin-flip results, 62 k records) `moves` ran at 20–35 k lookups/s,
+and the fenced lookup took 3.8 µs against 14 µs for the plain binary search, all from cache.
+The same run showed the selection bias. Every first move's raw score was 47–51%, yet the
+deep scores were 51–62%, and the lower bounds (z = 1) were up to 58%, because the SE doesn't
+include the max's bias. A holdout check (a month not in the index) is the planned answer.
+Not yet run on the user's index: `bench` measures their SSD.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

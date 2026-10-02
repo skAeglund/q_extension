@@ -734,6 +734,41 @@ By hand: `add <dump> --into <name>`, `prune <name> --min-games N`, `finish <name
 <name>] [--min-games 10]`, `info <name>`. `merge a b c --out abc` joins finished indexes, but
 each has already dropped its own rare positions: the store is the way to add months up.
 
+### Deep win rates (deeprep)
+
+`tools/deeprep.mjs` scores moves by what the games went on to do, from your explorerdb index
+alone (no network). From a position, each of your moves gets a **deep score**: the score
+(wins + half the draws, for your side) when you keep choosing your best scoring move and the
+opponent plays as people do, down to `--plies` (16) from the position. A line stops early where
+fewer than `--min-games` (50) games go on; there its own games' score counts.
+
+```bash
+node tools/deeprep.mjs bench lichess                     # how fast lookups are on this disk
+node tools/deeprep.mjs moves lichess --moves "1.d4 c5 2.dxc5"
+node tools/deeprep.mjs browse lichess --moves "1.d4 c5 2.dxc5" --side black
+node tools/deeprep.mjs search lichess --moves "1.d4 c5 2.dxc5" --side black --out dxc5_deep
+```
+
+- `moves` prints one position's table: deep score, its standard error (SE), a lower bound
+  (deep − `--z` × SE), the move's raw score, and its games.
+- `browse` shows the same table position by position. Type a move or its number to go on,
+  `b` to go back. This is the mode for choosing your moves yourself.
+- `search` writes `repertoires/<out>.pgn` and `.json`. At each of your moves it plays the best
+  deep score. If another move has a better lower bound (a 56% move with 8,000 games beside a
+  70% one with 60), it keeps that one too, as a variation marked "best lower bound". Up to
+  `--show` (3) other moves are listed in the comment. `--keep N` expands your N best moves
+  instead of one. Opponent replies are prepared for when they are played at least
+  `--reply-share` (5) % of the time on a line reached at least `--min-reach` (1) % of the
+  time. The comment says how much of the opponent's play is left out.
+
+**Read deep scores with care.** Taking the best of several noisy scores at every one of your
+moves picks luck as well as good moves, and the SE doesn't include that. On a synthetic index
+where every result was a coin flip, the best moves scored 56–62% deep, with lower bounds still
+above 52%. Raw score versus deep score, and many games versus few, are the things to compare.
+
+The first run on an index reads it once from end to end (minutes for 150 GB) and saves
+`<index>.xdb.fence` beside it, so a lookup is one read of 22.5 kB.
+
 ## How it works
 
 Qchess is a vanilla-JS app with no build step, and it keeps its analysis state in
@@ -850,16 +885,19 @@ test/repgen.js      the repertoire generator's tests, run by the harness
 test/pgnclean.js    pgnclean's tests, run by the harness
 test/cdbexplore.js  cdbexplore's tests, run by the harness
 test/explorerdb.js  explorerdb's tests, run by the harness
+test/deeprep.js     deeprep's tests, run by the harness
 tools/repgen.mjs    the repertoire generator (Node; not part of the extension)
 tools/pgnclean.mjs  finishes a repgen PGN: comments and transpositions
 tools/cdbexplore.mjs deepens ChessDB's evals below a PGN's line ends and close decisions
 tools/explorerdb.mjs builds a local opening explorer from a Lichess monthly dump
+tools/deeprep.mjs   deep win rates from that explorer: tables, browsing, PGN
+tools/deeprep/      its search (search.mjs) and PGN/table output (pgn.mjs)
 tools/repgen/       their plan, PGN reader/writers, file cache, root search adapter,
                     ChessDB exploration (explore.mjs) and Maia 3 (maia.mjs)
 tools/explorerdb/   the dump reader and fast replay (games.mjs), shard counting and the
                     index file (store.mjs), the importer and its worker threads, the
                     streaming merge (merge.mjs), the many-month store (acc.mjs), the
                     whole-archive driver (all.mjs) and the filter that shrinks a dump
-                    for download (filter.mjs)
+                    for download (filter.mjs), and the one-read lookup (fence.mjs)
 tools/package.json  onnxruntime-node, for repgen --maia only
 ```
