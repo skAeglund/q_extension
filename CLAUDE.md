@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 561 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 578 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -30,7 +30,8 @@ node test/harness.js          # 561 checks: main-world.js on a stubbed DOM, plus
                               # merge, the accumulator and the all driver, filtered
                               # parts, the server and providers.js's local path)
                               # and test/deeprep.js (fenced lookups, the deep score
-                              # against a plain recursive version, the tree and PGN)
+                              # against a plain recursive version, shrinkage, risk, fit,
+                              # eval, build with a fake ChessDB, slices, the tree and PGN)
 node --check src/main-world.js
 python icons/make_icons.py    # regenerate PNGs (stdlib only, no Pillow)
 ```
@@ -224,8 +225,8 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
 - When you change `src/main-world.js`, update `test/harness.js` in the same pass. The stub DOM
   is minimal — if new code needs a DOM API the stub lacks, add it to the stub rather than
   weakening the test.
-- `test/`, `tools/`, `repertoires/`, `explorer/` and `icons/make_icons.py` are excluded when packaging
-  for distribution; everything else ships.
+- `test/`, `tools/`, `repertoires/`, `explorer/`, `.claude/` and `icons/make_icons.py` are excluded
+  when packaging for distribution; everything else ships.
 - `repertoires/` holds the repertoire tools' runs, their shared `repgen-cache.jsonl` and
   cleaned PGNs. Bare names go there (`tools/repgen/paths.mjs`): repgen's and pgnclean's
   `--out`, and input files that aren't in the current directory. A name with a directory is
@@ -293,6 +294,15 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
   recursive version with `move()` and FEN keys. Its lookups go through
   `explorerdb/fence.mjs`: the first hash of every 1,024 records in memory, saved as
   `<index>.fence`, so a lookup is one block read instead of ~32 small ones.
+- `deeprep build` (`deeprep/build.mjs`, pure: the index and ChessDB come in) is repgen's plan
+  (reach order, `pickReplies`, one node per position) with deeprep's deep scores. Each of the
+  user's four criteria has its own part: the shrunk deep score, the loss limit and the sound
+  value, the ChessDB/Prac/deep blend, and the learning cost. Keep them separate: the review
+  explains a decision by them, and a decisions file answers in their terms. The learning cost
+  multiplies a move's *new share* by the largest candidate's line size, never its own count of
+  new positions. Counting those would reward moves into positions too thin to go on.
+  `deeprep/evaluate.mjs` takes no maximum anywhere, which is what makes it unbiased on a
+  holdout. Don't add choices to it.
 - `explorerdb.mjs all` (`explorerdb/all.mjs`) runs the whole archive into an accumulator
   (`explorerdb/acc.mjs`, `explorer/<name>.acc/`): every month at N >= 1, added shard by
   shard in the import's own workers (`importDump`'s `intoShard`), so a month's full count is
@@ -919,6 +929,57 @@ user's index, 1.d4 c5 2.dxc5 e5 for Black at `--plies 28 --coverage 90`: 2 s, 21
 minimum ended it. The same day's runs showed the PGN writer putting two comments in a row
 at a root where the opponent moves (`{deep …} {replies not covered …}`), which chess.js's
 `loadPgn` refuses; they are one comment now.
+
+**Honest deep scores, the repertoire builder and the holdout (2026-10-02).** The user's
+verdict on the first deeprep run (1.d4 c5 2.dxc5 e5 for Black, 16 plies, min 75,
+`--coverage 90`): useful, but not reliable on its own. That run's tree showed why. The chosen
+moves' deep scores stood 6.2 points over their raw ones, weighted by reach. 235 of 466 chosen
+moves had under 300 games. In 19 positions after a move of mine, a reply played over 10% of
+the time left me more than 8 points under the position's value. One example is 5.Bg5 Qb6, at
+66.9% only because 7.Bxf6?? Bxf2+ 8.Ke2 Qe3# props it up, while the 46% who play 7.Qd2 hold
+it to 52%. The user then gave four criteria for a repertoire: a high score in the resulting
+middlegames, no reliance on traps (traps are fine if the position stays decent), a good
+practical evaluation, and few great lines over many best ones ("56% by transposing into a
+known position over 58% with a new move"; recurring moves help, but count for less). They
+also floated scripts that gather data and a Claude session that decides. Built:
+- `search.mjs`: shrinkage (`prior`, empirical Bayes towards the position's own score) and
+  `risk` (riskMean). The earlier "no shrinkage" decision was about keeping a thin 70% move
+  *visible* beside a solid 56% one. Display still does that (raw and SE beside the deep
+  score), but choosing now shrinks. `fit` estimates the prior (DerSimonian-Laird over random
+  walks).
+  - From the uploaded run's alternatives, τ is about 3.2 points among top candidates,
+    which gives a prior of about 220. Hence the default of 200.
+  - On a coin-flip index, the start position's deep score went from 56.3% to 51.6% at prior
+    200.
+- `eval`: any repertoire PGN as a fixed policy, against a holdout index of other months.
+- `build`: the four criteria (see the conventions above), a review in Markdown, a decisions
+  file, and `.claude/skills/repertoire-review` for the Claude session.
+- `slice`: the part of the 11.8 GB index under one line, a few MB, for cloud sessions.
+
+Checked here: the harness, and synthetic indexes under 1.d4 c5 2.dxc5 e5. Those are
+60,000 random games each, whose results lean by a hash of the move sequence, so moves do
+differ. Two seeds served as index and holdout. Holdout scores (everyone: 48.2%):
+
+| repertoire | in sample | holdout |
+| --- | ---: | ---: |
+| old search (prior 0, risk 0) | 56.7% | 52.8% |
+| new search | 57.0% | 54.9% |
+| `build --no-chessdb` | 57.0% | 55.2% |
+| `build --no-chessdb --min-games 10` | 59.9% | 54.6% |
+
+The old search's own claim was 58.8%. The priors 0/50/200/800 gave the build 55.1–55.4% on
+the holdout, inside its ±1.0 SE. A build with live ChessDB ran against the same synthetic
+index: 110 requests, through the provider and the file cache. ChessDB knew few of those
+positions. Its random games hang pieces (3.Bf4 exf4 is 82.5% for Black), so the loss limit
+cut almost every move it knew. The moves that passed were ones it had no eval for, here or
+after them, and the holdout fell to 47.5%. That loophole is repgen's rule too ("no eval
+passes"). On real games it should be rare, so it stays, and the review flags it
+(`no-eval`).
+
+Not checked: any run on the user's index, a real holdout, the default `learnCost` (0.5) on
+real trees, and build's time there. The synthetic build made about 500 lookups a decision,
+and the user's disk does 10–20 k a second. ChessDB at 60 a minute will take about 30 minutes
+for 300 decisions. The skill hasn't been tried by a session yet.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

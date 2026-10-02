@@ -10,6 +10,7 @@ function games(n) { return n.toLocaleString('en-US'); }
 var TAG = { best: '', safe: 'best lower bound; ', kept: '' };
 
 export function moveComment(n) {
+  if (n.note != null) return n.note;          // written by the caller (deeprep build)
   var parts = [];
   if (n.mine) {
     parts.push(TAG[n.tag] + 'deep ' + pct(n.s) + ' ' + pm(n.se) + ', raw ' + pct(n.raw) + ', ' +
@@ -102,4 +103,17 @@ export function candidateLines(op) {
   return rows.map(function (r) {
     return r.map(function (x, i) { return i ? x.padStart(w[i]) : x.padEnd(w[i]); }).join('  ');
   });
+}
+
+// SANs played from `fen`, numbered: "3. e4 Bxc5 4. Nc3", or "3... Bxc5 4. Nc3".
+export function lineText(fen, sans) {
+  var ply = plyOf(fen);
+  return sans.map(function (san, i) { return num(ply + i, i === 0) + san; }).join(' ');
+}
+
+// The dumps an index was made from, as its header names them: an accumulator's list, or
+// the source(s) of an import or a merge.
+export function dumpsOf(meta) {
+  if (meta && meta.report && Array.isArray(meta.report.dumps)) return meta.report.dumps.slice();
+  return meta && meta.source ? String(meta.source).split(' + ') : [];
 }

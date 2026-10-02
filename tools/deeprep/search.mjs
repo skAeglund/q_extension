@@ -20,10 +20,32 @@
  * Score is (W + D/2) / games for `side`. Each value also carries a standard error: a
  * leaf's from its own W/D/L (with one pseudo-win and one pseudo-loss, so 3 games of 3 wins
  * don't claim certainty), their move's as sqrt(sum share^2 SE^2), mine as the chosen
- * move's. It ignores that the max over my moves is itself biased upwards (taking the best
- * of several noisy scores picks luck too). That is why the candidates show `lb` = score -
+ * move's.
+ *
+ * Two corrections, both on by default since 2026-10-02 (`prior` 0 and `risk` 0 give the
+ * plain expectimax above):
+ *
+ *   - Shrinkage (`prior`, in games). Taking the best of several noisy scores picks luck as
+ *     well as good moves, at every one of my moves on the way down: in the first real run
+ *     (1.d4 c5 2.dxc5 e5, 16 plies) the chosen moves' deep scores stood 6 points above
+ *     their raw ones, weighted by reach, and on an index of coin flips the best moves
+ *     scored 56-62%. So at my move each candidate's value is pulled towards the
+ *     position's own score by `prior` games' worth, as an empirical-Bayes estimate:
+ *     v' = mu + w (v - mu), w = n / (n + prior), where n = var / SE^2 is the games' worth
+ *     of the value (var: the variance of one game's result here). A move with 8,000 games
+ *     keeps its value; one with 60 keeps a quarter of its lead at prior 200. The
+ *     opponent's replies under `minGames` (leaves) are pulled the same way. `fit` measures
+ *     a prior for an index (fitPrior): var / tau^2, tau being the spread of the
+ *     candidates' true scores around their position's.
+ *   - Risk aversion (`risk`, lambda per win% point). Their move takes riskMean() (as the
+ *     Practical column and repgen do) instead of the plain mean, so a position whose
+ *     common reply is sound and whose tail is blunders is worth less than its mean.
+ *
+ * A shrunk value keeps the SE of its games, not the posterior's: a value pulled once is
+ * pulled again at each of my moves above it, each time by how noisy its games are. The
+ * bias of the max is still not in the SE, which is why the candidates show `lb` = score -
  * z * SE beside the score, and the tree keeps the move with the best lower bound when it
- * isn't the best scoring one: a 70% move with 60 games and a 56% one with 8,000 both stay.
+ * isn't the best scoring one.
  *
  * The walk plays moves on one chess.js board with _makeMove/_undoMove and reads the
  * position's key from its incremental Zobrist hash (as the import does, games.mjs), with
@@ -32,6 +54,7 @@
  */
 
 import { Chess } from '../../src/vendor/chess.js';
+import { riskMean } from '../../src/pe/search.js';
 import { CUT, ENDED, legalEp, fullFen, codeParts } from '../explorerdb/games.mjs';
 
 export var DEFAULTS = {
@@ -39,7 +62,10 @@ export var DEFAULTS = {
   minGames: 50,       // a position or move with fewer games is a leaf
   z: 1,               // lb = score - z * SE
   myMoves: 0,         // consider only my N most played moves (0: all with minGames)
-  maxLookups: 20e6    // give up past this many index lookups
+  maxLookups: 20e6,   // give up past this many index lookups
+  prior: 200,         // shrinkage: games' worth of the position's own score in each of my
+                      // candidates' values (0: none). `fit` measures it for an index.
+  risk: 0.05          // risk aversion at their moves, lambda per win% point (0: plain mean)
 };
 
 var SQ = {};
@@ -64,6 +90,22 @@ export function leafStat(w, d, b, me) {
   var v = Math.max(e2 - m2 * m2, 0);
   return { s: s, se: Math.sqrt(v / n), n: n };
 }
+
+/*
+ * Pulls a value towards `mu` by `prior` games' worth: the empirical-Bayes posterior mean
+ * when values spread around mu with variance tau^2 = vr / prior, and one game's result
+ * has variance vr. A value's games' worth is vr / SE^2. The SE is left as it was (see
+ * the top of the file).
+ */
+export function shrink(v, mu, vr, prior) {
+  if (!(prior > 0) || !isFinite(mu)) return v;
+  var n = v.se > 0 && isFinite(v.se) ? vr / (v.se * v.se) : (v.se === 0 ? Infinity : 0);
+  var w = n === Infinity ? 1 : n / (n + prior);
+  return { s: mu + w * (v.s - mu), se: v.se, n: v.n };
+}
+
+// One game's variance for `me`, from a leafStat: SE^2 x games (with its pseudo-games).
+function varOf(st) { return st.n > 0 && isFinite(st.se) ? st.se * st.se * st.n : 0.25; }
 
 // A position's records -> { moves: [{code, w, d, b, n}] most played first, ended, cut, total }.
 function sortRecords(recs) {
@@ -153,27 +195,29 @@ export function createSearch(db, fen, o) {
     var all = sumOf(a);
     var leaf = leafStat(all.w, all.d, all.b, me);
     if (left <= 0 || a.total < o.minGames) return leaf;
+    var vr = varOf(leaf);
     if (c.turn() === me) {
       var best = null;
       mine(a).forEach(function (m) {
         if (!play(m.code)) return;
-        var v = value(left - 1, m);
+        var v = shrink(value(left - 1, m), leaf.s, vr, o.prior);
         c._undoMove();
         if (!best || v.s > best.s) best = v;
       });
       return best ? { s: best.s, se: best.se, n: a.total } : leaf;
     }
-    var sw = 0, ss = 0, sv = 0;
-    function add(n, v) { sw += n; ss += n * v.s; sv += n * n * v.se * v.se; }
+    var items = [], sw = 0, sv = 0;
+    function add(n, v) { items.push({ w: n, v: 100 * v.s }); sw += n; sv += n * n * v.se * v.se; }
+    function thin(x) { return shrink(statOf(x), leaf.s, vr, o.prior); }
     a.moves.forEach(function (m) {
-      if (m.n < o.minGames || !play(m.code)) return add(m.n, statOf(m));
+      if (m.n < o.minGames || !play(m.code)) return add(m.n, thin(m));
       var v = value(left - 1, m);
       c._undoMove();
       add(m.n, v);
     });
-    if (a.ended) add(a.ended.n, statOf(a.ended));
-    if (a.cut) add(a.cut.n, statOf(a.cut));
-    return { s: ss / sw, se: Math.sqrt(sv) / sw, n: a.total };
+    if (a.ended) add(a.ended.n, thin(a.ended));
+    if (a.cut) add(a.cut.n, thin(a.cut));
+    return { s: riskMean(items, o.risk) / 100, se: Math.sqrt(sv) / sw, n: a.total };
   }
 
   // My moves that compete: at least minGames games, the myMoves most played.
@@ -202,6 +246,9 @@ export function createSearch(db, fen, o) {
     var a = lookup();
     if (!a.total || left <= 0 || a.total < o.minGames) return { total: a.total, mine: c.turn() === me, list: [] };
     var my = c.turn() === me;
+    var all = sumOf(a);
+    var leaf = leafStat(all.w, all.d, all.b, me);
+    var vr = varOf(leaf);
     var list = (my ? mine(a) : a.moves).map(function (m) {
       var san = sanOf(m.code);
       var raw = statOf(m);
@@ -211,11 +258,13 @@ export function createSearch(db, fen, o) {
         c._undoMove();
         deep = true;
       }
+      // As evaluate() counts them: my candidates and their thin replies shrunk.
+      if (my || !deep) v = shrink(v, leaf.s, vr, o.prior);
       return { san: san, code: m.code, games: m.n, share: m.n / a.total, raw: raw.s, s: v.s, se: v.se,
         lb: v.s - o.z * v.se, deep: deep };
     });
     if (my) list.sort(function (x, y) { return y.s - x.s; });
-    return { total: a.total, mine: my, list: list };
+    return { total: a.total, mine: my, raw: leaf.s, list: list };
   }
 
   /*
@@ -302,4 +351,84 @@ export function createSearch(db, fen, o) {
     tree: tree,
     stats: function () { return { lookups: lookups, nodes: nodes, positions: memo.size, ms: Date.now() - t0 }; }
   };
+}
+
+/*
+ * A prior for an index (`fit`): how far my candidates' true scores spread around each
+ * other, from positions met on random walks from `fen` (each move chosen by how often
+ * it is played, as a search meets them), and prior = var / tau^2.
+ *
+ * tau^2 is DerSimonian and Laird's random-effects estimate, pooled over the positions:
+ * per position, Q = sum w_i (s_i - s_w)^2 over its candidates (moves with minGames games),
+ * w_i = 1 / SE_i^2, s_w their weighted mean, and
+ *
+ *   tau^2 = sum (Q - (k - 1)) / sum (sum w - sum w^2 / sum w)
+ *
+ * which takes out what sampling noise alone would spread them by. It is measured on the
+ * moves' own scores: the deep values' spread isn't observable this way. o: { samples
+ * (positions), minGames, side ('w' | 'b': only positions that side moves in), maxPly
+ * (walk length), rnd }.
+ * Returns { positions, moves, tau, vr, prior } (tau as a fraction; prior in games).
+ */
+export function fitPrior(db, fen, o) {
+  o = Object.assign({ samples: 2000, minGames: DEFAULTS.minGames, side: null, maxPly: 30,
+    rnd: Math.random }, o || {});
+  var seen = new Set();
+  var num = 0, den = 0, vsum = 0, moves = 0, positions = 0;
+  var start = fullFen(fen);
+  var walks = 0;
+  while (positions < o.samples && walks < o.samples * 20) {
+    walks++;
+    var c = new Chess(start);
+    if (c._epSquare !== -1) legalEp(c);
+    for (var p = 0; p < o.maxPly; p++) {
+      var a = sortRecords(db.records(c._hash));
+      if (a.total < 2 * o.minGames || !a.moves.length) break;
+      if (!seen.has(c._hash)) {
+        seen.add(c._hash);
+        if (!o.side || c.turn() === o.side) {
+          var me = c.turn();
+          var cs = a.moves.filter(function (m) { return m.n >= o.minGames; }).map(function (m) {
+            var st = leafStat(m.w, m.d, m.b, me);
+            return { s: st.s, w: 1 / (st.se * st.se), vr: varOf(st) };
+          });
+          if (cs.length >= 2) {
+            var sw = 0, sw2 = 0, sws = 0, q = 0;
+            cs.forEach(function (x) { sw += x.w; sw2 += x.w * x.w; sws += x.w * x.s; });
+            var mean = sws / sw;
+            cs.forEach(function (x) { q += x.w * (x.s - mean) * (x.s - mean); vsum += x.vr; });
+            num += q - (cs.length - 1);
+            den += sw - sw2 / sw;
+            moves += cs.length;
+            positions++;
+            if (positions >= o.samples) break;
+          }
+        }
+      }
+      // On by a move chosen in proportion to its games.
+      var x = o.rnd() * a.moves.reduce(function (t, m) { return t + m.n; }, 0), pick = a.moves[0];
+      for (var i = 0; i < a.moves.length; i++) {
+        x -= a.moves[i].n;
+        if (x < 0) { pick = a.moves[i]; break; }
+      }
+      if (!playCode(c, pick.code)) break;
+    }
+  }
+  var tau2 = den > 0 ? Math.max(num / den, 0) : NaN;
+  var vr = moves ? vsum / moves : NaN;
+  return { positions: positions, moves: moves, tau: Math.sqrt(tau2), vr: vr,
+    prior: tau2 > 0 ? vr / tau2 : Infinity };
+}
+
+// Plays the move with index code `code` on chess.js board `c`; false if it has none.
+export function playCode(c, code) {
+  var ms = c._moves({ legal: false });
+  for (var i = 0; i < ms.length; i++) {
+    if (moveCode(ms[i]) === code) {
+      c._makeMove(ms[i]);
+      if (c._epSquare !== -1) legalEp(c);
+      return true;
+    }
+  }
+  return false;
 }

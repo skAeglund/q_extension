@@ -28,8 +28,9 @@ export function indexInfo(db) {
     filter: m.filter,
     plies: m.plies,
     minGames: m.minGames,
-    positions: m.report.positions,
-    games: m.report.games.kept
+    // A deeprep slice keeps only the source's list of dumps from the report.
+    positions: m.report && m.report.positions != null ? m.report.positions : m.slice ? m.slice.positions : null,
+    games: m.report && m.report.games ? m.report.games.kept : null
   };
 }
 
