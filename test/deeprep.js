@@ -119,6 +119,63 @@ module.exports = async function run(check) {
     assert.deepStrictEqual(e4b.children, []);
     near(e4b.other, 1, 'not covered');
   });
+  // Replies with distinct shares, and a second opponent decision after 1.e4 e5 2.Nf3.
+  const cov = [];
+  const addC = (line, w, b) => {
+    for (let i = 0; i < w; i++) cov.push({ sans: line.split(' '), res: '1-0' });
+    for (let i = 0; i < b; i++) cov.push({ sans: line.split(' '), res: '0-1' });
+  };
+  addC('e4 e5 Nf3 Nc6 Bb5', 30, 10);   // after 2.Nf3: Nc6 40/60, d6 15/60, Nf6 5/60
+  addC('e4 e5 Nf3 d6 d4', 10, 5);
+  addC('e4 e5 Nf3 Nf6 Nxe5', 3, 2);
+  addC('e4 c5 Nf3', 15, 10);           // after 1.e4: e5 60%, c5 25%, e6 10%, d5 5%
+  addC('e4 e6 d4', 5, 5);
+  addC('e4 d5 exd5', 3, 2);
+  const covFile = path.join(tmp, 'cov.pgn');
+  fs.writeFileSync(covFile, pgnOf(cov));
+  const covIdx = path.join(tmp, 'cov.xdb');
+  await I.importDump({ input: covFile, out: covIdx, plies: 10, minGames: 1, workers: 1 });
+  const cdb = F.openFenced(covIdx, { fenceFile: false });
+  await check('coverage: replies most played first until they cover the share, less each decision', () => {
+    const s = D.createSearch(cdb, START, { plies: 6, minGames: 2 });
+    const replies = (t) => {
+      const e4 = t.children[0];
+      const nf3 = e4.children.find(k => k.san === 'e5').children[0];
+      return [e4.children.map(k => k.san), nf3.children.map(k => k.san), e4, nf3];
+    };
+    // Without coverage: every reply played 5% of the time, d5 included.
+    assert.deepStrictEqual(replies(s.tree({}))[0], ['e5', 'c5', 'e6', 'd5']);
+    // 90%: e5 + c5 = 85%, so e6 too (95%); then 80% after 2.Nf3: Nc6 67%, so d6 too (92%).
+    let [first, second, e4, nf3] = replies(s.tree({ coverage: 0.9 }));
+    assert.deepStrictEqual(first, ['e5', 'c5', 'e6']);
+    assert.deepStrictEqual(second, ['Nc6', 'd6']);
+    near(e4.other, 0.05, 'not covered at the first decision');
+    near(nf3.other, 5 / 60, 'at the second');
+    // Under --single-below at the second decision (80% < 85%): the top reply only.
+    [first, second] = replies(s.tree({ coverage: 0.9, singleBelow: 0.85 }));
+    assert.deepStrictEqual(first, ['e5', 'c5', 'e6']);
+    assert.deepStrictEqual(second, ['Nc6']);
+    // A bigger step: 90% then 60%, which Nc6 alone covers.
+    assert.deepStrictEqual(replies(s.tree({ coverage: 0.9, coverageStep: 0.3 }))[1], ['Nc6']);
+    // minReach still holds for the others, never for the top reply: c5 reaches 25%, e6
+    // 10%, d6 15%.
+    [first, second] = replies(s.tree({ coverage: 0.9, minReach: 0.2 }));
+    assert.deepStrictEqual(first, ['e5', 'c5']);
+    assert.deepStrictEqual(second, ['Nc6']);
+    assert.deepStrictEqual(replies(s.tree({ coverage: 0.9, minReach: 0.7 }))[0], ['e5']);
+  });
+  await check('a root where they move gets one comment, which chess.js reads back', () => {
+    const c = new Chess();
+    c.move('e4');
+    const s = D.createSearch(cdb, c.fen(), { plies: 5, minGames: 2, side: 'w' });
+    const pgn = P.toPgn(s.tree({ coverage: 0.9 }), { prefix: ['e4'], rootComment: 'deep for White' });
+    const body = pgn.split('\n\n')[1].replace(/\s+/g, ' ');
+    assert.ok(/^1\. e4 \{deep for White; replies not covered 5%\} 1\.\.\. e5/.test(body), body);
+    const back = new Chess();
+    back.loadPgn(pgn);
+    assert.strictEqual(back.history()[0], 'e4');
+  });
+
   await check('the PGN has the chosen moves, the safe one as a variation, numbers in comments', () => {
     const s = D.createSearch(hdb2, START, { plies: 3, minGames: 2, z: 2 });
     const pgn = P.toPgn(s.tree({}), { prefix: [] });
@@ -252,7 +309,7 @@ module.exports = async function run(check) {
       /passed 5 lookups/);
   });
 
-  [hdb, hdb2, db].forEach(d => d.close());
+  [hdb, hdb2, cdb, db].forEach(d => d.close());
   plain.close();
   fs.rmSync(tmp, { recursive: true, force: true });
 };

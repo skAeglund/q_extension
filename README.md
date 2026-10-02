@@ -760,6 +760,12 @@ node tools/deeprep.mjs search lichess --moves "1.d4 c5 2.dxc5" --side black --ou
   instead of one. Opponent replies are prepared for when they are played at least
   `--reply-share` (5) % of the time on a line reached at least `--min-reach` (1) % of the
   time. The comment says how much of the opponent's play is left out.
+- `--coverage 90` prepares for replies as repgen does instead: the most played ones until
+  they cover 90% of the position's games, 10 points less at each later opponent decision on
+  the line (`--coverage-step`), and below 50% (`--single-below`) only the most played reply.
+  That one always goes on, so the main line runs until `--min-games` or `--plies` ends it.
+  With `--coverage`, `--reply-share` and `--min-reach` default to 0; given, they still hold
+  for the other replies.
 
 **Read deep scores with care.** Taking the best of several noisy scores at every one of your
 moves picks luck as well as good moves, and the SE doesn't include that. On a synthetic index

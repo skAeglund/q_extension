@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 560 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 561 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -900,7 +900,25 @@ and the fenced lookup took 3.8 µs against 14 µs for the plain binary search, a
 The same run showed the selection bias. Every first move's raw score was 47–51%, yet the
 deep scores were 51–62%, and the lower bounds (z = 1) were up to 58%, because the SE doesn't
 include the max's bias. A holdout check (a month not in the index) is the planned answer.
-Not yet run on the user's index: `bench` measures their SSD.
+First run on the user's index on 2026-10-02 (`lichess.xdb`, N ≥ 10, 536 M records, 11.8 GB,
+806 M games; Windows 11, Samsung PM981 NVMe). Fences built in 6 s (4.2 MB file); a lookup took
+11–14 µs fenced against 232–276 µs plain, though the index was freshly written and may have
+been in the OS cache. A search runs at 10–20 k lookups/s, so about 85% of its time is outside
+the reads (not profiled). After 1.d4 c5 2.dxc5 (Black) it took 13 s; after 1.e4 c5 (White)
+3.77 M lookups, 321 s and 1.1 GB. The gap between deep and raw score is largest on the most
+played moves: +14 for 2...e6 (519,917 games), +15 to +19 for White's main moves after 1.e4
+c5, where every reasonable move scored 60–70% deep against at most 52% raw. `--plies 24`
+instead of 16 changed 2...e6 by +0.3: the 50-game minimum ends almost every line first.
+
+`--coverage` (2026-10-02, requested after that run): the PGN can prepare for replies as
+repgen does (`--coverage`, `--coverage-step`, `--single-below`, the same rule as
+`pickReplies` in `generator.mjs`), instead of every reply above `--reply-share` on lines
+above `--min-reach`. Off by default. Only `tree()` changes; the deep scores don't. On the
+user's index, 1.d4 c5 2.dxc5 e5 for Black at `--plies 28 --coverage 90`: 2 s, 219 lines,
+91% of White's third moves covered, the deepest line ending at ply 22, where the 50-game
+minimum ended it. The same day's runs showed the PGN writer putting two comments in a row
+at a root where the opponent moves (`{deep …} {replies not covered …}`), which chess.js's
+`loadPgn` refuses; they are one comment now.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

@@ -67,11 +67,14 @@ export function toPgn(root, o) {
   var text = '';
   var ply = start;
   (o.prefix || []).forEach(function (san) { text += num(ply, ply === start) + san + ' '; ply++; });
-  if (o.rootComment) text += '{' + o.rootComment + '} ';
-  var body = line(root, ply, ply === start || !!o.rootComment || !!(o.prefix && o.prefix.length));
+  // One comment: chess.js's loadPgn refuses two in a row.
+  var note = [];
+  if (o.rootComment) note.push(o.rootComment);
   if (root.mine === undefined && root.other > 0.005 && root.children.length) {
-    text += '{replies not covered ' + Math.round(100 * root.other) + '%} ';
+    note.push('replies not covered ' + Math.round(100 * root.other) + '%');
   }
+  if (note.length) text += '{' + note.join('; ') + '} ';
+  var body = line(root, ply, ply === start || !!o.rootComment || !!(o.prefix && o.prefix.length));
   return head.join('\n') + '\n\n' + wrap(text + body + ' *') + '\n';
 }
 

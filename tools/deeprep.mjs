@@ -54,7 +54,11 @@ var USAGE = [
   '  --no-safe            don\'t also expand the move with the best lower bound',
   '  --show 3             alternatives listed in the comment',
   '  --reply-share 5      prepare for replies played at least this % of the time...',
-  '  --min-reach 1        ...on lines reached at least this % of the time'
+  '  --min-reach 1        ...on lines reached at least this % of the time',
+  '  --coverage 90        instead: the most played replies until they cover this % of the',
+  '                       games (then --reply-share and --min-reach default to 0)...',
+  '  --coverage-step 10   ...this many points less at each later opponent decision...',
+  '  --single-below 50    ...and under this, only the most played reply'
 ].join('\n');
 
 function indexPath(name) {
@@ -91,12 +95,21 @@ function parse(argv, extra) {
     else if (a === '--show' && extra) o.tree.show = num(argv[++i], '--show');
     else if (a === '--reply-share' && extra) o.tree.replyShare = num(argv[++i], '--reply-share') / 100;
     else if (a === '--min-reach' && extra) o.tree.minReach = num(argv[++i], '--min-reach') / 100;
+    else if (a === '--coverage' && extra) o.tree.coverage = num(argv[++i], '--coverage') / 100;
+    else if (a === '--coverage-step' && extra) o.tree.coverageStep = num(argv[++i], '--coverage-step') / 100;
+    else if (a === '--single-below' && extra) o.tree.singleBelow = num(argv[++i], '--single-below') / 100;
     else if (a === '--out' && extra) o.out = argv[++i];
     else if (a === '--samples') o.samples = num(argv[++i], '--samples');
     else if (!o.name && !/^--/.test(a)) o.name = a;
     else throw new Error('Unexpected argument: ' + a + '\n' + USAGE);
   }
   if (!o.name) throw new Error('Which index?\n' + USAGE);
+  if (o.tree.coverage == null && (o.tree.coverageStep != null || o.tree.singleBelow != null)) {
+    throw new Error('--coverage-step and --single-below need --coverage');
+  }
+  if (o.tree.coverage != null && !(o.tree.coverage > 0 && o.tree.coverage <= 1)) {
+    throw new Error('--coverage is a % above 0, at most 100');
+  }
   o.prefix = null;
   if (o.moves != null) {
     var c = new Chess();
@@ -138,6 +151,13 @@ function describe(o, side) {
     (x.myMoves ? ', my ' + x.myMoves + ' most played moves' : '');
 }
 
+function coverageNote(t) {
+  if (t.coverage == null) return '';
+  var p = function (x) { return Math.round(100 * x * 10) / 10; };
+  return ', replies to ' + p(t.coverage) + '% less ' + p(t.coverageStep != null ? t.coverageStep : 0.1) +
+    ' a move, top only under ' + p(t.singleBelow != null ? t.singleBelow : 0.5) + '%';
+}
+
 function cmdSearch(argv) {
   var o = parse(argv, true);
   if (!o.out) throw new Error('--out <name> is missing');
@@ -157,7 +177,8 @@ function cmdSearch(argv) {
     fs.writeFileSync(base + '.json', JSON.stringify({ meta: meta, tree: tree }, null, 1));
     fs.writeFileSync(base + '.pgn', toPgn(tree, {
       prefix: o.prefix, fen: o.prefix ? null : o.fen,
-      headers: { Event: 'deeprep ' + describe(o, s.side), Annotator: 'deeprep (' + db.meta.source + ')' },
+      headers: { Event: 'deeprep ' + describe(o, s.side) + coverageNote(o.tree),
+        Annotator: 'deeprep (' + db.meta.source + ')' },
       rootComment: 'deep ' + (100 * tree.s).toFixed(1) + '% for ' + (s.side === 'w' ? 'White' : 'Black') +
         ', ' + fmt(tree.games) + ' games'
     }));

@@ -226,13 +226,26 @@ export function createSearch(db, fen, o) {
    *   show: 3          my alternatives listed (not expanded) beside the choice
    *   replyShare: .05  a reply is prepared for if played this often here...
    *   minReach: .01    ...and the line reaches it this often (their shares multiplied)
+   *   coverage: null   instead, as repgen does: replies most played first until they cover
+   *                    this share of the position's games...
+   *   coverageStep: .1 ...this much less at each later opponent decision on the line...
+   *   singleBelow: .5  ...and under this, only the most played reply.
    * }
+   * With coverage, the most played reply always goes on (the line still ends at minGames
+   * or the horizon), and replyShare and minReach default to 0 but still apply to the others.
    * Node: { san, fen, mine (my move), s, se, lb, games, share, raw, reach, tag ('best',
    * 'safe', 'kept'), alts: [...], other (share of replies not prepared for), children }.
    */
   function tree(t) {
-    t = Object.assign({ keep: 1, keepSafe: true, show: 3, replyShare: 0.05, minReach: 0.01 }, t || {});
-    function grow(node, left, reach) {
+    var byCoverage = !!t && t.coverage != null;
+    t = Object.assign({ keep: 1, keepSafe: true, show: 3, replyShare: byCoverage ? 0 : 0.05,
+      minReach: byCoverage ? 0 : 0.01, coverage: null, coverageStep: 0.1, singleBelow: 0.5 }, t || {});
+    // Coverage at the line's oi-th opponent decision (0 = the first); 0 means the top reply only.
+    function coverageAt(oi) {
+      var c = Math.round((t.coverage - t.coverageStep * oi) * 1e6) / 1e6;
+      return c < t.singleBelow ? 0 : c;
+    }
+    function grow(node, left, reach, oi) {
       var op = options(left);
       node.children = [];
       if (!op.list.length) return node;
@@ -250,20 +263,25 @@ export function createSearch(db, fen, o) {
           if (!i) kid.alts = alts;
           if (play(q[0].code)) {
             kid.fen = c.fen();
-            if (q[0].deep) grow(kid, left - 1, reach);
+            if (q[0].deep) grow(kid, left - 1, reach, oi);
             c._undoMove();
           }
           node.children.push(kid);
         });
       } else {
-        var other = 0;
-        op.list.forEach(function (x) {
+        var other = 0, cov = byCoverage ? coverageAt(oi) : 0, covered = 0;
+        // op.list is most played first.
+        op.list.forEach(function (x, i) {
           var r = reach * x.share;
-          if (!x.deep || x.share < t.replyShare || r < t.minReach) { other += x.share; return; }
+          var take = byCoverage
+            ? x.deep && (i === 0 || covered < cov && x.share >= t.replyShare && r >= t.minReach)
+            : x.deep && x.share >= t.replyShare && r >= t.minReach;
+          if (!take) { other += x.share; return; }
+          covered += x.share;
           var kid = Object.assign({ mine: false, reach: r }, x);
           if (play(x.code)) {
             kid.fen = c.fen();
-            grow(kid, left - 1, r);
+            grow(kid, left - 1, r, oi + 1);
             c._undoMove();
           }
           node.children.push(kid);
@@ -273,7 +291,7 @@ export function createSearch(db, fen, o) {
       return node;
     }
     var v = value(o.plies, null);
-    return grow({ fen: c.fen(), s: v.s, se: v.se, games: v.n, reach: 1, root: true }, o.plies, 1);
+    return grow({ fen: c.fen(), s: v.s, se: v.se, games: v.n, reach: 1, root: true }, o.plies, 1, 0);
   }
 
   return {
