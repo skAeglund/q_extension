@@ -1006,7 +1006,18 @@ in the 3.b4 line (tied, more games, ChessDB's best, no blunders to rely on, and 
 transposes); 5...h6 over b6 after 3.Nf3 Nc6 4.Be3 Nf6 5.Nc3 (b6's lead was 0.3 on 55 games,
 with ChessDB 44.6 and Prac 44.5). Left to the user: 3.Be3 Qc7 and 4.Bg5 Qc7 (201 and 85 games,
 ChessDB 2.6–2.7 under Nf6), and 3.c3 and 3.g3 (2.0% and 1.7%), which coverage 90 leaves out.
-The rebuild runs on the user's machine.
+
+The user's rebuild (`benoni_accepted_e5_v2`, the same day) took 29 s, since ChessDB was
+cached (23 new requests). 98 positions, 58.6% in sample (59.1 before). Six moves changed,
+exactly those predicted from the first run's JSON: the three pins, the two picks the sound
+fix changed (5.Bb5 e4, ChessDB's best, over Qc7; after 3.c4 Bxc5 4.Nc3 Nf6 5.e4, Nc6
+over Qb6, which led to 6.Nf3 Ng4 at ChessDB 65.8), and 3.Nc3 Bxc5 4.e3 Nc6 (a
+transposition, tied with Nf6 after learning). Below 0.5% reach, learning now costs 2–18
+points a move. That is the price of a position reached that rarely, and equal for
+all-new alternatives, so it decides nothing there. But the 17 positions under 0.5% added
+about 0.0 points in sample, and the 22 at 0.5–1% about 0.2, roughly their price at
+learnCost 1. `--line-min-reach 0.005` would drop the first 17. Note the share options'
+rule (`v > 1` is a percentage): `0.5` there means 50%.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where
