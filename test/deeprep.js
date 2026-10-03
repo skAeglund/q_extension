@@ -39,10 +39,27 @@ module.exports = async function run(check) {
   const B = await load('tools/deeprep/build.mjs');
   const R = await load('tools/deeprep/report.mjs');
   const SL = await load('tools/deeprep/slice.mjs');
+  const T = await load('tools/repgen/pgntree.mjs');
+  const C = await load('tools/repgen/clean.mjs');
   const PE = await load('src/pe/search.js');
   const { Chess } = await load('src/vendor/chess.js');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'qx-deep-'));
   const near = (a, b, what) => assert.ok(Math.abs(a - b) < 1e-9, `${what}: ${a} vs ${b}`);
+  // pgnclean on a PGN deeprep wrote: the comments left that are neither a share nor where a
+  // line transposes, which should be none.
+  const leftAfterClean = (pgn, side) => {
+    const [g] = T.parsePgn(pgn);
+    C.cleanGame(g, side);
+    const left = [];
+    const walk = nd => {
+      [nd.comment, nd.pre].forEach(c => c && c.split(/\n\n/).forEach(x => {
+        if (!/^\d+%$/.test(x) && !/^(\S+ t|T)ransposes into /.test(x)) left.push(x);
+      }));
+      nd.children.forEach(walk);
+    };
+    walk(g.root);
+    return left;
+  };
   // The plain expectimax: no shrinkage, plain means at their moves.
   const PLAIN = { prior: 0, risk: 0 };
   // riskMean, written out: the certainty equivalent at lambda per win% point (values 0-1).
@@ -276,6 +293,17 @@ module.exports = async function run(check) {
     const c = new Chess();
     c.loadPgn(pgn);
     assert.deepStrictEqual(c.history(), ['c4', 'e5', 'Nc3']);
+  });
+  await check('pgnclean takes the search\'s PGN down to the shares of their replies', () => {
+    const s = D.createSearch(hdb2, START, { plies: 3, minGames: 2, z: 2, ...PLAIN });
+    const pgn = P.toPgn(s.tree({ coverage: 0.9 }), { prefix: [], rootComment: 'deep 77.5% for White, 1,234 games' });
+    assert.ok(/best lower bound; deep/.test(pgn) && /% of 40 games, deep/.test(pgn), pgn);
+    assert.deepStrictEqual(leftAfterClean(pgn, 'w'), []);
+    const [g] = T.parsePgn(pgn);
+    C.cleanGame(g, 'w');
+    const e4 = g.root.children.find(x => x.san === 'e4');
+    assert.deepStrictEqual(e4.children.map(x => x.comment), ['50%', '50%']);
+    assert.strictEqual(g.root.children[0].children[0].comment, null, '1.c4 e5: the only reply');
   });
 
   /* --- eval: a repertoire as a fixed policy ------------------------------ */
@@ -520,6 +548,22 @@ module.exports = async function run(check) {
     assert.ok(/### 1\. d4 Nf6 — reach 40%/.test(md), md);
     assert.ok(md.includes('Decide: `"1. d4 Nf6": { "play": "Nf3" }`'), md);
     assert.ok(/\| \*\*Nf3\*\* \|/.test(md));
+  });
+  await check('build: pgnclean takes the PGN down to shares and transpositions', async () => {
+    const write = (b, held) => P.toPgn(B.toTree(b.nodes, b.rootKey, R.moveNote, p => p.join(' ')), { prefix: [],
+      headers: { White: 'Repertoire', Black: 'Lichess' }, rootComment: R.rootNote(4, { s: 0.585, raw: 0.522 }, held) });
+    const pgns = [
+      write(await build(trapDb, { soundMargin: 3 }, trapCdb), null),          // unsound, ChessDB, Prac, sound
+      write(await build(trapDb, { soundMargin: 0 }, trapCdb), { s: 0.55, raw: 0.5 }),   // blunders; holdout
+      write(await build(trDb1, Object.assign({ learnCost: 200 }, LEARN)), null),          // learning, over, transposes
+      write(await build(trDb1, Object.assign({ learnCost: 0 }, LEARN), null,
+        { decisions: R.parseDecisions({ '1. d4 Nf6': { play: 'Nf3' } }, START) }), null)  // pinned
+    ];
+    const all = pgns.join('\n').replace(/\s+/g, ' ');
+    ['positions to know; in sample 58.5% (everyone 52.2%)', 'holdout 55.0%', 'score ', ', ChessDB ', ', Prac ', ' games, raw ',
+      'sound ', ', blunders 40%', ' unsound', 'learning -', ' · over ', ' · pinned', ' · also ', 'end: ',
+      'transposes to '].forEach(x => assert.ok(all.includes(x), 'the builds wrote "' + x + '"'));
+    pgns.forEach(pgn => assert.deepStrictEqual(leftAfterClean(pgn, 'w'), [], pgn));
   });
   await check('pawnKey: the pawns alone', () => {
     assert.strictEqual(B.pawnKey(fenAfter('d4', 'c5', 'dxc5', 'e5')), '8/pp1p1ppp/8/2P1p3/8/8/PPP1PPPP/8');

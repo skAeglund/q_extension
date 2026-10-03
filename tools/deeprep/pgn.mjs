@@ -9,6 +9,7 @@ function games(n) { return n.toLocaleString('en-US'); }
 
 var TAG = { best: '', safe: 'best lower bound; ', kept: '' };
 
+// pgnclean drops these notes by their wording (repgen/clean.mjs DEEPREP): change it there too.
 export function moveComment(n) {
   if (n.note != null) return n.note;          // written by the caller (deeprep build)
   var parts = [];

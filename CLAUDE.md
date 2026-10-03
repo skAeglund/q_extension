@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 580 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 583 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -255,7 +255,11 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
 - `tools/pgnclean.mjs` reads PGN back (`repgen/pgntree.mjs`, variations and all) and finds
   transpositions by replaying moves with chess.js, never by parsing repgen's comments.
   `repgen/clean.mjs` recognises repgen's comment wording (`N% of N games`, `Prac `,
-  `engine move`, `end: `, …): change `pgn.mjs`'s wording and that list together.
+  `engine move`, `end: `, …): change `pgn.mjs`'s wording and that list together. It knows
+  deeprep's too (`DEEPREP`, matched whole): `deeprep/report.mjs` `moveNote`/`rootNote`,
+  `deeprep/pgn.mjs` `moveComment`, the search's root comment in `deeprep.mjs`, and the
+  share note in `build.mjs` `toTree`. test/deeprep.js cleans real build and search PGNs and
+  expects nothing left but shares and transpositions, so a new note fails there.
 - `tools/cdbexplore.mjs` deepens ChessDB's tree below a PGN's line ends and close decisions
   of mine (`repgen/explore.mjs`, pure: ChessDB, sleep and clock come through deps). The
   search follows vondele/cdbexplore (GPL-3), rewritten, not copied: keep it that way. It

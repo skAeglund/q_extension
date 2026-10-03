@@ -75,6 +75,15 @@ export function flagsOf(n, cfg) {
   return f;
 }
 
+// The PGN's comment before the first move of mine: count is my positions, held the holdout's
+// eval or null. pgnclean drops it (repgen/clean.mjs DEEPREP), as it does moveNote's
+// notes: change the wording there too.
+export function rootNote(count, inSample, held) {
+  var e = held || inSample;
+  return count + ' positions to know; ' + (held ? 'holdout ' : 'in sample ') + (100 * e.s).toFixed(1) +
+    '% (everyone ' + (100 * e.raw).toFixed(1) + '%)';
+}
+
 // The PGN comment on my move.
 export function moveNote(n, kid) {
   var c = pickOf(n);

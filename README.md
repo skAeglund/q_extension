@@ -568,7 +568,8 @@ answers no longer expire, so the searches see the games the repertoire was built
 
 ### Finishing the PGN
 
-Once you're happy with a run, `tools/pgnclean.mjs` turns its PGN into one to keep:
+Once you're happy with a run, `tools/pgnclean.mjs` turns its PGN into one to keep. It
+takes deeprep's PGNs too (`build`'s, and the search's with `--side`):
 
 ```bash
 node tools/pgnclean.mjs sicilian.pgn
@@ -579,7 +580,8 @@ It writes `sicilian.clean.pgn` and never touches the input file.
 - **Comments** keep only the played share: `{9% of 97,950 games}` becomes `{9%}`. Even that
   is kept only on a move that has alternatives, since its purpose is to compare branches.
   A move that is the only reply left, once transposing branches are gone, has no comment.
-  The Prac values, engine moves and line-end notes go. Anything else in a comment, such as a
+  The Prac values, engine moves and line-end notes go, and so do deeprep's scores, limits,
+  alternatives and its summary before the first move. Anything else in a comment, such as a
   note of your own, stays.
 - **Their transposing moves** are removed as branches. The move is noted instead on your
   move it answered, with the line written from where the two move orders part. After
@@ -830,8 +832,9 @@ learning, the alternatives, "transposes to"), `<out>.json` (every number), and
 table and a line to answer with. The flags are: a close call, chosen for learning, traps,
 over the loss limit, under ChessDB's best, few games, and the holdout disagreeing. One more,
 no ChessDB eval, marks a move ChessDB had no eval for, neither for it nor after it. Such a
-move passes the limits, as it does in repgen, so it gets a second look.
-Answer in a decisions file and build again:
+move passes the limits, as it does in repgen, so it gets a second look. `pgnclean` takes
+the PGN down to the moves, the replies' shares and where lines transpose, for keeping (see
+"Finishing the PGN" under repgen). Answer in a decisions file and build again:
 
 ```json
 { "1. d4 c5 2. dxc5 e5 3. e4 Bxc5 4. Nc3 Nf6 5. Bg5": { "play": "Nc6", "why": "skip the Qb6 trap" },
@@ -998,7 +1001,7 @@ test/cdbexplore.js  cdbexplore's tests, run by the harness
 test/explorerdb.js  explorerdb's tests, run by the harness
 test/deeprep.js     deeprep's tests, run by the harness
 tools/repgen.mjs    the repertoire generator (Node; not part of the extension)
-tools/pgnclean.mjs  finishes a repgen PGN: comments and transpositions
+tools/pgnclean.mjs  finishes a repgen or deeprep PGN: comments and transpositions
 tools/cdbexplore.mjs deepens ChessDB's evals below a PGN's line ends and close decisions
 tools/explorerdb.mjs builds a local opening explorer from a Lichess monthly dump
 tools/deeprep.mjs   deep win rates from that explorer: tables, browsing, the repertoire

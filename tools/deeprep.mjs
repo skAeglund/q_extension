@@ -52,7 +52,7 @@ import { createSearch, fitPrior, DEFAULTS } from './deeprep/search.mjs';
 import { toPgn, candidateLines, lineText, dumpsOf } from './deeprep/pgn.mjs';
 import { repertoireFromPgn, evaluateRepertoire } from './deeprep/evaluate.mjs';
 import { createBuilder, repertoireMoves, toTree, positionOf, BUILD_DEFAULTS } from './deeprep/build.mjs';
-import { moveNote, parseDecisions, reviewMarkdown, lineOf } from './deeprep/report.mjs';
+import { moveNote, rootNote, parseDecisions, reviewMarkdown, lineOf } from './deeprep/report.mjs';
 import { createProviders } from '../src/pe/providers.js';
 import { createFileCache } from './repgen/filecache.mjs';
 import { writeSlice } from './deeprep/slice.mjs';
@@ -615,9 +615,7 @@ async function cmdBuild(argv) {
     var headers = { Event: 'deeprep build for ' + side, Annotator: 'deeprep (' + db.meta.source + ')',
       White: b.side === 'w' ? 'Repertoire' : 'Lichess', Black: b.side === 'b' ? 'Repertoire' : 'Lichess' };
     fs.writeFileSync(base + '.pgn', toPgn(tree, { prefix: o.prefix, fen: o.prefix ? null : o.fen, headers: headers,
-      rootComment: mineCount + ' positions to know' + (held ? '; holdout ' + (100 * held.s).toFixed(1) + '% (everyone ' +
-        (100 * held.raw).toFixed(1) + '%)' : '; in sample ' + (100 * inSample.s).toFixed(1) + '% (everyone ' +
-        (100 * inSample.raw).toFixed(1) + '%)') }));
+      rootComment: rootNote(mineCount, inSample, held) }));
     fs.writeFileSync(base + '.review.md', reviewMarkdown({ out: path.basename(base), side: b.side, root: o.fen, prefix: o.prefix,
       index: db.meta.source, filter: db.meta.filter, cfg: cfg, nodes: b.nodes, inSample: inSample, chessdb: !!cdb,
       holdout: hdb ? { name: hdb.meta.source, eval: held } : null, date: new Date().toISOString().slice(0, 10) }));

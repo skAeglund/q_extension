@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 /*
- * pgnclean - finishes a repertoire PGN from repgen for keeping: comments down to the
- * played share, and transposing branches folded into comments (repgen/clean.mjs).
+ * pgnclean - finishes a repertoire PGN from repgen or deeprep for keeping: comments down
+ * to the played share, and transposing branches folded into comments (repgen/clean.mjs).
  *
  *   node tools/pgnclean.mjs sicilian.pgn                   -> sicilian.clean.pgn
  *   node tools/pgnclean.mjs sicilian.pgn --out final.pgn --side white
  *
  * Works on any PGN, including one edited or exported from Qchess: transpositions are
- * found by replaying the moves, not from repgen's comments. The side comes from repgen's
- * headers (White/Black "Repertoire"); --side is needed for any other PGN.
+ * found by replaying the moves, not from the generators' comments. The side comes from
+ * repgen's and deeprep build's headers (White/Black "Repertoire"); --side is needed for
+ * any other PGN, deeprep's search included.
  *
  * A bare input name that isn't in the current directory is looked up in repertoires/, and a
  * bare --out name is written there (repgen/paths.mjs).
