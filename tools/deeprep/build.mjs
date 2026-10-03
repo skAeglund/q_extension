@@ -247,6 +247,33 @@ export function createBuilder(db, o) {
     n.status = 'done';
   }
 
+  /*
+   * A position reached by a second move order gains that path's reach, but what was built
+   * below it kept the first one's: the first real line cut (2026-10-03) ended 3.Nc3 Bxc5
+   * 4.Nf3 Nc6 5.e3 Nf6, reached 3% of the time, as if it were 1.3%. So once the reach is
+   * recomputed, a position of theirs follows the replies its whole reach earns. Reach only
+   * grows here and the picks are a prefix of the replies by games, so this only adds.
+   */
+  function widen(n) {
+    if (n.ply >= cfg.maxPly) return false;
+    var r = replyPicks(n.fen, n.reach, n.oi);
+    var have = n.replies || [];
+    if (r.picks.length <= have.length) return false;
+    for (var i = 0; i < have.length; i++) if (moveKey(have[i].san) !== moveKey(r.picks[i].san)) return false;
+    var covered = 0;
+    n.replies = r.picks.map(function (p, j) {
+      covered += p.share;
+      if (j < have.length) return have[j];
+      var mv = playSan(n.fen, p.san);
+      return { san: mv.san, share: p.share, games: p.games,
+        child: ensure(mv.fen, n.reach * p.share, n.oi + 1, n.ply + 1, n.path.concat(mv.san)).key };
+    });
+    n.other = Math.max(0, 1 - covered);
+    n.status = 'done';
+    delete n.end;
+    return true;
+  }
+
   function themeKey(fen, san) { return pawnKey(fen) + '|' + moveKey(san); }
   function addTheme(n, d) {
     if (!n.move) return;
@@ -442,6 +469,21 @@ export function createBuilder(db, o) {
     }
   }
 
+  // grow(), then widen() with the whole repertoire's reach until nothing more is earned.
+  // Ends with the reach recomputed.
+  async function growAll() {
+    for (;;) {
+      await grow();
+      recomputeReach();
+      var wider = 0;
+      Array.from(nodes.values()).forEach(function (n) {
+        if (n.kind === 'opp' && n.reach > 0 && (n.status === 'done' || (n.status === 'leaf' && n.end === 'rare')) &&
+          widen(n)) wider++;
+      });
+      if (!wider) return;
+    }
+  }
+
   // Reach from the root through the repertoire's edges (Kahn's order, so a transposition
   // sums its parents first). Unreachable nodes get 0.
   function edges(n) {
@@ -511,8 +553,7 @@ export function createBuilder(db, o) {
         settle(n, pick);
         n.was = (n.was || []).concat(was);
         prune();
-        await grow();
-        recomputeReach();
+        await growAll();
         stats.polished++;
         changed++;
         log(n, 'polish');
@@ -523,7 +564,7 @@ export function createBuilder(db, o) {
 
   async function run() {
     ensure(o.root, 1, 0, 0, []);
-    await grow();
+    await growAll();
     for (var p = 0; p < cfg.passes; p++) {
       if (!(await polish())) break;
     }

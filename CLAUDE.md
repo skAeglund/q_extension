@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 579 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 580 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -1014,10 +1014,27 @@ fix changed (5.Bb5 e4, ChessDB's best, over Qc7; after 3.c4 Bxc5 4.Nc3 Nf6 5.e4,
 over Qb6, which led to 6.Nf3 Ng4 at ChessDB 65.8), and 3.Nc3 Bxc5 4.e3 Nc6 (a
 transposition, tied with Nf6 after learning). Below 0.5% reach, learning now costs 2–18
 points a move. That is the price of a position reached that rarely, and equal for
-all-new alternatives, so it decides nothing there. But the 17 positions under 0.5% added
-about 0.0 points in sample, and the 22 at 0.5–1% about 0.2, roughly their price at
-learnCost 1. `--line-min-reach 0.005` would drop the first 17. Note the share options'
-rule (`v > 1` is a percentage): `0.5` there means 50%.
+all-new alternatives, so it decides nothing there. The 17 positions under 0.5% looked
+worthless: each one's deep score over its position's average, times its reach, summed
+to about 0.0. Note the share options' rule (`v > 1` is a percentage): `0.5` there means 50%.
+
+`benoni_accepted_e5_v3` (`--line-min-reach 0.005`, 4 s, all cached): 79 positions, 58.35%
+in sample against v2's 58.61. The estimate above was wrong twice:
+- The limit applies to the next reply's reach (reach × share), so it also ended lines at
+  positions reached 0.5–3%, not only the ones under 0.5%.
+- The cut lost 0.26 points. Most of it was in 3.c4 (that branch went from 58.7 to 55.0),
+  whose cut lines punished White's mistakes: 5.e4 Nc6 6.Nf3 Ng4 (ChessDB 65.8), 5.Bg5 Qb6
+  6.e3 Qxb2. A line's end is scored by everyone's results from there, so losing the
+  refutation costs its whole gain, not the per-card difference that was summed.
+
+v3 also showed a builder bug, now fixed. When a position is reached by a second move
+order, `ensure()` adds that path's reach to it, but whatever was already built below it
+keeps the first path's reach. So lines were cut on partial reach: 3.Nc3 Bxc5 4.Nf3 Nc6
+5.e3 Nf6 is reached 3% of the time but ended as if it were 1.3%. Comparing v3's leaves
+with v2's, 4 of 17 cut positions should have gone on. `growAll()` now
+recomputes the reach after `grow()`, `widen()`s every position of theirs whose replies its
+whole reach earns, and repeats until nothing is added; polishing uses it too. repgen's
+generator has the same pattern (its `ensure()` comment says so) and is unchanged.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

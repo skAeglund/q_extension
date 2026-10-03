@@ -419,6 +419,7 @@ module.exports = async function run(check) {
     b = await build(luckDb, { soundMargin: 3, prior: 0 }, luckCdb);
     near(rootOf(b).cands.find(c => c.san === 'd4').sound, 65, 'prior 0: unshrunk');
     assert.strictEqual(rootOf(b).cands.find(c => c.san === 'e4').out, 'unsound');
+    luckDb.close();
   });
   await check('build: the loss limit, with an eval from the position after a move ChessDB doesn\'t list', async () => {
     let b = await build(trapDb, { soundMargin: 0 }, Object.assign({}, trapCdb, { [PE.fenKey(START)]: [['e4', -200], ['d4', 30]] }));
@@ -484,6 +485,21 @@ module.exports = async function run(check) {
     assert.strictEqual(r.cards, 4);
     near(r.s, 0.5, 'every line scores 50%');
     near(r.ends.out, 0, 'no reply left out');
+  });
+  await check('build: a position reached by two move orders follows the replies its whole reach earns', async () => {
+    // 1.e4 e5 2.Nf3 Nc6 (70%) and 1.e4 Nc6 2.Nf3 e5 (30%) meet; 3.Bb5's replies are a6 40%,
+    // Nf6 30%, d6 30%. The 70% path gets there first: 0.7 x 0.4 is under the 0.29 line
+    // minimum, the whole 1.0 x 0.4 isn't.
+    const twoDb = await mkIdx('two', [
+      ['e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6', 28, 0, 0], ['e4 e5 Nf3 Nc6 Bb5 Nf6 O-O', 21, 0, 0], ['e4 e5 Nf3 Nc6 Bb5 d6 O-O', 21, 0, 0],
+      ['e4 Nc6 Nf3 e5 Bb5 a6 Ba4 Nf6', 12, 0, 0], ['e4 Nc6 Nf3 e5 Bb5 Nf6 O-O', 9, 0, 0], ['e4 Nc6 Nf3 e5 Bb5 d6 O-O', 9, 0, 0]]);
+    const b = await build(twoDb, { lineMinReach: 0.29 }, null);
+    const y = b.nodes.get(String(G.keyOf(fenAfter('e4', 'e5', 'Nf3', 'Nc6', 'Bb5'))));
+    near(y.reach, 1, 'both paths');
+    assert.strictEqual(y.status, 'done');
+    assert.deepStrictEqual(y.replies.map(r => r.san), ['a6', 'Nf6']);
+    assert.strictEqual(b.nodes.get(String(G.keyOf(fenAfter('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6')))).move, 'Ba4');
+    twoDb.close();
   });
   await check('build: decisions pin a move or keep one out', async () => {
     const key = 'd4 Nf6';
