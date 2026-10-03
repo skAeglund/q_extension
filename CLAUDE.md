@@ -1036,6 +1036,12 @@ recomputes the reach after `grow()`, `widen()`s every position of theirs whose r
 whole reach earns, and repeats until nothing is added; polishing uses it too. repgen's
 generator has the same pattern (its `ensure()` comment says so) and is unchanged.
 
+`benoni_accepted_e5_v4`, with the fix and the same settings as v3 (21 s, 17 new ChessDB
+requests): 87 positions, 58.54% in sample, against v2's 98 and 58.61%. So the cut now costs
+0.07 points for 11 positions. Nine positions came back below transpositions, among them
+6.Bg5 Qb6 7.Bxf6 Bxf2+, the refutation of 7.Bxf6 (ChessDB mates). The 3.c4 branch is still
+at 55.0: its refutation lines stay under the limit.
+
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where
 the site already consults `REP_STATE.map`.
