@@ -1,0 +1,14 @@
+{
+  "1. d4 c5 2. dxc5 e5 3. e4 Bxc5 4. Nf3 Nf6 5. Nc3": {
+    "play": "Nc6",
+    "why": "56% by transposing over 58% with a new move: Nc6 (2,613 games, deep 56.7) goes into 3.Nf3 Nc6 4.e4 Bxc5 5.Nc3 Nf6, already in the repertoire. Qb6 (385 games, deep 57.8) was a line of its own, and its 7.Nd5 Nxd5 8.exd5 branch left only Nd4 (ChessDB 29%)."
+  },
+  "1. d4 c5 2. dxc5 e5 3. b4 a5 4. c3 b6 5. cxb6 axb4 6. cxb4": {
+    "play": "Bxb4+",
+    "why": "Tied on score (57.8 vs 57.9). Bxb4+ has 394 games to 176, is ChessDB's best (53.4 vs 51.2) and relies on no blunders (0% vs 28%); after 7.Bd2 Qxb6 it is the position of 6...Qxb6 7.Bd2 Bxb4. Qxb6's edge was Prac, raised by those blunders."
+  },
+  "1. d4 c5 2. dxc5 e5 3. Nf3 Nc6 4. Be3 Nf6 5. Nc3": {
+    "play": "h6",
+    "why": "b6 led by 0.3 on 55 games against h6's 51. ChessDB (44.6 vs 48.2, its best) and Prac (44.5 vs 49.4: White's usual replies leave Black worse after b6) both prefer h6."
+  }
+}

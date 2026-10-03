@@ -99,9 +99,15 @@ export function leafStat(w, d, b, me) {
  */
 export function shrink(v, mu, vr, prior) {
   if (!(prior > 0) || !isFinite(mu)) return v;
-  var n = v.se > 0 && isFinite(v.se) ? vr / (v.se * v.se) : (v.se === 0 ? Infinity : 0);
-  var w = n === Infinity ? 1 : n / (n + prior);
+  var w = shrinkWeight(v.se, vr, prior);
   return { s: mu + w * (v.s - mu), se: v.se, n: v.n };
+}
+
+// The share of its distance from mu a value keeps: its games' worth over that plus the prior.
+export function shrinkWeight(se, vr, prior) {
+  if (!(prior > 0)) return 1;
+  var n = se > 0 && isFinite(se) ? vr / (se * se) : (se === 0 ? Infinity : 0);
+  return n === Infinity ? 1 : n / (n + prior);
 }
 
 // One game's variance for `me`, from a leafStat: SE^2 x games (with its pseudo-games).
@@ -240,7 +246,8 @@ export function createSearch(db, fen, o) {
   /*
    * The position on the board, `left` plies from the horizon: my candidates ranked by
    * score, or their replies, most played first. Each: { san, code, games, share, raw
-   * (the move's own score), s, se, lb, deep (searched, not a leaf) }.
+   * (the move's own score), s, se, lb, deep (searched, not a leaf), w (the share of its
+   * distance from the position's score, `raw` below, that s kept: 1 if not shrunk) }.
    */
   function options(left) {
     var a = lookup();
@@ -252,16 +259,19 @@ export function createSearch(db, fen, o) {
     var list = (my ? mine(a) : a.moves).map(function (m) {
       var san = sanOf(m.code);
       var raw = statOf(m);
-      var v = raw, deep = false;
+      var v = raw, deep = false, w = 1;
       if (m.n >= o.minGames && play(m.code)) {
         v = value(left - 1, m);
         c._undoMove();
         deep = true;
       }
       // As evaluate() counts them: my candidates and their thin replies shrunk.
-      if (my || !deep) v = shrink(v, leaf.s, vr, o.prior);
+      if (my || !deep) {
+        if (isFinite(leaf.s)) w = shrinkWeight(v.se, vr, o.prior);
+        v = shrink(v, leaf.s, vr, o.prior);
+      }
       return { san: san, code: m.code, games: m.n, share: m.n / a.total, raw: raw.s, s: v.s, se: v.se,
-        lb: v.s - o.z * v.se, deep: deep };
+        lb: v.s - o.z * v.se, deep: deep, w: w };
     });
     if (my) list.sort(function (x, y) { return y.s - x.s; });
     return { total: a.total, mine: my, raw: leaf.s, list: list };

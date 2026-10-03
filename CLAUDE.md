@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 578 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 579 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -976,10 +976,37 @@ after them, and the holdout fell to 47.5%. That loophole is repgen's rule too ("
 passes"). On real games it should be rare, so it stays, and the review flags it
 (`no-eval`).
 
-Not checked: any run on the user's index, a real holdout, the default `learnCost` (0.5) on
-real trees, and build's time there. The synthetic build made about 500 lookups a decision,
-and the user's disk does 10–20 k a second. ChessDB at 60 a minute will take about 30 minutes
-for 300 decisions. The skill hasn't been tried by a session yet.
+Not checked: a real holdout. The synthetic build made about 500 lookups a decision.
+
+**First real build, reviewed (2026-10-03).** The user ran `build` on their index (1.d4 c5
+2.dxc5 e5 for Black, `--plies 12 --prior 178`, the prior from their own `fit`) and handed
+over the PGN, JSON and review for a session to review and rebuild. 105 decisions, 42,488
+lookups, 416 ChessDB requests, 8m22s. 99 positions of mine, 59.1% in sample against
+everyone's 52.2%, no holdout. Two flaws came out of the review, both fixed:
+- **The sound value wasn't shrunk.** It was the plain mean over the non-blunder replies,
+  without the candidate's own pull to its position's score that the deep score gets. A
+  thin move's lucky games then put well-known ones out as "unsound": 3.Be3 Qc7 (201 games,
+  raw 59.0, deep 53.3, sound 57.1) put Nf6 (3,201 games, sound 52.6) and Nc6 (4,854) out.
+  `options()` now returns each candidate's weight `w`, and `replyCheck` pulls the sound
+  value to mu by it. From the run's JSON (mu and the per-game variance approximated), the
+  unsound set changes in 18 of 99 positions. By blend it changes the pick in 2, both under
+  1.2% reach.
+- **The learning cost was under half of what its comment said.** 0.5 was meant as about 2
+  points for a wholly new line at any reach, assuming lines shrink with reach. They don't:
+  at 3–22% reach a line was 2–37 positions. So a wholly new line cost 0.24–1.5 points
+  there, 0.9 at the median decision by reach. 5...Qb6 (a new line, deep 57.8 on 385 games)
+  then beat 5...Nc6 (a transposition into 3.Nf3 Nc6 4.e4 Bxc5 5.Nc3 Nf6, 56.7) at 8%
+  reach, the user's own "58 new vs 56 known" case the wrong way round. The default is now
+  1. That doesn't flip that case by itself (the blend gap was 1.05, the cost 1.07 against
+  0.06), so the review pins it.
+
+Decisions (`repertoires/benoni_accepted_e5_deep.decisions.json`): 5...Nc6 there, which also
+drops 8.exd5, where the only move with games, Nd4, was ChessDB 29%; 6...Bxb4+ over 6...Qxb6
+in the 3.b4 line (tied, more games, ChessDB's best, no blunders to rely on, and it
+transposes); 5...h6 over b6 after 3.Nf3 Nc6 4.Be3 Nf6 5.Nc3 (b6's lead was 0.3 on 55 games,
+with ChessDB 44.6 and Prac 44.5). Left to the user: 3.Be3 Qc7 and 4.Bg5 Qc7 (201 and 85 games,
+ChessDB 2.6–2.7 under Nf6), and 3.c3 and 3.g3 (2.0% and 1.7%), which coverage 90 leaves out.
+The rebuild runs on the user's machine.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

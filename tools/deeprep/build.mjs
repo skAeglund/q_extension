@@ -7,7 +7,9 @@
  *      opponent doesn't fall for it. Two checks, from ChessDB: my move at most `maxLoss`
  *      win% points under ChessDB's best (as repgen's), and the sound value, the score
  *      after their replies that aren't blunders, at most `soundMargin` under the best
- *      candidate's;
+ *      candidate's. The sound value is shrunk as the deep score is: unshrunk, a move with a
+ *      few hundred lucky games knocked well-known ones out as "unsound" (the first real
+ *      build, 2026-10-03: 3.Be3 Qc7, 201 games, put Nf6 and Nc6, 3,201 and 4,854, out);
  *   3. a good practical evaluation: ChessDB's eval of my move, and Prac d1 (ChessDB's evals
  *      after each of their replies, weighed by how often people play them, risk-averse),
  *      blended with the deep score by `weights`;
@@ -17,8 +19,12 @@
  *      `reach` of the games a move pays learnCost/100 x (positions it adds) / reach points
  *      of its own score. What a move adds is the new share of its line times the size of
  *      the largest candidate's line (see price()): a move into positions the repertoire
- *      already has adds nothing, a new line adds the whole size. At the default 0.5 that
- *      is about 2 points for a wholly new line at any reach, since lines shrink with it.
+ *      already has adds nothing, a new line adds the whole size. Lines don't shrink in
+ *      proportion to reach: in the first real build (1.d4 c5 2.dxc5 e5, 99 decisions) a
+ *      wholly new line cost 1.5 points per unit of learnCost above 2% reach, 2-2.5 at
+ *      0.5-2%, and 1.75 at the median decision by reach. So the default is 1: about 2
+ *      points, the user's "58 new vs 56 known". (It was 0.5, meant as 2 points, and let
+ *      5...Qb6, a new line, beat 5...Nc6, a transposition, by 1.1 deep points at 8% reach.)
  *      A move the repertoire already plays in a position with the same pawns counts
  *      `theme` less (recurring moves are easier to learn).
  *
@@ -52,7 +58,7 @@ export var BUILD_DEFAULTS = {
   maxLoss: 5,             // ChessDB: my move at most this many win% under its best (0: off)
   blunder: 8,             // a reply giving me this many win% over their best is a blunder
   soundMargin: 3,         // sound value at most this far under the best candidate's (0: off)
-  learnCost: 0.5,         // points of the repertoire's score 100 new positions must earn (0: off)
+  learnCost: 1,           // points of the repertoire's score 100 new positions must earn (0: off)
   theme: 0.5,             // a move played elsewhere with the same pawns costs this much less than a new one
   costCap: 300,           // positions counted per move at most
   passes: 3,              // polish passes
@@ -115,15 +121,18 @@ export function blend(w, parts) {
 /*
  * ChessDB's view of the position after my candidate, `fen` (their move), against the
  * index's replies `rp` (createSearch().candidates() there: their replies with deep scores
- * for me). Returns { prac, sound, trap, refute, refuteValue }:
+ * for me). `pull` ({ mu, w }, optional): the candidate's own shrinkage at my move, from
+ * candidates() there (mu its position's score, w its weight). Returns { prac, sound, trap,
+ * refute, refuteValue }:
  *   prac   Prac d1: the risk-averse mean of ChessDB's eval after each reply played, by games
  *   sound  the frequency-weighted deep score over the replies that aren't blunders (a
- *          blunder gives me more than `blunder` win% over their best reply); with none
- *          played, ChessDB's eval after their best one
+ *          blunder gives me more than `blunder` win% over their best reply), pulled to mu
+ *          as the candidate's deep score is, so the two compare; with none played,
+ *          ChessDB's eval after their best one
  *   trap   the share of the games that are blunders
  * All null when ChessDB doesn't know the position.
  */
-export function replyCheck(cdb, fen, side, rp, cfg) {
+export function replyCheck(cdb, fen, side, rp, cfg, pull) {
   var none = { prac: null, sound: null, trap: null, refute: null, refuteValue: null };
   if (!cdb || cdb.status !== 'ok' || !cdb.moves || !cdb.moves.length) return none;
   var evals = new Map();
@@ -142,9 +151,11 @@ export function replyCheck(cdb, fen, side, rp, cfg) {
     sw += r.games;
     ss += r.games * 100 * r.s;
   });
+  var sound = sw > 0 ? ss / sw : bestMe;
+  if (sw > 0 && pull && isFinite(pull.mu)) sound = pull.mu + pull.w * (sound - pull.mu);
   return {
     prac: items.length ? riskMean(items, cfg.risk) : null,
-    sound: sw > 0 ? ss / sw : bestMe,
+    sound: sound,
     trap: rp.total ? blunders / rp.total : 0,
     refute: bestSan,
     refuteValue: bestMe
@@ -374,7 +385,7 @@ export function createBuilder(db, o) {
     }
     n.cands = picked.map(function (x) {
       var c = { san: x.san, fen: playSan(n.fen, x.san).fen, games: x.games, share: x.share, raw: 100 * x.raw,
-        deep: 100 * x.s, se: 100 * x.se, engine: null, prac: null, sound: null, trap: null };
+        deep: 100 * x.s, se: 100 * x.se, w: x.w, engine: null, prac: null, sound: null, trap: null };
       if (d && d.avoid && d.avoid.some(function (a) { return moveKey(a) === moveKey(x.san); })) c.out = 'avoid';
       return c;
     });
@@ -396,7 +407,7 @@ export function createBuilder(db, o) {
       if (wins.has(moveKey(c.san))) c.engine = wins.get(moveKey(c.san));
       if (c.out) return;
       var rp = createSearch(db, c.fen, Object.assign({}, sopts, { plies: Math.max(1, cfg.plies - 1) })).candidates();
-      var chk = replyCheck(answers[i + 1], c.fen, side, rp, cfg);
+      var chk = replyCheck(answers[i + 1], c.fen, side, rp, cfg, { mu: 100 * op.raw, w: c.w });
       c.prac = chk.prac;
       c.sound = chk.sound;
       c.trap = chk.trap;

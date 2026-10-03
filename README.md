@@ -804,17 +804,19 @@ replies by coverage (`--coverage 90 --coverage-step 10 --single-below 50`, `--mi
   - **Sound value**: the deep score over their replies that aren't blunders (a blunder gives
     you more than `--blunder` 8 win% over their best reply). A move whose sound value is more
     than `--sound-margin` (3) under the best candidate's is out. That is a trap that doesn't
-    leave you decent when they find the right reply.
+    leave you decent when they find the right reply. The sound value is shrunk like the deep
+    score, so a move's few hundred lucky games can't put better-known moves out.
   - **Prac**: ChessDB's evals after their replies, weighed by how often people play them,
     risk-averse. This is the Practical column at depth 1.
 - **Blend**: `--weights 0.1,0.2,0.7` of ChessDB, Prac and deep (win% for you).
-- **Learning cost**: `--learn-cost` (0.5) points of the whole repertoire's score per 100
+- **Learning cost**: `--learn-cost` (1) points of the whole repertoire's score per 100
   positions you'd have to learn. At a move reached in a share `reach` of games, the cost
   is learnCost/100 × (positions the move adds) / reach. A move into positions the repertoire
   already has adds none. A wholly new line adds as many as the largest candidate's line, so
-  a line that runs out early isn't cheap for that reason. At 0.5 a wholly new line pays
-  about 2 points at any reach, since lines shrink with it. A move the repertoire already
-  plays elsewhere with the same pawns counts `--theme` (0.5) less.
+  a line that runs out early isn't cheap for that reason. At 1 a wholly new line pays about
+  2 points at a typical decision (1.5 above 2% reach, more below: lines don't shrink as fast
+  as reach does). A move the repertoire already plays elsewhere with the same pawns counts
+  `--theme` (0.5) less.
 - The move with the best **score** (blend − learning) is played.
 
 Once everything is built, `--passes` (3) polishing passes decide every move again, most

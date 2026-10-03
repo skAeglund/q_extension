@@ -209,7 +209,7 @@ export function reviewMarkdown(ctx) {
   L.push('');
   L.push('Columns: deep is the deep score (shrunk, ±SE); ChessDB the engine\'s win% for my move; Prac the risk-averse mean ' +
     'of ChessDB\'s evals after their replies, by how often they\'re played; sound the deep score over their replies that ' +
-    'aren\'t blunders (more than ' + cfg.blunder + ' win% over their best); new the share of the move\'s line the ' +
+    'aren\'t blunders (more than ' + cfg.blunder + ' win% over their best), shrunk like deep; new the share of the move\'s line the ' +
     'repertoire doesn\'t have yet; score = blend (' + cfg.weights.join('/') + ' of ChessDB/Prac/deep) minus learning. ' +
     'All in win% for ' + side + '.');
   L.push('');

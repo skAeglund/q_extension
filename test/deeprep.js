@@ -405,6 +405,21 @@ module.exports = async function run(check) {
     b = await build(trapDb, { soundMargin: 0 }, trapCdb);
     assert.strictEqual(rootOf(b).move, 'e4');
   });
+  await check('build: the sound value is shrunk like the deep score, so a lucky thin move can\'t make others unsound', async () => {
+    // 1.e4 e5 is 50% on 400 games; 1.d4 d5 65% on 20. Neither has a blunder to fall for.
+    const luckDb = await mkIdx('luck', [['e4 e5', 200, 0, 200], ['d4 d5', 13, 0, 7]]);
+    const luckCdb = { [PE.fenKey(START)]: [['e4', 30], ['d4', 30]], [PE.fenKey(fenAfter('e4'))]: [['e5', 0]],
+      [PE.fenKey(fenAfter('d4'))]: [['d5', 0]] };
+    let b = await build(luckDb, { soundMargin: 3, prior: 200 }, luckCdb);
+    let d4 = rootOf(b).cands.find(c => c.san === 'd4'), e4 = rootOf(b).cands.find(c => c.san === 'e4');
+    near(d4.sound, d4.deep, 'd4: sound pulled as far as its deep score');
+    assert.ok(d4.sound < 55, 'not its 65% of 20 games');
+    assert.strictEqual(e4.out, undefined, 'e4 stays in');
+    // Unshrunk, d4's 65 put e4's 50 out as "unsound".
+    b = await build(luckDb, { soundMargin: 3, prior: 0 }, luckCdb);
+    near(rootOf(b).cands.find(c => c.san === 'd4').sound, 65, 'prior 0: unshrunk');
+    assert.strictEqual(rootOf(b).cands.find(c => c.san === 'e4').out, 'unsound');
+  });
   await check('build: the loss limit, with an eval from the position after a move ChessDB doesn\'t list', async () => {
     let b = await build(trapDb, { soundMargin: 0 }, Object.assign({}, trapCdb, { [PE.fenKey(START)]: [['e4', -200], ['d4', 30]] }));
     assert.strictEqual(rootOf(b).move, 'd4');
