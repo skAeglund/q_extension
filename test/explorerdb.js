@@ -1083,6 +1083,40 @@ module.exports = async function run(check) {
           fs.rmSync(sn.dir, { recursive: true, force: true });
         }
       });
+      await check('drain with maxWaiting takes no more months while that many wait to be added', async () => {
+        // Its own repository, so the ledgers the later checks read are untouched.
+        const bareE = path.join(rel, 'helperE.git');
+        await R.git(['init', '-q', '--bare', '-b', 'main', bareE]);
+        const pushE = path.join(rel, 'pushE');
+        await R.git(['clone', '-q', bareE, pushE]);
+        fs.mkdirSync(path.join(pushE, '2020'), { recursive: true });
+        for (const m of ['2020-11', '2020-12']) {
+          await F.filterDump({ input: dumpFile, out: path.join(pushE, '2020', m), source: m, plies: PLIES,
+            partBytes: 2000, chunkBytes: 800 });
+        }
+        await R.git(['add', '-A'], pushE);
+        await R.git(['commit', '-q', '-m', 'months'], pushE);
+        await R.git(['push', '-q', 'origin', 'HEAD:main'], pushE);
+        const repoE = pathToFileURL(bareE).href;
+        // One month already waits for `all`.
+        const kept = path.join(rel, 'kept3');
+        fs.mkdirSync(path.join(kept, '2019'), { recursive: true });
+        fs.writeFileSync(path.join(kept, '2019', '2019-01.json'), '{}');
+        const elogs = [];
+        const opts = { repos: [repoE], dir: path.join(rel, 'clonesE'), keep: kept, out: rel, once: true, noImport: true,
+          maxWaiting: 2, pollMs: 50, log: s => elogs.push(s) };
+        assert.deepStrictEqual(await R.drain(opts), ['2020-11'], elogs.join('\n'));
+        assert.ok(elogs.some(s => /2 months waiting in .*: holding off until there are fewer than 2/.test(s)), elogs.join('\n'));
+        let sn = await R.snapshot(repoE, path.join(rel, 'checkE'));
+        assert.deepStrictEqual(Object.keys(sn.months), ['2020-12']);
+        fs.rmSync(sn.dir, { recursive: true, force: true });
+        // `all` adds the waiting one and deletes its files: drain goes on.
+        fs.rmSync(path.join(kept, '2019', '2019-01.json'));
+        assert.deepStrictEqual(await R.drain(opts), ['2020-12'], elogs.join('\n'));
+        sn = await R.snapshot(repoE, path.join(rel, 'checkE'));
+        assert.deepStrictEqual(Object.keys(sn.months), []);
+        fs.rmSync(sn.dir, { recursive: true, force: true });
+      });
       await check('a second fill from the other end leaves the first one\'s months to it, also ones it pushes meanwhile', async () => {
         // The first session (helperA/B) has 2020-01..03 and 05 in its LEDGERs; the second
         // has its own repository and goes newest first.

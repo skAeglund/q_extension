@@ -90,6 +90,7 @@ var USAGE = [
   '                          files to its accumulator, so an index per month is spare work',
   '      --until YYYY-MM     stop once every month from 2013-01 to this one is imported',
   '      --once              one pass, then stop',
+  '      --max-waiting N     take no more months while N wait in --keep for `all`',
   '      --poll-min 5        how often to look when there is nothing new',
   '      --workers, --min-games, --plies   as for import (an index per month, <month>.xdb)',
   '  node tools/explorerdb.mjs fill --repos <owner/name,...> [options]       (in the cloud)',
@@ -323,6 +324,7 @@ async function cmdDrain(argv) {
     else if (a === '--out') o.out = path.resolve(argv[++i]);
     else if (a === '--until') o.until = parseMonths('2013-01..' + parseMonths(argv[++i])[0]);
     else if (a === '--once') o.once = true;
+    else if (a === '--max-waiting') o.maxWaiting = num(argv[++i], '--max-waiting');
     else if (a === '--poll-min') o.pollMs = Number(argv[++i]) * 60000;
     else if (a === '--footer') o.footer = argv[++i];
     else if (a === '--workers') o.importOptions.workers = num(argv[++i], '--workers');

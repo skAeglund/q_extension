@@ -522,10 +522,13 @@ export async function drain(o) {
   fs.mkdirSync(o.dir, { recursive: true });
   fs.mkdirSync(o.out, { recursive: true });
   var imported = [];
+  var holding = false;
   for (;;) {
     var worked = false;
     for (var r = 0; r < o.repos.length; r++) {
       var url = o.repos[r], dir = path.join(o.dir, repoName(url));
+      // Checked before the pull too, which already downloads the parts.
+      if (full()) break;
       try {
         await update(url, dir);
       } catch (e) {
@@ -539,6 +542,7 @@ export async function drain(o) {
       for (var i = 0; i < months.length; i++) {
         var month = months[i], year = month.slice(0, 4);
         var index = path.join(o.out, month + '.xdb');
+        if (full()) break;
         try {
           await drainMonth();
         } catch (e) {
@@ -558,6 +562,25 @@ export async function drain(o) {
     }
     if (o.once) return imported;
     if (!worked) await sleep(o.pollMs);
+  }
+
+  // With maxWaiting, whether that many months already wait in `keep` for `all`, which
+  // deletes a month's files once it has added it. Each waiting month is disk taken from
+  // the accumulator, so a longer queue only makes `all` prune sooner.
+  function full() {
+    if (!o.maxWaiting || !o.keep) return false;
+    var n = 0;
+    if (fs.existsSync(o.keep)) {
+      fs.readdirSync(o.keep).forEach(function (y) {
+        if (!/^\d{4}$/.test(y)) return;
+        n += fs.readdirSync(path.join(o.keep, y)).filter(function (f) { return /^\d{4}-\d{2}\.json$/.test(f); }).length;
+      });
+    }
+    var now = n >= o.maxWaiting;
+    if (now && !holding) log(stamp() + ' ' + n + ' months waiting in ' + o.keep + ': holding off until there are fewer than ' + o.maxWaiting);
+    if (!now && holding) log(stamp() + ' ' + n + ' months waiting: going on');
+    holding = now;
+    return now;
   }
 
   // Whether a month is done here: its index, or with noImport its kept manifest.
