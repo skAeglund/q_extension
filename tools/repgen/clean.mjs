@@ -22,7 +22,7 @@ import { fenKey, sideToMove } from '../../src/pe/search.js';
 
 var SEP = '\n\n';
 // repgen's notes, by how they start. A note is the text between ' · '.
-var GENERATED = /^(Prac |engine move|transposes to |not searched yet|end: )/;
+var GENERATED = /^(Prac |engine move|given move|transposes to |not searched yet|end: )/;
 
 // deeprep's, whole: build's moveNote (deeprep/report.mjs) and rootNote, the search's
 // moveComment (deeprep/pgn.mjs) and its root comment (deeprep.mjs). deeprep joins some

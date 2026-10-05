@@ -10,6 +10,11 @@
  * <out>.json (the run's state: run the same command again to resume) and <out>.log.
  * Responses are cached in repgen-cache.jsonl next to <out>, shared by every run.
  *
+ *   node tools/repgen.mjs --moves "1.d4 c5 2.dxc5 Nf6 3.Nf3 (3.Nc3 e6) (3.c3) Na6" --side black
+ *
+ * --moves may have variations: the lines are played as given, and the run starts afresh at
+ * every branch end (repgen/lines.mjs).
+ *
  *   node tools/repgen.mjs --out sicilian --check
  *
  * checks a run against ChessDB's newer evals (repgen/check.mjs) and searches again where
@@ -35,6 +40,7 @@ import { runCheck, apply as applyCheck, outcome as checkOutcome } from './repgen
 import { toPgn, engineLoss, markFor } from './repgen/pgn.mjs';
 import { outPath, REPERTOIRES } from './repgen/paths.mjs';
 import { loadMaia, maiaEloFor, clampElo, MAIA_FILE } from './repgen/maia.mjs';
+import { readMoves, givenOf, sameGiven } from './repgen/lines.mjs';
 
 var STANDARD = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -63,7 +69,9 @@ function usage() {
     'Usage: node tools/repgen.mjs [--fen "<FEN>" | --moves "1.e4 c5"] [--side white|black]',
     '                             [--out <name>] [--hours <n>] [options]',
     '',
-    'Start:     --fen, --moves (from the initial position), --side (default: side to move)',
+    'Start:     --fen, --moves (from the initial position, or --fen), --side (default: side to move)',
+    '           --moves may have variations, as in "1.d4 c5 2.dxc5 Nf6 3.Nf3 (3.Nc3 e6) (3.c3) Na6":',
+    '           only those lines are played up to their ends, and each end is a start',
     'Output:    --out <name> (default "repertoire"), --cache <file>, --fresh, --pgn-only',
     'Check:     --check (ask ChessDB again, search again where it matters), --check-all',
     '           (search every one of my positions again), --dry-run (report only)',
@@ -118,15 +126,14 @@ function pick(args, defaults) {
   return out;
 }
 
+// tree: where the variations of --moves start, for givenOf() once the side is known.
 function startFrom(args) {
   if (args.moves) {
-    var c = new Chess(args.fen && args.fen !== true ? args.fen : STANDARD);
-    var sans = String(args.moves).replace(/\d+\.(\.\.)?/g, ' ').trim().split(/\s+/).filter(Boolean);
-    var played = sans.map(function (s) {
-      try { return c.move(s).san; } catch (e) { throw new Error('Not a legal move in --moves: ' + s); }
-    });
+    var from = args.fen && args.fen !== true ? String(args.fen) : STANDARD;
+    new Chess(from);   // throws on a bad FEN
+    var r = readMoves(args.moves === true ? '' : String(args.moves), from);
     // A prefix is only written into the PGN from the initial position.
-    return { fen: c.fen(), prefix: args.fen ? [] : played, fenGiven: !!args.fen };
+    return { fen: r.fen, prefix: args.fen ? [] : r.prefix, fenGiven: !!args.fen, tree: r.tree };
   }
   var fen = args.fen && args.fen !== true ? String(args.fen) : STANDARD;
   new Chess(fen);   // throws on a bad FEN
@@ -207,9 +214,16 @@ function run(args, local) {
     if (args.side && sideOf(args.side, state.startFen) !== state.side) {
       throw new Error(statePath + ' is a run for the other side. Use --fresh or another --out.');
     }
+    if (args.moves && !sameGiven(givenOf(s.tree, state.side), state.given)) {
+      throw new Error(statePath + ' was started with other lines in --moves. Use --fresh to ' +
+        'start over, or another --out.');
+    }
   } else {
     var st = startFrom(args);
     state = newState(st.fen, sideOf(args.side, st.fen), st.prefix);
+    // The lines given past the prefix, if --moves has variations.
+    var given = st.tree ? givenOf(st.tree, state.side) : {};
+    if (Object.keys(given).length) state.given = given;
     state.filter = local ? { speeds: local.info.filter.speeds.slice(), ratings: local.info.filter.ratings.slice() } : {
       speeds: String(args.speeds || 'blitz,rapid,classical').split(',').filter(Boolean),
       ratings: String(args.ratings || '1600,1800,2000,2200,2500').split(',').filter(Boolean).map(Number)
@@ -460,7 +474,8 @@ function run(args, local) {
   });
 
   log('repgen: ' + (state.side === 'w' ? 'White' : 'Black') + ' from ' + state.startFen +
-    (state.prefix.length ? ' (' + state.prefix.join(' ') + ')' : '') + '; ' +
+    (state.prefix.length ? ' (' + state.prefix.join(' ') + ')' : '') +
+    (state.given ? ', lines given for ' + Object.keys(state.given).length + ' positions' : '') + '; ' +
     (local ? 'local explorer ' + local.info.source + ' at ' + local.address : 'Lichess') + ' ' +
     state.filter.speeds.join(',') + ' / ' + state.filter.ratings.join(',') + '.');
   if (Object.keys(state.config).length || Object.keys(state.search).length) {
@@ -510,10 +525,14 @@ function run(args, local) {
           : ' (engine, ' + n.why + ')') +
           (n.checkPrev && n.checkPrev.move
             ? (n.checkPrev.move === n.move ? ', kept' : ', was ' + n.checkPrev.move) : ''));
+      } else if (ev.type === 'given') {
+        var gl = engineLoss(n);
+        log('Me   ' + lineOf(n) + ': ' + n.move + markFor(gl, state.config) + ' (given' +
+          (n.engine != null ? ', engine ' + n.engine.toFixed(1) : '') + ')');
       } else if (ev.type === 'expanded') {
         log('Opp  ' + lineOf(n) + ': ' + n.replies.map(function (r) {
           return r.san + ' ' + Math.round(r.share * 100) + '%';
-        }).join(', ') + ' of ' + n.games + ' games');
+        }).join(', ') + ' of ' + n.games + ' games' + (n.given ? ' (given)' : ''));
       } else if (ev.type === 'no-eval') {
         log('Wait ' + lineOf(n) + ': ChessDB has no eval yet; asked it to analyse.');
       } else if (ev.type === 'retry') {

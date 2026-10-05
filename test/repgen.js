@@ -1177,4 +1177,95 @@ module.exports = async function run(check) {
     const one = Object.assign({}, plain, { rows: plain.rows.filter(r => r.san === rn.move) });
     assert.ok(!/risk/.test(rreasons(one, G.SEARCH_DEFAULTS)), rreasons(one, G.SEARCH_DEFAULTS));
   });
+
+  console.log('\nrepertoire generator: lines given with --moves');
+  const LN = await load('tools/repgen/lines.mjs');
+  const STD = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  const benoni = '1. d4 c5 2. dxc5 Nf6 3. Nf3 (3. Nc3 e6) (3. c4 Na6) (3. b4 a5) (3. e3 e5) ' +
+    '(3. Bf4 Na6) (3. c3) (3. Bg5 e6) Na6';
+  await check('the moves up to the first variation are the prefix, and the rest is given', () => {
+    const r = LN.readMoves(benoni, STD);
+    assert.deepStrictEqual(r.prefix, ['d4', 'c5', 'dxc5', 'Nf6']);
+    const g = LN.givenOf(r.tree, 'b');
+    // The start, and the seven branches with a move of mine after them; 3.c3 has none.
+    assert.strictEqual(Object.keys(g).length, 8);
+    assert.deepStrictEqual(g[S.fenKey(r.fen)], ['Nf3', 'Nc3', 'c4', 'b4', 'e3', 'Bf4', 'c3', 'Bg5']);
+    const nf3 = r.tree.children.find(c => c.san === 'Nf3');
+    assert.deepStrictEqual(g[S.fenKey(nf3.fen)], ['Na6']);
+    assert.ok(!g[S.fenKey(r.tree.children.find(c => c.san === 'c3').fen)]);
+  });
+  await check('  ...a plain line gives nothing, so it runs as it always did', () => {
+    const r = LN.readMoves('1.e4 c5 2.Nf3', STD);
+    assert.deepStrictEqual(r.prefix, ['e4', 'c5', 'Nf3']);
+    assert.deepStrictEqual(LN.givenOf(r.tree, 'w'), {});
+    assert.ok(LN.sameGiven({}, undefined));
+  });
+  await check('  ...two moves of mine at one position are refused', () => {
+    assert.throws(() => LN.givenOf(LN.readMoves('1. e4 e5 2. Nf3 (2. Bc4)', STD).tree, 'w'),
+      /more than one move of yours after e4 e5: Nf3, Bc4/);
+    // The same tree for Black is fine: those are the opponent's moves.
+    assert.strictEqual(Object.keys(LN.givenOf(LN.readMoves('1. e4 e5 2. Nf3 (2. Bc4)', STD).tree, 'b')).length, 1);
+  });
+  await check('  ...an illegal move says where', () =>
+    assert.throws(() => LN.readMoves('1. e4 e5 2. Ke3', STD), /--moves: Illegal move "Ke3" after e4 e5/));
+  await check('  ...and the same lines in another order are the same run', () => {
+    const a = LN.givenOf(LN.readMoves('1. d4 (1. c4 e5) (1. e4 c5) Nf6', STD).tree, 'b');
+    const b = LN.givenOf(LN.readMoves('1. e4 (1. d4 Nf6) (1. c4 e5) c5', STD).tree, 'b');
+    const c = LN.givenOf(LN.readMoves('1. e4 (1. d4 Nf6) (1. c4 e6) c5', STD).tree, 'b');
+    assert.ok(LN.sameGiven(a, b));
+    assert.ok(!LN.sameGiven(a, c));
+  });
+
+  // Black's repertoire from S: a, b and c are given (c has no games), d isn't; after a my
+  // move x is given (ChessDB prefers y); after b nothing is, so my move is searched.
+  const gw = {
+    'S w - - 0 1': { ex: ex(1000, [['a', 600], ['b', 300], ['d', 100]]),
+      next: { a: 'A b - - 0 1', b: 'B b - - 0 1', c: 'C b - - 0 1', d: 'D b - - 0 1' } },
+    'A b - - 0 1': { ex: ex(600, [['x', 300], ['y', 300]]), cdb: cdb([['y', 20], ['x', -150]]),
+      next: { x: 'AX w - - 0 2' } },
+    'AX w - - 0 2': { ex: ex(300, [['p', 240], ['q', 60]]), next: { p: 'AXP b - - 0 2', q: 'AXQ b - - 0 2' } },
+    'B b - - 0 1': { ex: ex(300, [['m', 200], ['n', 100]]), cdb: cdb([['m', 10], ['n', 0]]),
+      next: { m: 'BM w - - 0 2' }, root: { m: val(55, 3), n: val(50, 3) } }
+  };
+  const gs = G.newState('S w - - 0 1', 'b');
+  gs.given = { 'S w - -': ['c', 'b', 'a'], 'A b - -': ['x'] };
+  const gd = deps(gw);
+  await drain(pracGen({ state: gs, deps: gd, now: () => 0 }), { t: 0 });
+  await check('given replies are followed, most played first, and no others', () => {
+    const r = gs.nodes['S w - -'].replies;
+    assert.deepStrictEqual(r.map(x => [x.san, x.share, x.given]), [['a', 0.6, true], ['b', 0.3, true], ['c', 0, true]]);
+    assert.ok(!gs.nodes['D b - -']);
+  });
+  await check('a given move of mine is played without a search', () => {
+    const n = gs.nodes['A b - -'];
+    assert.strictEqual(n.pickedBy, 'given');
+    assert.strictEqual(n.move, 'x');
+    assert.strictEqual(n.bestMove, 'y');
+    assert.ok(n.engine < n.bestEngine);
+    assert.ok(!gd.log.roots.some(x => x.fen === 'A b - - 0 1'));
+    assert.strictEqual(gs.searches, 1);
+  });
+  await check('a branch end is a starting point: reach 1, ply 0, first coverage, deep search', () => {
+    const ax = gs.nodes['AX w - -'];
+    assert.deepStrictEqual([ax.reach, ax.ply, ax.oi], [1, 0, 0]);
+    // 20% of 300 games at reach 1: followed at the first decision's coverage.
+    assert.deepStrictEqual(ax.replies.map(x => x.san), ['p', 'q']);
+    assert.strictEqual(gs.nodes['AXQ b - -'].reach, 0.2);
+    const b = gs.nodes['B b - -'];
+    assert.deepStrictEqual([b.reach, b.ply, b.move], [1, 0, 'm']);
+    assert.strictEqual(gd.log.roots.find(x => x.fen === 'B b - - 0 1').opts.maxPly, G.REPGEN_DEFAULTS.deepMaxPly);
+    assert.deepStrictEqual(gs.nodes['C b - -'].path, ['c']);
+  });
+  const gpgn = PG.toPgn(gs).split('\n\n')[1].replace(/\n/g, ' ');
+  await check('the PGN says a given move was given, and marks it against ChessDB\'s best', () => {
+    assert.ok(/1\.\.\. x\?\? \{given move, engine \d+\.\d \(best y \d+\.\d\)/.test(gpgn), gpgn);
+    assert.ok(gpgn.includes('(1. c {0% of 1,000 games'), gpgn);
+  });
+  await check('  ...and pgnclean takes that note out', () =>
+    assert.strictEqual(CL.cleanComment('given move, engine 30.1 (best y 52.0) · end: few games (5)'), null));
+  await check('a check leaves given moves alone', () => {
+    const a = CK.assess(gs.nodes['A b - -'], gw['A b - - 0 1'].ex, cdb([['x', 40], ['y', 20]]), D, G.SEARCH_DEFAULTS, true);
+    assert.strictEqual(a.action, null);
+    assert.strictEqual(a.engine.bestMove, 'x');
+  });
 };

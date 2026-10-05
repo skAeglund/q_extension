@@ -321,6 +321,24 @@ The Lichess explorer needs a token. Create one at
 scopes. Put it in `LICHESS_TOKEN`, or in a file passed as `--token-file`. The token is never
 written anywhere.
 
+`--moves` can also give a tree of lines, with variations in parentheses:
+
+```bash
+node tools/repgen.mjs --side black --out benoni_nf6 \
+  --moves "1. d4 c5 2. dxc5 Nf6 3. Nf3 (3. Nc3 e6) (3. c4 Na6) (3. b4 a5) (3. e3 e5) (3. Bf4 Na6) (3. c3) (3. Bg5 e6) Na6"
+```
+
+The moves before the first variation are where the run starts, as with a single line. From
+there the lines are played as written. After 2...Nf6, only White's eight given third moves
+are followed, and no others, however often they're played. Your moves in the lines (3...Na6,
+3...e6, …) are played as given, not searched. The PGN says `given move`, and they're marked
+like any move of yours if ChessDB rates them lower. Each end of a line is a fresh start, as if
+the run began there: reach 100%, full coverage at the next opponent decision, and a deep
+search for your next move. So `(3. c3)`, which ends on your move, gets that move searched as
+usual. Opponent moves can branch; your own can't (two moves of yours at one position is an
+error). A run keeps its lines: resuming with different ones is refused (`--fresh` or another
+`--out`).
+
 The games are Lichess blitz, rapid and classical games in the 1800, 2000 and 2200 rating
 groups (`--speeds`, `--ratings`). A run keeps the filter it started with.
 
