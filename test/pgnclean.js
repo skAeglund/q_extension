@@ -84,6 +84,20 @@ module.exports = async function run(check) {
     assert.strictEqual(C.cleanComment('Plan: queenside\n\nThen b4'), 'Plan: queenside\n\nThen b4');
   });
 
+  await check("deeprep's notes go too, and your words in them stay", () => {
+    assert.strictEqual(C.cleanComment('87 positions to know; in sample 58.5% (everyone 52.2%);\nreplies not covered 9%'), null);
+    assert.strictEqual(C.cleanComment('score 55.3: deep 57.7, ChessDB 50.0, Prac 50.4 · 38,798 games, raw 52.7 · sound ' +
+      '57.6, blunders 13% · learning -0.2 (13% new) · over Nf6 56.1, learning -1.4 · also Nf6 53.1, Qb6\n49.3 · Nc6 over ' +
+      'the loss limit, f5 unsound · every move over a limit: the safest · ChessDB best Nf6 52.1 · pinned · replies not ' +
+      'covered 12% · end: no reply likely enough'), null);
+    assert.strictEqual(C.cleanComment('22% of 51,253 games, deep 61.2% ±0.7; replies not covered 4%'), '22%');
+    assert.strictEqual(C.cleanComment('best lower bound; deep 66.1% ±1.4, raw 58.9%, 313 games; also O-O 58.1% ±1.6 ' +
+      '(590), d6 53.9% ±2.2 (376)'), null);
+    assert.strictEqual(C.cleanComment('score 52.3: deep 54.5, Prac 55.2 · Qb6 is a trap; avoid it · sound 55.7'),
+      'Qb6 is a trap; avoid it');
+    assert.strictEqual(C.cleanComment('deep 64.1% ±2.9, raw 52.7%, 38,798 games; my plan: f5'), 'my plan: f5');
+  });
+
   console.log('\npgnclean: transpositions');
   const [g] = T.parsePgn(QGA);
   const r = C.cleanGame(g, C.sideOfHeaders(g.headers));

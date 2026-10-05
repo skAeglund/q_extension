@@ -209,7 +209,7 @@ export function createReplayer() {
  * stands beside the pawn that moved, even if that pawn is pinned, so it is taken out
  * here. Called after a double step, which is rare enough not to cost anything.
  */
-function legalEp(c) {
+export function legalEp(c) {
   var ps = c._moves({ legal: true, piece: 'p' });
   for (var i = 0; i < ps.length; i++) if (ps[i].flags & 8) return;   // BITS.EP_CAPTURE
   c._hash ^= c._epKey();

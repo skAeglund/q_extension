@@ -569,7 +569,8 @@ answers no longer expire, so the searches see the games the repertoire was built
 
 ### Finishing the PGN
 
-Once you're happy with a run, `tools/pgnclean.mjs` turns its PGN into one to keep:
+Once you're happy with a run, `tools/pgnclean.mjs` turns its PGN into one to keep. It
+takes deeprep's PGNs too (`build`'s, and the search's with `--side`):
 
 ```bash
 node tools/pgnclean.mjs sicilian.pgn
@@ -580,7 +581,8 @@ It writes `sicilian.clean.pgn` and never touches the input file.
 - **Comments** keep only the played share: `{9% of 97,950 games}` becomes `{9%}`. Even that
   is kept only on a move that has alternatives, since its purpose is to compare branches.
   A move that is the only reply left, once transposing branches are gone, has no comment.
-  The Prac values, engine moves and line-end notes go. Anything else in a comment, such as a
+  The Prac values, engine moves and line-end notes go, and so do deeprep's scores, limits,
+  alternatives and its summary before the first move. Anything else in a comment, such as a
   note of your own, stays.
 - **Their transposing moves** are removed as branches. The move is noted instead on your
   move it answered, with the line written from where the two move orders part. After
@@ -814,6 +816,153 @@ By hand: `add <dump> --into <name>`, `prune <name> --min-games N`, `finish <name
 <name>] [--min-games 10]`, `info <name>`. `merge a b c --out abc` joins finished indexes, but
 each has already dropped its own rare positions: the store is the way to add months up.
 
+### Deep win rates (deeprep)
+
+`tools/deeprep.mjs` scores moves by what the games went on to do, from your explorerdb index
+(no network, except ChessDB in `build`). From a position, each of your moves gets a **deep
+score**: the score (wins + half the draws, for your side) when you keep choosing your best
+scoring move and the opponent plays as people do, down to `--plies` (16) from the position. A
+line stops early where fewer than `--min-games` (50) games go on; there its own games' score
+counts.
+
+```bash
+node tools/deeprep.mjs bench lichess                     # how fast lookups are on this disk
+node tools/deeprep.mjs fit lichess                       # how much to trust a lead on few games
+node tools/deeprep.mjs moves lichess --moves "1.d4 c5 2.dxc5"
+node tools/deeprep.mjs browse lichess --moves "1.d4 c5 2.dxc5" --side black
+node tools/deeprep.mjs build lichess --moves "1.d4 c5 2.dxc5 e5" --side black --out e5 --holdout lichess_holdout
+node tools/deeprep.mjs eval lichess_holdout e5           # what a repertoire PGN scores (any PGN)
+node tools/deeprep.mjs search lichess --moves "1.d4 c5 2.dxc5" --side black --out dxc5_deep
+node tools/deeprep.mjs slice lichess --moves "1.d4 c5 2.dxc5 e5" --out e5_slice
+```
+
+**Two corrections** (since 2026-10-02) make the deep scores honest:
+
+- **Shrinkage** (`--prior`, 200 games). Taking the best of several noisy scores picks luck as
+  well as good moves, at every one of your moves on the way down. In the first real run, the
+  chosen moves' deep scores stood 6 points above their raw ones, weighted by reach. Each of
+  your candidates' values is now pulled towards the position's own score by `--prior` games'
+  worth: a move with 8,000 games keeps its value, one with 60 keeps about a quarter of its
+  lead. `fit` measures how far good moves really differ in your index, and prints the
+  prior that goes with it. On a synthetic index of coin flips, where every move's raw score
+  was about 50%, the start position's deep score fell from 56.3% to 51.6%.
+- **Risk aversion** (`--risk`, 0.05 per win% point) at the opponent's moves, as the Practical
+  column and repgen do: a position whose common reply is sound and whose tail is blunders
+  is worth less than its mean.
+
+`--prior 0 --risk 0` gives the old numbers. Even shrunk, the deep score of the best move is
+biased upwards. The SE doesn't include that, so compare raw score with deep score, and many
+games with few.
+
+- `moves` prints one position's table: deep score, its standard error (SE), a lower bound
+  (deep − `--z` × SE), the move's raw score, and its games.
+- `browse` shows the same table position by position. Type a move or its number to go on,
+  `b` to go back. This is the mode for choosing your moves yourself.
+- `search` writes `repertoires/<out>.pgn` and `.json`. At each of your moves it plays the best
+  deep score, and keeps the move with the best lower bound beside it as a variation. Replies
+  follow `--reply-share`/`--min-reach`, or `--coverage` as repgen does. `build` is the
+  repertoire maker now. `search` stays for a quick look at the whole tree.
+
+#### Building a repertoire (build)
+
+`build` chooses moves by four criteria:
+
+1. A high score in the resulting middlegames: the deep score (shrunk).
+2. No reliance on traps: the position stays decent when the opponent doesn't fall for one.
+3. A good practical evaluation.
+4. Few great lines over many best ones. 56% by transposing into a known position beats 58%
+   with a new move, and recurring moves help.
+
+The plan is repgen's. It works most likely line first, decides your move, and follows their
+replies by coverage (`--coverage 90 --coverage-step 10 --single-below 50`, `--min-reach`,
+`--line-min-reach`), and a transposition is one node. At each of your moves:
+
+- **Candidates**: your `--consider` (4) best moves by deep score (`--plies` 12 ahead, from
+  that move), plus the most played.
+- **ChessDB** (cached in `repertoires/repgen-cache.jsonl`, shared with repgen, at
+  `--chessdb-rate` 60 a minute):
+  - A move more than `--max-loss` (5) win% under ChessDB's best is out. A move ChessDB lists
+    no eval for is valued from the position after it.
+  - **Sound value**: the deep score over their replies that aren't blunders (a blunder gives
+    you more than `--blunder` 8 win% over their best reply). A move whose sound value is more
+    than `--sound-margin` (3) under the best candidate's is out. That is a trap that doesn't
+    leave you decent when they find the right reply. The sound value is shrunk like the deep
+    score, so a move's few hundred lucky games can't put better-known moves out.
+  - **Prac**: ChessDB's evals after their replies, weighed by how often people play them,
+    risk-averse. This is the Practical column at depth 1.
+- **Blend**: `--weights 0.1,0.2,0.7` of ChessDB, Prac and deep (win% for you).
+- **Learning cost**: `--learn-cost` (1) points of the whole repertoire's score per 100
+  positions you'd have to learn. At a move reached in a share `reach` of games, the cost
+  is learnCost/100 × (positions the move adds) / reach. A move into positions the repertoire
+  already has adds none. A wholly new line adds as many as the largest candidate's line, so
+  a line that runs out early isn't cheap for that reason. At 1 a wholly new line pays about
+  2 points at a typical decision (1.5 above 2% reach, more below: lines don't shrink as fast
+  as reach does). A move the repertoire already plays elsewhere with the same pawns counts
+  `--theme` (0.5) less.
+- The move with the best **score** (blend − learning) is played.
+
+Once everything is built, `--passes` (3) polishing passes decide every move again, most
+reached first, with the whole repertoire known. An early move could only guess what the
+rest would share. A move changes only for `--switch-margin` (0.25) points. `--no-chessdb`
+leaves out the loss limit, the sound value and Prac, so the deep score decides alone.
+
+It writes `repertoires/<out>.pgn` (comments: score, deep, ChessDB, Prac, sound, games,
+learning, the alternatives, "transposes to"), `<out>.json` (every number), and
+`<out>.review.md`: the decisions worth a second look, most reached first, each with its
+table and a line to answer with. The flags are: a close call, chosen for learning, traps,
+over the loss limit, under ChessDB's best, few games, and the holdout disagreeing. One more,
+no ChessDB eval, marks a move ChessDB had no eval for, neither for it nor after it. Such a
+move passes the limits, as it does in repgen, so it gets a second look. `pgnclean` takes
+the PGN down to the moves, the replies' shares and where lines transpose, for keeping (see
+"Finishing the PGN" under repgen). Answer in a decisions file and build again:
+
+```json
+{ "1. d4 c5 2. dxc5 e5 3. e4 Bxc5 4. Nc3 Nf6 5. Bg5": { "play": "Nc6", "why": "skip the Qb6 trap" },
+  "1. d4 c5 2. dxc5 e5 3. Nf3": { "avoid": ["Nf6"] } }
+```
+
+`--decisions repertoires/e5.decisions.json` plays `play` whatever it scores (it needs
+`--min-games` games there) and never plays `avoid`. A Claude session can do this review
+for you. The repo has a skill for it (`.claude/skills/repertoire-review`), which runs
+build, reads the review, looks closer with `moves`, writes the decisions with reasons,
+builds again and compares on the holdout.
+
+#### Scoring a repertoire (eval) and the holdout
+
+`eval <index> <pgn>` plays any repertoire PGN (build's, search's, repgen's, or your own) as
+a fixed policy against the index's games. Your move is the PGN's. Their replies count by how
+often they're played, and a reply that transposes into the repertoire goes on there.
+Everything else ends at its own games' score. It prints:
+
+- the expected score against everyone's from the same position;
+- how many positions you have to know;
+- how often games leave the book, and on which unprepared replies;
+- the weak spots: moves whose own games score under another move's there.
+
+On the index a repertoire was chosen with, that score shares the choices' luck. The
+answer is a **holdout**: an index of other months (`explorerdb import` of dumps the main
+index doesn't have). There, nothing was chosen, so the score is unbiased. `build --holdout
+<index>` reports it, and adds each candidate's holdout games to the review. Both commands
+warn when the two indexes share dumps.
+
+On a synthetic pair (two indexes of 60,000 games from the same random process), the
+repertoire made by the old search scored 56.7% in sample and 52.8% on the holdout. With the
+corrections, the new search scored 54.9% on the holdout, and `build` 55.2% (everyone:
+48.2%). Lowering `--min-games` from 30 to 10 raised the in-sample score to 59.9% and lowered
+the holdout's to 54.6%. That is the overfitting `eval` is for. None of this has run on real
+games yet.
+
+#### Slices for a Claude session in the cloud
+
+`slice <index> --moves "..." --out <name>` writes `explorer/<name>.xdb`, the part of the index
+under that position: every position a search from there can reach in `--plies` (42, a
+build's 30 plies plus its 12 ahead) through moves with `--min-games` (50) games, with all
+their records. On those terms it answers exactly as the whole index does, and it is a few
+MB, small enough to upload to a session that doesn't have your 12 GB.
+
+The first run on an index reads it once from end to end (minutes for 150 GB) and saves
+`<index>.xdb.fence` beside it, so a lookup is one read of 22.5 kB.
+
 ## How it works
 
 Qchess is a vanilla-JS app with no build step, and it keeps its analysis state in
@@ -930,17 +1079,25 @@ test/repgen.js      the repertoire generator's tests, run by the harness
 test/pgnclean.js    pgnclean's tests, run by the harness
 test/cdbexplore.js  cdbexplore's tests, run by the harness
 test/explorerdb.js  explorerdb's tests, run by the harness
+test/deeprep.js     deeprep's tests, run by the harness
 tools/repgen.mjs    the repertoire generator (Node; not part of the extension)
-tools/pgnclean.mjs  finishes a repgen PGN: comments and transpositions
+tools/pgnclean.mjs  finishes a repgen or deeprep PGN: comments and transpositions
 tools/cdbexplore.mjs deepens ChessDB's evals below a PGN's line ends and close decisions
 tools/explorerdb.mjs builds a local opening explorer from a Lichess monthly dump
+tools/deeprep.mjs   deep win rates from that explorer: tables, browsing, the repertoire
+                    builder, evaluation on a holdout, slices
+tools/deeprep/      its search (search.mjs), the builder (build.mjs), its review and
+                    decisions (report.mjs), evaluation (evaluate.mjs), slices (slice.mjs)
+                    and PGN/table output (pgn.mjs)
+.claude/skills/     repertoire-review: how a Claude session reviews a build
 tools/repgen/       their plan, PGN reader/writers, file cache, root search adapter,
                     ChessDB exploration (explore.mjs) and Maia 3 (maia.mjs)
 tools/explorerdb/   the dump reader and fast replay (games.mjs), shard counting and the
                     index file (store.mjs), the importer and its worker threads, the
                     streaming merge of records and of whole indexes (merge.mjs), the
                     many-month store (acc.mjs), the whole-archive driver (all.mjs), the
-                    filter that shrinks a dump for download (filter.mjs) and the relay
-                    that carries filtered months home through GitHub (relay.mjs)
+                    filter that shrinks a dump for download (filter.mjs), the relay
+                    that carries filtered months home through GitHub (relay.mjs) and
+                    the one-read lookup (fence.mjs)
 tools/package.json  onnxruntime-node, for repgen --maia only
 ```

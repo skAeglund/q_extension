@@ -736,6 +736,7 @@ const optText = o => o.children.map(c => c.textContent).join(' | ');
   await require('./pgnclean.js')(check);
   await require('./cdbexplore.js')(check);
   await require('./explorerdb.js')(check);
+  await require('./deeprep.js')(check);
 
   /* --- practical eval: the column --------------------------------------- */
   console.log('\npractical eval: column');

@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 581 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 617 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -29,6 +29,9 @@ node test/harness.js          # 581 checks: main-world.js on a stubbed DOM, plus
                               # and test/explorerdb.js (dump filter, fast replay, import,
                               # merge, the accumulator and the all driver, filtered
                               # parts, the relay, the server and providers.js's local path)
+                              # and test/deeprep.js (fenced lookups, the deep score
+                              # against a plain recursive version, shrinkage, risk, fit,
+                              # eval, build with a fake ChessDB, slices, the tree and PGN)
 node --check src/main-world.js
 python icons/make_icons.py    # regenerate PNGs (stdlib only, no Pillow)
 ```
@@ -222,8 +225,8 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
 - When you change `src/main-world.js`, update `test/harness.js` in the same pass. The stub DOM
   is minimal — if new code needs a DOM API the stub lacks, add it to the stub rather than
   weakening the test.
-- `test/`, `tools/`, `repertoires/`, `explorer/` and `icons/make_icons.py` are excluded when packaging
-  for distribution; everything else ships.
+- `test/`, `tools/`, `repertoires/`, `explorer/`, `.claude/` and `icons/make_icons.py` are excluded
+  when packaging for distribution; everything else ships.
 - `repertoires/` holds the repertoire tools' runs, their shared `repgen-cache.jsonl` and
   cleaned PGNs. Bare names go there (`tools/repgen/paths.mjs`): repgen's and pgnclean's
   `--out`, and input files that aren't in the current directory. A name with a directory is
@@ -252,7 +255,11 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
 - `tools/pgnclean.mjs` reads PGN back (`repgen/pgntree.mjs`, variations and all) and finds
   transpositions by replaying moves with chess.js, never by parsing repgen's comments.
   `repgen/clean.mjs` recognises repgen's comment wording (`N% of N games`, `Prac `,
-  `engine move`, `end: `, …): change `pgn.mjs`'s wording and that list together.
+  `engine move`, `end: `, …): change `pgn.mjs`'s wording and that list together. It knows
+  deeprep's too (`DEEPREP`, matched whole): `deeprep/report.mjs` `moveNote`/`rootNote`,
+  `deeprep/pgn.mjs` `moveComment`, the search's root comment in `deeprep.mjs`, and the
+  share note in `build.mjs` `toTree`. test/deeprep.js cleans real build and search PGNs and
+  expects nothing left but shares and transpositions, so a new note fails there.
 - `tools/cdbexplore.mjs` deepens ChessDB's tree below a PGN's line ends and close decisions
   of mine (`repgen/explore.mjs`, pure: ChessDB, sleep and clock come through deps). The
   search follows vondele/cdbexplore (GPL-3), rewritten, not copied: keep it that way. It
@@ -283,6 +290,23 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
   index keeps games the ply limit cut off (`CUT`) apart from ended ones (`ENDED`). The answer's
   totals leave the cut games out, because the search reads moves as shares of the total and
   those games' next moves are unknown. Index format 2; format 1 files must be re-imported.
+- `tools/deeprep.mjs` scores moves from the local index alone (`deeprep/search.mjs`): an
+  expectimax over games, mine the max by score, theirs the games-weighted mean, leaves the
+  results of the games through a position. It walks one chess.js board with
+  `_makeMove`/`_undoMove` and the incremental hash (with `legalEp`, exported from games.mjs
+  for this), memoised by (hash, plies left); test/deeprep.js checks it against a plain
+  recursive version with `move()` and FEN keys. Its lookups go through
+  `explorerdb/fence.mjs`: the first hash of every 1,024 records in memory, saved as
+  `<index>.fence`, so a lookup is one block read instead of ~32 small ones.
+- `deeprep build` (`deeprep/build.mjs`, pure: the index and ChessDB come in) is repgen's plan
+  (reach order, `pickReplies`, one node per position) with deeprep's deep scores. Each of the
+  user's four criteria has its own part: the shrunk deep score, the loss limit and the sound
+  value, the ChessDB/Prac/deep blend, and the learning cost. Keep them separate: the review
+  explains a decision by them, and a decisions file answers in their terms. The learning cost
+  multiplies a move's *new share* by the largest candidate's line size, never its own count of
+  new positions. Counting those would reward moves into positions too thin to go on.
+  `deeprep/evaluate.mjs` takes no maximum anywhere, which is what makes it unbiased on a
+  holdout. Don't add choices to it.
 - `explorerdb.mjs all` (`explorerdb/all.mjs`) runs the whole archive into an accumulator
   (`explorerdb/acc.mjs`, `explorer/<name>.acc/`): every month at N >= 1, added shard by
   shard in the import's own workers (`importDump`'s `intoShard`), so a month's full count is
@@ -993,6 +1017,155 @@ explorer served, how to make the column faster. ChessDB is now what a search wai
 `limiterReady`, so a restarted worker has read the address). repgen is unchanged: its
 ChessDB pace is its own (`--rate`), and a run searches the way it was made. Harness only;
 the speed-up is not measured live.
+
+**Deep win rates (`tools/deeprep.mjs`, 2026-10-02).** Requested: from a position, the
+continuations with the best win rate deep in the line, covering the common replies less
+each ply, from the local explorer index (600 M+ games). Decided with the user: score is
+W + D/2. There's no shrinkage, because the user wants a 70% move on 60 games kept beside a
+56% one on 8,000, not merged away. So the tree keeps the best lower bound as well as the
+best score, and `--min-games` (50) ends lines. ChessDB is to come as an option, both as a veto
+and as a blend, on the output's positions only, not inside the search. Checked here on synthetic indexes only: the
+fenced reader equals `openIndex` at every block size, and the search equals the plain version.
+On 30,000 random games (coin-flip results, 62 k records) `moves` ran at 20–35 k lookups/s,
+and the fenced lookup took 3.8 µs against 14 µs for the plain binary search, all from cache.
+The same run showed the selection bias. Every first move's raw score was 47–51%, yet the
+deep scores were 51–62%, and the lower bounds (z = 1) were up to 58%, because the SE doesn't
+include the max's bias. A holdout check (a month not in the index) is the planned answer.
+First run on the user's index on 2026-10-02 (`lichess.xdb`, N ≥ 10, 536 M records, 11.8 GB,
+806 M games; Windows 11, Samsung PM981 NVMe). Fences built in 6 s (4.2 MB file); a lookup took
+11–14 µs fenced against 232–276 µs plain, though the index was freshly written and may have
+been in the OS cache. A search runs at 10–20 k lookups/s, so about 85% of its time is outside
+the reads (not profiled). After 1.d4 c5 2.dxc5 (Black) it took 13 s; after 1.e4 c5 (White)
+3.77 M lookups, 321 s and 1.1 GB. The gap between deep and raw score is largest on the most
+played moves: +14 for 2...e6 (519,917 games), +15 to +19 for White's main moves after 1.e4
+c5, where every reasonable move scored 60–70% deep against at most 52% raw. `--plies 24`
+instead of 16 changed 2...e6 by +0.3: the 50-game minimum ends almost every line first.
+
+`--coverage` (2026-10-02, requested after that run): the PGN can prepare for replies as
+repgen does (`--coverage`, `--coverage-step`, `--single-below`, the same rule as
+`pickReplies` in `generator.mjs`), instead of every reply above `--reply-share` on lines
+above `--min-reach`. Off by default. Only `tree()` changes; the deep scores don't. On the
+user's index, 1.d4 c5 2.dxc5 e5 for Black at `--plies 28 --coverage 90`: 2 s, 219 lines,
+91% of White's third moves covered, the deepest line ending at ply 22, where the 50-game
+minimum ended it. The same day's runs showed the PGN writer putting two comments in a row
+at a root where the opponent moves (`{deep …} {replies not covered …}`), which chess.js's
+`loadPgn` refuses; they are one comment now.
+
+**Honest deep scores, the repertoire builder and the holdout (2026-10-02).** The user's
+verdict on the first deeprep run (1.d4 c5 2.dxc5 e5 for Black, 16 plies, min 75,
+`--coverage 90`): useful, but not reliable on its own. That run's tree showed why. The chosen
+moves' deep scores stood 6.2 points over their raw ones, weighted by reach. 235 of 466 chosen
+moves had under 300 games. In 19 positions after a move of mine, a reply played over 10% of
+the time left me more than 8 points under the position's value. One example is 5.Bg5 Qb6, at
+66.9% only because 7.Bxf6?? Bxf2+ 8.Ke2 Qe3# props it up, while the 46% who play 7.Qd2 hold
+it to 52%. The user then gave four criteria for a repertoire: a high score in the resulting
+middlegames, no reliance on traps (traps are fine if the position stays decent), a good
+practical evaluation, and few great lines over many best ones ("56% by transposing into a
+known position over 58% with a new move"; recurring moves help, but count for less). They
+also floated scripts that gather data and a Claude session that decides. Built:
+- `search.mjs`: shrinkage (`prior`, empirical Bayes towards the position's own score) and
+  `risk` (riskMean). The earlier "no shrinkage" decision was about keeping a thin 70% move
+  *visible* beside a solid 56% one. Display still does that (raw and SE beside the deep
+  score), but choosing now shrinks. `fit` estimates the prior (DerSimonian-Laird over random
+  walks).
+  - From the uploaded run's alternatives, τ is about 3.2 points among top candidates,
+    which gives a prior of about 220. Hence the default of 200.
+  - On a coin-flip index, the start position's deep score went from 56.3% to 51.6% at prior
+    200.
+- `eval`: any repertoire PGN as a fixed policy, against a holdout index of other months.
+  Which months an index holds comes from `dumpsOf()` (`deeprep/pgn.mjs`): an accumulator's
+  `report.dumps`, or an `explorerdb merge`'s `merged` list, whose `source` is only a summary.
+  The merged list was added when deeprep was merged with the relay line (2026-10-05); before
+  that, a merged holdout always looked unbiased.
+- `build`: the four criteria (see the conventions above), a review in Markdown, a decisions
+  file, and `.claude/skills/repertoire-review` for the Claude session.
+- `slice`: the part of the 11.8 GB index under one line, a few MB, for cloud sessions.
+
+Checked here: the harness, and synthetic indexes under 1.d4 c5 2.dxc5 e5. Those are
+60,000 random games each, whose results lean by a hash of the move sequence, so moves do
+differ. Two seeds served as index and holdout. Holdout scores (everyone: 48.2%):
+
+| repertoire | in sample | holdout |
+| --- | ---: | ---: |
+| old search (prior 0, risk 0) | 56.7% | 52.8% |
+| new search | 57.0% | 54.9% |
+| `build --no-chessdb` | 57.0% | 55.2% |
+| `build --no-chessdb --min-games 10` | 59.9% | 54.6% |
+
+The old search's own claim was 58.8%. The priors 0/50/200/800 gave the build 55.1–55.4% on
+the holdout, inside its ±1.0 SE. A build with live ChessDB ran against the same synthetic
+index: 110 requests, through the provider and the file cache. ChessDB knew few of those
+positions. Its random games hang pieces (3.Bf4 exf4 is 82.5% for Black), so the loss limit
+cut almost every move it knew. The moves that passed were ones it had no eval for, here or
+after them, and the holdout fell to 47.5%. That loophole is repgen's rule too ("no eval
+passes"). On real games it should be rare, so it stays, and the review flags it
+(`no-eval`).
+
+Not checked: a real holdout. The synthetic build made about 500 lookups a decision.
+
+**First real build, reviewed (2026-10-03).** The user ran `build` on their index (1.d4 c5
+2.dxc5 e5 for Black, `--plies 12 --prior 178`, the prior from their own `fit`) and handed
+over the PGN, JSON and review for a session to review and rebuild. 105 decisions, 42,488
+lookups, 416 ChessDB requests, 8m22s. 99 positions of mine, 59.1% in sample against
+everyone's 52.2%, no holdout. Two flaws came out of the review, both fixed:
+- **The sound value wasn't shrunk.** It was the plain mean over the non-blunder replies,
+  without the candidate's own pull to its position's score that the deep score gets. A
+  thin move's lucky games then put well-known ones out as "unsound": 3.Be3 Qc7 (201 games,
+  raw 59.0, deep 53.3, sound 57.1) put Nf6 (3,201 games, sound 52.6) and Nc6 (4,854) out.
+  `options()` now returns each candidate's weight `w`, and `replyCheck` pulls the sound
+  value to mu by it. From the run's JSON (mu and the per-game variance approximated), the
+  unsound set changes in 18 of 99 positions. By blend it changes the pick in 2, both under
+  1.2% reach.
+- **The learning cost was under half of what its comment said.** 0.5 was meant as about 2
+  points for a wholly new line at any reach, assuming lines shrink with reach. They don't:
+  at 3–22% reach a line was 2–37 positions. So a wholly new line cost 0.24–1.5 points
+  there, 0.9 at the median decision by reach. 5...Qb6 (a new line, deep 57.8 on 385 games)
+  then beat 5...Nc6 (a transposition into 3.Nf3 Nc6 4.e4 Bxc5 5.Nc3 Nf6, 56.7) at 8%
+  reach, the user's own "58 new vs 56 known" case the wrong way round. The default is now
+  1. That doesn't flip that case by itself (the blend gap was 1.05, the cost 1.07 against
+  0.06), so the review pins it.
+
+Decisions (`repertoires/benoni_accepted_e5_deep.decisions.json`): 5...Nc6 there, which also
+drops 8.exd5, where the only move with games, Nd4, was ChessDB 29%; 6...Bxb4+ over 6...Qxb6
+in the 3.b4 line (tied, more games, ChessDB's best, no blunders to rely on, and it
+transposes); 5...h6 over b6 after 3.Nf3 Nc6 4.Be3 Nf6 5.Nc3 (b6's lead was 0.3 on 55 games,
+with ChessDB 44.6 and Prac 44.5). Left to the user: 3.Be3 Qc7 and 4.Bg5 Qc7 (201 and 85 games,
+ChessDB 2.6–2.7 under Nf6), and 3.c3 and 3.g3 (2.0% and 1.7%), which coverage 90 leaves out.
+
+The user's rebuild (`benoni_accepted_e5_v2`, the same day) took 29 s, since ChessDB was
+cached (23 new requests). 98 positions, 58.6% in sample (59.1 before). Six moves changed,
+exactly those predicted from the first run's JSON: the three pins, the two picks the sound
+fix changed (5.Bb5 e4, ChessDB's best, over Qc7; after 3.c4 Bxc5 4.Nc3 Nf6 5.e4, Nc6
+over Qb6, which led to 6.Nf3 Ng4 at ChessDB 65.8), and 3.Nc3 Bxc5 4.e3 Nc6 (a
+transposition, tied with Nf6 after learning). Below 0.5% reach, learning now costs 2–18
+points a move. That is the price of a position reached that rarely, and equal for
+all-new alternatives, so it decides nothing there. The 17 positions under 0.5% looked
+worthless: each one's deep score over its position's average, times its reach, summed
+to about 0.0. Note the share options' rule (`v > 1` is a percentage): `0.5` there means 50%.
+
+`benoni_accepted_e5_v3` (`--line-min-reach 0.005`, 4 s, all cached): 79 positions, 58.35%
+in sample against v2's 58.61. The estimate above was wrong twice:
+- The limit applies to the next reply's reach (reach × share), so it also ended lines at
+  positions reached 0.5–3%, not only the ones under 0.5%.
+- The cut lost 0.26 points. Most of it was in 3.c4 (that branch went from 58.7 to 55.0),
+  whose cut lines punished White's mistakes: 5.e4 Nc6 6.Nf3 Ng4 (ChessDB 65.8), 5.Bg5 Qb6
+  6.e3 Qxb2. A line's end is scored by everyone's results from there, so losing the
+  refutation costs its whole gain, not the per-card difference that was summed.
+
+v3 also showed a builder bug, now fixed. When a position is reached by a second move
+order, `ensure()` adds that path's reach to it, but whatever was already built below it
+keeps the first path's reach. So lines were cut on partial reach: 3.Nc3 Bxc5 4.Nf3 Nc6
+5.e3 Nf6 is reached 3% of the time but ended as if it were 1.3%. Comparing v3's leaves
+with v2's, 4 of 17 cut positions should have gone on. `growAll()` now
+recomputes the reach after `grow()`, `widen()`s every position of theirs whose replies its
+whole reach earns, and repeats until nothing is added; polishing uses it too. repgen's
+generator has the same pattern (its `ensure()` comment says so) and is unchanged.
+
+`benoni_accepted_e5_v4`, with the fix and the same settings as v3 (21 s, 17 new ChessDB
+requests): 87 positions, 58.54% in sample, against v2's 98 and 58.61%. So the cut now costs
+0.07 points for 11 positions. Nine positions came back below transpositions, among them
+6.Bg5 Qb6 7.Bxf6 Bxf2+, the refutation of 7.Bxf6 (ChessDB mates). The 3.c4 branch is still
+at 55.0: its refutation lines stay under the limit.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

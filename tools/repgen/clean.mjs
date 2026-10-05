@@ -1,11 +1,11 @@
 /*
- * Finishing a generated repertoire PGN (tools/pgnclean.mjs):
+ * Finishing a generated repertoire PGN, from repgen or deeprep (tools/pgnclean.mjs):
  *
  *   - Comments: only the played share is kept ("9% of 97,950 games" becomes "9%"), and
  *     only on a move that still has alternatives once transpositions are gone: the share
- *     is there to compare branches. The generator's other notes (Prac values, engine
- *     moves, line ends, transposition pointers) go; anything else in a comment, such as
- *     your own notes, stays.
+ *     is there to compare branches. The generators' other notes (Prac values, engine
+ *     moves, deeprep's scores and limits, line ends, transposition pointers) go; anything
+ *     else in a comment, such as your own notes, stays.
  *   - Transpositions, found by position: a move that ends its line in a position that
  *     goes on elsewhere in the game.
  *       Their move: the branch is removed and noted on my move it answered, e.g. on
@@ -21,28 +21,66 @@ import { pathOf, movesText } from './pgntree.mjs';
 import { fenKey, sideToMove } from '../../src/pe/search.js';
 
 var SEP = '\n\n';
+// repgen's notes, by how they start. A note is the text between ' · '.
 var GENERATED = /^(Prac |engine move|transposes to |not searched yet|end: )/;
 
-var SHARE = /^(\d+(?:\.\d+)?%) of [\d,]+ games$/;
+// deeprep's, whole: build's moveNote (deeprep/report.mjs) and rootNote, the search's
+// moveComment (deeprep/pgn.mjs) and its root comment (deeprep.mjs). deeprep joins some
+// with '; ', so those are matched part by part. Its "transposes to" and "end:" are
+// repgen's words.
+var N = '(?:-?\\d+(?:\\.\\d+)?|–)';                // f1(): one decimal, or – for none
+var P = '(?:\\d+(?:\\.\\d+)?%|\\?)';                 // pct(), or p0()
+var OUT = '\\S+ (?:over the loss limit|unsound)';
+var DEEPREP = [
+  'score ' + N + ': deep ' + N + '(?:, ChessDB ' + N + ')?(?:, Prac ' + N + ')?',
+  '[\\d,]+ games, raw ' + N,
+  'sound ' + N + '(?:, blunders ' + P + ')?',
+  'learning -' + N + ' \\(' + P + ' new\\)',
+  'over \\S+ ' + N + ', learning -' + N,
+  'pinned',
+  'every move over a limit: the safest',
+  'also \\S+ ' + N + '(?:, \\S+ ' + N + ')*',
+  OUT + '(?:, ' + OUT + ')*',
+  'ChessDB best \\S+ ' + N,
+  'replies not covered ' + P,
+  '\\d+ positions to know',
+  '(?:in sample|holdout) ' + P + ' \\(everyone ' + P + '\\)',
+  'best lower bound',
+  'deep ' + P + ' ±\\S+, raw ' + P + ', [\\d,]+ games',
+  'also \\S+ ' + P + ' ±\\S+ \\([\\d,]+\\)(?:, \\S+ ' + P + ' ±\\S+ \\([\\d,]+\\))*',
+  'deep ' + P + ' for (?:White|Black), [\\d,]+ games'
+].map(function (x) { return new RegExp('^' + x + '$'); });
+
+// The share of games a reply has; deeprep's search adds its deep score.
+var SHARE = /^(\d+(?:\.\d+)?%) of [\d,]+ games(?:, deep \S+ ±\S+)?$/;
+
+// The notes of a paragraph: [[part]], parts being what deeprep joined with '; '.
+function notes(p) {
+  return p.replace(/\s+/g, ' ').trim().split(' · ').map(function (b) {
+    return GENERATED.test(b) ? [] : b.split('; ');
+  });
+}
 
 // o.share false: the played share goes too.
 export function cleanComment(text, o) {
   if (text == null) return null;
   var keep = !(o && o.share === false);
   var paras = String(text).split(/\r?\n[ \t]*\r?\n/).map(function (p) {
-    return p.replace(/\s+/g, ' ').trim().split(' · ').map(function (b) {
-      var m = SHARE.exec(b);
-      if (m) return keep ? m[1] : '';
-      return GENERATED.test(b) ? '' : b;
+    return notes(p).map(function (parts) {
+      return parts.map(function (x) {
+        var m = SHARE.exec(x);
+        if (m) return keep ? m[1] : '';
+        return DEEPREP.some(function (re) { return re.test(x); }) ? '' : x;
+      }).filter(Boolean).join('; ');
     }).filter(Boolean).join(' · ');
   }).filter(Boolean);
   return paras.length ? paras.join(SEP) : null;
 }
 
 function shareOf(text) {
-  var bits = String(text || '').replace(/\s+/g, ' ').split(' · ');
-  for (var i = 0; i < bits.length; i++) {
-    var m = SHARE.exec(bits[i].trim());
+  var all = [].concat.apply([], notes(String(text || '')));
+  for (var i = 0; i < all.length; i++) {
+    var m = SHARE.exec(all[i]);
     if (m) return m[1];
   }
   return null;
