@@ -954,15 +954,17 @@ note. `--check` passes the fresh best to `choose()` and says when a pick is over
 Harness only.
 
 **Repgen: lines given with `--moves` (2026-10-05).** Requested: `--moves "1. d4 c5 2. dxc5 Nf6
-3. Nf3 (3. Nc3 e6) (3. c3) Na6"`, every line end a starting point and no other branch
+3. Nf3 (3. Nc3 e6) (3. c3) Na6"`, each line end a starting point and no other branch
 covered. `repgen/lines.mjs` reads it with pgntree's parser. The moves before the first
 variation stay the prefix (so a plain line runs exactly as before), and the tree's positions
 with a move after them go into `state.given` (fenKey → SANs). There the generator plays the
 given moves only: given replies are followed whatever their games (most played first), and a
 given move of mine is played unsearched (`pickedBy: 'given'`, ChessDB asked only for the
-mark; PGN `given move`, which `clean.mjs` knows). Their children start at reach 1, ply 0 and
-oi 0, as the start position does: the user's "starting point" taken literally, so a rare
-given branch is covered as fully as the main one. Two moves of mine at one position are
+mark; PGN `given move`, which `clean.mjs` knows). Otherwise given positions count as any:
+a given reply's reach is its real share, and ply and oi go on as usual, so where the lines
+end the plan carries on as a run from the prefix would. (The first version reset reach, ply
+and oi at every line end, the user's "starting point" taken literally; they asked for the
+real shares instead the same day.) Two moves of mine at one position are
 refused, and so is resuming with other lines. `--check` leaves given moves alone (only their
 engine values and marks update). Harness only; no live run yet.
 

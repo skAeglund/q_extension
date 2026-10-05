@@ -332,10 +332,12 @@ The moves before the first variation are where the run starts, as with a single 
 there the lines are played as written. After 2...Nf6, only White's eight given third moves
 are followed, and no others, however often they're played. Your moves in the lines (3...Na6,
 3...e6, …) are played as given, not searched. The PGN says `given move`, and they're marked
-like any move of yours if ChessDB rates them lower. Each end of a line is a fresh start, as if
-the run began there: reach 100%, full coverage at the next opponent decision, and a deep
-search for your next move. So `(3. c3)`, which ends on your move, gets that move searched as
-usual. Opponent moves can branch; your own can't (two moves of yours at one position is an
+like any move of yours if ChessDB rates them lower. Where a line ends, the run carries on as usual. A
+line's reach is the real share of games its given moves have, so a rare branch like 3.Bg5 is
+covered as thinly as it would be in a run from 2...Nf6, and each given opponent move counts
+as a decision for `--coverage-step`. `(3. c3)`, which ends on your move, gets that move
+searched as usual. A given reply with no games at all has reach 0, so its line ends at the
+opponent's next move. Opponent moves can branch; your own can't (two moves of yours at one position is an
 error). A run keeps its lines: resuming with different ones is refused (`--fresh` or another
 `--out`).
 

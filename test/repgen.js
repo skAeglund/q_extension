@@ -1245,16 +1245,19 @@ module.exports = async function run(check) {
     assert.ok(!gd.log.roots.some(x => x.fen === 'A b - - 0 1'));
     assert.strictEqual(gs.searches, 1);
   });
-  await check('a branch end is a starting point: reach 1, ply 0, first coverage, deep search', () => {
+  await check('a line goes on with its real reach, ply and coverage where the given moves end', () => {
     const ax = gs.nodes['AX w - -'];
-    assert.deepStrictEqual([ax.reach, ax.ply, ax.oi], [1, 0, 0]);
-    // 20% of 300 games at reach 1: followed at the first decision's coverage.
-    assert.deepStrictEqual(ax.replies.map(x => x.san), ['p', 'q']);
-    assert.strictEqual(gs.nodes['AXQ b - -'].reach, 0.2);
+    assert.deepStrictEqual([ax.reach, ax.ply, ax.oi], [0.6, 2, 1]);
+    // The second decision's coverage is 80%, which p (80%) meets alone; at the first
+    // decision's 90%, q would have gone on too.
+    assert.deepStrictEqual(ax.replies.map(x => x.san), ['p']);
+    assert.ok(Math.abs(gs.nodes['AXP b - -'].reach - 0.48) < 1e-12);
+    assert.strictEqual(gs.nodes['AXP b - -'].oi, 2);
     const b = gs.nodes['B b - -'];
-    assert.deepStrictEqual([b.reach, b.ply, b.move], [1, 0, 'm']);
+    assert.deepStrictEqual([b.reach, b.ply, b.oi, b.move], [0.3, 1, 1, 'm']);
     assert.strictEqual(gd.log.roots.find(x => x.fen === 'B b - - 0 1').opts.maxPly, G.REPGEN_DEFAULTS.deepMaxPly);
-    assert.deepStrictEqual(gs.nodes['C b - -'].path, ['c']);
+    // A given reply without games: reach 0, though my move after it is still played.
+    assert.deepStrictEqual([gs.nodes['C b - -'].reach, gs.nodes['C b - -'].path], [0, ['c']]);
   });
   const gpgn = PG.toPgn(gs).split('\n\n')[1].replace(/\n/g, ' ');
   await check('the PGN says a given move was given, and marks it against ChessDB\'s best', () => {

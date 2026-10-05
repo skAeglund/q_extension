@@ -12,8 +12,8 @@
  *
  *   node tools/repgen.mjs --moves "1.d4 c5 2.dxc5 Nf6 3.Nf3 (3.Nc3 e6) (3.c3) Na6" --side black
  *
- * --moves may have variations: the lines are played as given, and the run starts afresh at
- * every branch end (repgen/lines.mjs).
+ * --moves may have variations: the lines are played as given, and the run carries
+ * on from every branch end (repgen/lines.mjs).
  *
  *   node tools/repgen.mjs --out sicilian --check
  *
@@ -71,7 +71,7 @@ function usage() {
     '',
     'Start:     --fen, --moves (from the initial position, or --fen), --side (default: side to move)',
     '           --moves may have variations, as in "1.d4 c5 2.dxc5 Nf6 3.Nf3 (3.Nc3 e6) (3.c3) Na6":',
-    '           only those lines are played up to their ends, and each end is a start',
+    '           only those lines are played, and the run carries on where they end',
     'Output:    --out <name> (default "repertoire"), --cache <file>, --fresh, --pgn-only',
     'Check:     --check (ask ChessDB again, search again where it matters), --check-all',
     '           (search every one of my positions again), --dry-run (report only)',

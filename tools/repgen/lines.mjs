@@ -7,8 +7,8 @@
  * the run starts where they end. From there the tree is *given*. At each of its positions
  * with a move after it, only the moves it gives are played: their replies are those and no
  * others, whatever the games say, and my move is that one, unsearched. Where a branch ends,
- * the run carries on as it would from a start position (the generator resets reach, ply and
- * coverage there), so (3. c3) has my move after 3.c3 searched as usual. A plain line has no
+ * the run carries on as usual, with the line's real reach (the given replies' shares of the
+ * games), so (3. c3) has my move after 3.c3 searched as usual. A plain line has no
  * given positions, and runs exactly as before.
  *
  * Pure apart from chess.js (through pgntree.mjs), so test/repgen.js covers it.

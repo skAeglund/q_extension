@@ -30,9 +30,9 @@
  *
  * Given lines (state.given, from a --moves with variations: repgen/lines.mjs) override the
  * plan where they are: at a given position of theirs only the given replies are followed,
- * and at one of mine the given move is played without a search. Their children are
- * starting points: reach 1, ply 0 and the first opponent decision's coverage, as the start
- * position has.
+ * and at one of mine the given move is played without a search. Otherwise they count as any
+ * position does: a given reply's reach is its real share, and it is an opponent decision
+ * for coverage, so where the lines end the plan carries on as it would have there.
  *
  * A check (repgen/check.mjs) sets `recheck` on done nodes of mine: they are searched
  * again, in reach order like queued work, but stay done meanwhile, so the PGN keeps the
@@ -464,9 +464,7 @@ export function createGenerator(o) {
     // A re-search that kept its move: the line below stands, and ensure() would count
     // this move order's reach a second time.
     if (old && old === fenKey(mv.fen) && nodes[old]) return;
-    var path = (n.path || []).concat(mv.san);
-    n.child = (given[n.key] ? ensure(mv.fen, 0, 1, 0, path)
-      : ensure(mv.fen, n.ply + 1, n.reach, n.oi, path)).key;
+    n.child = ensure(mv.fen, n.ply + 1, n.reach, n.oi, (n.path || []).concat(mv.san)).key;
     if (old) prune(state);
   }
 
@@ -653,7 +651,8 @@ export function createGenerator(o) {
     });
   }
 
-  // Given replies: those and no others, most played first like any, each a starting point.
+  // Given replies: those and no others, most played first like any, each with its real
+  // share. A reply without games gets reach 0, so its line ends at their next move.
   function givenReplies(n) {
     return Promise.resolve(d.explorer(n.fen)).then(function (ex) {
       n.games = ex ? ex.total : 0;
@@ -664,7 +663,8 @@ export function createGenerator(o) {
         var g = games[moveKey(mv.san)] || 0;
         return { san: mv.san, share: n.games ? g / n.games : 0, games: g, given: true, fen: mv.fen };
       }).sort(function (a, b) { return b.games - a.games; }).map(function (r) {
-        r.child = ensure(r.fen, 0, 1, 0, (n.path || []).concat(r.san)).key;
+        r.child = ensure(r.fen, n.ply + 1, n.reach * r.share, n.oi + 1,
+          (n.path || []).concat(r.san)).key;
         delete r.fen;
         return r;
       });
