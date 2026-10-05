@@ -40,6 +40,8 @@ export var PE_DEFAULTS = {
   replyThreshold: 0.03,    // replies with at least this share are recursed into
   minGames: 50,            // without Maia, an opponent node with fewer games is a leaf
   skipExplorerBelow: 10,   // without Maia, below a move with fewer games: no explorer call
+  explorerFree: false,     // the explorer costs nothing (a local index): ask it everywhere,
+                           // so neither games bound below skips it
   maia: false,             // Maia fills in thin positions (the provider must have .maia)
   maiaElo: 2150,
   maiaUntil: 100,          // Maia weighs in below this many games...
@@ -321,7 +323,9 @@ function makeSearch(provider, opts, rootSide, stats, plies) {
    * repgen's searches (2026-09-27), skipping under 50 found more games in 16% of the
    * positions skipped, up to 6,835 behind a 43-game move, and moved row values by up to
    * 5.8 points. Under 10 the values moved by at most 1.6 and saved 14% of requests, so
-   * keep the cut-offs low.
+   * keep the cut-offs low. With `explorerFree` (a local explorer, which answers in a
+   * millisecond and has no rate limit) they save nothing, so the explorer is always asked
+   * and a transposition's games count. ChessDB is asked either way.
    *
    * `maia` on the result is the share of the value that rests on Maia: each reply's
    * Maia part of its weight, plus its games part times its own subtree's Maia share.
@@ -330,7 +334,7 @@ function makeSearch(provider, opts, rootSide, stats, plies) {
     stats.positions++;
     var info = { reach: reach, plies: plies };
     var useMaia = !!opts.maia && typeof provider.maia === 'function';
-    var skipEx = !!opts.maiaOnly || (hint != null &&
+    var skipEx = !!opts.maiaOnly || (!opts.explorerFree && hint != null &&
       hint < (useMaia ? opts.maiaOnlyBelow : opts.skipExplorerBelow));
     return Promise.all([
       skipEx ? null : provider.explorer(pos, info),

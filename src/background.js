@@ -16,7 +16,7 @@
 import { Chess } from './vendor/chess.js';
 import { fenKey } from './pe/search.js';
 import { createPreviewedSearch } from './pe/rounds.js';
-import { createProviders, burstFor, EXPLORER_URL, LICHESS_RATE } from './pe/providers.js';
+import { createProviders, burstFor, localAddress, EXPLORER_URL, LICHESS_RATE } from './pe/providers.js';
 import { createCache } from './pe/cache.js';
 
 var DEFAULT_BUDGET = 60;     // uncached explorer requests per root position
@@ -331,22 +331,43 @@ function startRoot(port, st, msg) {
     } catch (e) { st.alive = false; }
   }
 
-  return createPreviewedSearch({
-    rootFen: msg.rootFen,
-    opts: msg.opts,
-    budget: budget,
-    makeProvider: providerFor('lichess'),
-    isStale: rootStale,
-    onResult: function (san, res) { res.tokenSource = tokenSource; post(san, res); },
-    onError: function (san, e) { post(san, { state: 'error', reason: reasonOf(e), final: true }); },
-    preview: wantPreview ? {
-      makeProvider: providerFor('maia'),
-      onResult: function (san, res) { post(san, res, 'maia'); },
-      onError: function (san, e) {
-        post(san, { state: 'error', reason: reasonOf(e), final: true }, 'maia');
-      }
-    } : null
-  });
+  /*
+   * With a local explorer, explorer calls cost nothing and ChessDB is what the search
+   * waits on: the explorer is asked everywhere (explorerFree), and the preview, which
+   * would take ChessDB lane slots from the real search, waits until that has settled.
+   * Decided once per position, when its first rows arrive: by then the saved address has
+   * been read (limiterReady), also in a worker that has just started. A search started
+   * against Lichess keeps its rules.
+   */
+  var search = null;
+  function create() {
+    var local = !!localAddress(localExplorer);
+    return createPreviewedSearch({
+      rootFen: msg.rootFen,
+      opts: local ? Object.assign({}, msg.opts, { explorerFree: true }) : msg.opts,
+      budget: budget,
+      previewAfter: local,
+      makeProvider: providerFor('lichess'),
+      isStale: rootStale,
+      onResult: function (san, res) { res.tokenSource = tokenSource; post(san, res); },
+      onError: function (san, e) { post(san, { state: 'error', reason: reasonOf(e), final: true }); },
+      preview: wantPreview ? {
+        makeProvider: providerFor('maia'),
+        onResult: function (san, res) { post(san, res, 'maia'); },
+        onError: function (san, e) {
+          post(san, { state: 'error', reason: reasonOf(e), final: true }, 'maia');
+        }
+      } : null
+    });
+  }
+
+  return {
+    add: function (sans) {
+      if (!search) search = create();
+      search.add(sans);
+    },
+    remove: function (san) { return search ? search.remove(san) : false; }
+  };
 }
 
 /* ---------------------------------------------------------------- popup */

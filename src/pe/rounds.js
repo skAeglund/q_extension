@@ -233,6 +233,11 @@ export function createRootSearch(o) {
  *
  * o = as for createRootSearch, plus
  *   preview: { makeProvider, onResult, onError } or null for no preview
+ *   previewAfter: start the preview's rows only once the Lichess search has settled. For
+ *     a local explorer: the preview was there because Lichess's rate limit is slow, and
+ *     with the explorer free both searches wait on the same ChessDB lane. A preview lookup
+ *     that has started holds a lane slot for its ~340 ms, so running both at once slows
+ *     the real search down.
  */
 export function createPreviewedSearch(o) {
   var real = createRootSearch(o);
@@ -246,17 +251,46 @@ export function createPreviewedSearch(o) {
     onError: o.preview.onError
   });
 
+  var later = !!(preview && o.previewAfter);
+  var held = [];             // rows for the preview, waiting for the Lichess search
+  var adds = 0;
+  var gate = null;
+
+  // real.done() covers the rows it has at the time, so wait again if more came meanwhile.
+  function settled() {
+    var seen = adds;
+    return real.done().then(function () { return adds !== seen ? settled() : null; });
+  }
+
+  function hold(sans) {
+    (sans || []).forEach(function (san) { if (held.indexOf(san) < 0) held.push(san); });
+    if (gate) return;
+    gate = settled().then(function () {
+      gate = null;
+      var sans = held;
+      held = [];
+      if (sans.length) preview.add(sans);
+    });
+  }
+
   return {
     add: function (sans) {
+      adds++;
       real.add(sans);
-      if (preview) preview.add(sans);
+      if (!preview) return;
+      if (later) hold(sans);
+      else preview.add(sans);
     },
     remove: function (san) {
+      var i = held.indexOf(san);
+      if (i >= 0) held.splice(i, 1);
       if (preview) preview.remove(san);
       return real.remove(san);
     },
     done: function () {
-      return Promise.all([real.done(), preview ? preview.done() : null]).then(function () {});
+      return Promise.all([real.done(), gate]).then(function () {
+        return preview ? preview.done() : null;
+      }).then(function () {});
     }
   };
 }

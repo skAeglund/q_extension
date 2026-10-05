@@ -423,6 +423,7 @@ module.exports = async function run(check) {
       maia: r.maia, state: r.state });
     const search = R.createPreviewedSearch({
       rootFen: 'root w - -', opts: { maia: true },
+      previewAfter: !!o.previewAfter,
       makeProvider: mk('lichess'),
       onResult: pub('lichess'),
       onError: (san, e) => pubs.push({ pass: 'lichess', san, error: e }),
@@ -499,6 +500,32 @@ module.exports = async function run(check) {
   await pr.search.done();
   await check('  ...and the Lichess one still gets there', () =>
     assert.deepStrictEqual(pr.depths('lichess', 'R'), [1, 1, 3, 5]));
+
+  // A local explorer: the preview waits for the Lichess search, so the two never share
+  // ChessDB's lane.
+  rg = gate();
+  pr = runPaired({ tree: switchTree(-100), previewAfter: true,
+    hook: (pass, san, info) => (info.plies === 3 ? rg.p : undefined) });
+  pr.search.add(['R', 'S']);
+  await tickMs(20);
+  pr.search.add(['T']);
+  pr.search.remove('T');
+  await check('previewAfter: no preview while the Lichess search runs', () => {
+    assert.strictEqual(pr.pubs.filter(p => p.pass === 'maia').length, 0);
+    assert.strictEqual(pr.log.filter(x => x.pass === 'maia').length, 0);
+    assert.deepStrictEqual(pr.depths('lichess', 'R'), [1]);
+  });
+  rg.open();
+  await pr.search.done();
+  await check('  ...and once it has settled, the preview runs to its own end', () => {
+    assert.deepStrictEqual([pr.depths('lichess', 'R'), pr.depths('lichess', 'S')], [[1, 3, 5], [1, 3, 5]]);
+    assert.deepStrictEqual([pr.depths('maia', 'R'), pr.depths('maia', 'S')], [[1, 3, 5], [1, 3, 5]]);
+    const firstMaia = pr.pubs.findIndex(p => p.pass === 'maia');
+    const lastReal = pr.pubs.map(p => p.pass).lastIndexOf('lichess');
+    assert.ok(firstMaia > lastReal, 'the preview started before the Lichess search settled');
+  });
+  await check('  ...without a row taken out while it waited', () =>
+    assert.strictEqual(pr.log.filter(x => x.san === 'T' && x.pass === 'maia').length, 0));
 
   pr = runPaired({ tree: switchTree(-100), noPreview: true });
   pr.search.add(['R', 'S']);
@@ -597,6 +624,15 @@ module.exports = async function run(check) {
     near(res.maia, (5 + a) / (200 + 2 * a), 1e-9, 'maia share');
   });
 
+  exSeen.length = 0;
+  const fprov = withMaia(DEEP, DPOL, { explorer: 0, chessdb: 0 });
+  const fInner = fprov.explorer;
+  fprov.explorer = (fen, info) => { exSeen.push(fen); return fInner(fen, info); };
+  await S.evaluateRow(fprov, 'root w - -', 'R', 3, Object.assign({ replyThreshold: 0.02,
+    reachFloor: 0.02, explorerFree: true }, MAIA));
+  await check('  ...unless the explorer is free (local): then it is asked there too', () =>
+    assert.ok(exSeen.includes('pb b - -'), 'not asked: ' + exSeen));
+
   console.log('\npractical eval: Maia alone (the preview\'s search)');
   const MONLY = Object.assign({ maiaOnly: true }, MAIA);
   log = { explorer: 0, chessdb: 0 };
@@ -650,6 +686,9 @@ module.exports = async function run(check) {
     near(skipOn.r.value, skipOff.r.value, 1e-12);
     near(skipOn.r.replies.find(r => r.san === 'b').v, W(-300), 1e-9, 'b: ChessDB\'s best');
   });
+  const free = await deepSeen({ explorerFree: true });
+  await check('explorerFree (a local explorer): the explorer is asked below a rare move too', () =>
+    assert.ok(free.seen.includes('pb b - -'), 'not asked: ' + free.seen));
   skipOn = await deepSeen({ skipExplorerBelow: 5 });
   await check('  ...and from the cut-off on it is asked', () =>
     assert.ok(skipOn.seen.includes('pb b - -'), 'not asked at 5 games: ' + skipOn.seen));
@@ -1346,12 +1385,14 @@ module.exports = async function run(check) {
   const boards = [];
   const pfetch = url => {
     boards.push(new URLSearchParams(url.split('?')[1]).get('board'));
-    return (boards.length <= 2 ? cdbHold.p : Promise.resolve()).then(() => ({ ok: true,
+    return (boards.length <= P.CDB_IN_FLIGHT ? cdbHold.p : Promise.resolve()).then(() => ({ ok: true,
       status: 200, headers: new Map(), json: () => Promise.resolve({ status: 'ok', moves: [] }) }));
   };
   const pprov = P.createProviders({ fetch: pfetch, cache: C.createMemoryCache(now),
     getToken: () => Promise.resolve('tok'), stats: {}, now, sleep });
-  const looks = [pprov.chessdb(pos(1), null, 1), pprov.chessdb(pos(2), null, 1)];
+  // The first CDB_IN_FLIGHT lookups fill the lane; the rest wait.
+  const fill = Array.from({ length: P.CDB_IN_FLIGHT }, (_, i) => pos(1 + 5 * i));
+  const looks = fill.map(f => pprov.chessdb(f, null, 1));
   await tickMs(5);
   looks.push(pprov.chessdb(pos(3), null, 0), pprov.chessdb(pos(4), null, 0));
   await tickMs(5);
@@ -1360,7 +1401,7 @@ module.exports = async function run(check) {
   cdbHold.open();
   await Promise.all(looks);
   await check('  ...and a lookup the preview queued moves up when the Lichess search joins it', () =>
-    assert.deepStrictEqual(boards, [pos(1), pos(2), pos(4), pos(3)]));
+    assert.deepStrictEqual(boards, fill.concat([pos(4), pos(3)])));
   // A dropped connection is tried again; ChessDB's own HTTP answers are not.
   const flaky = [];
   const rprov = P.createProviders({ fetch: url => {
@@ -1384,6 +1425,66 @@ module.exports = async function run(check) {
   await check('  ...but an HTTP error from ChessDB is final', () => {
     assert.strictEqual(cdbRefused && cdbRefused.status, 400);
     assert.strictEqual(flaky.length, 3);
+  });
+
+  // Lookups in flight at once: CDB_IN_FLIGHT, no more.
+  const wideHold = gate();
+  let wideNow = 0, wideMax = 0;
+  const wprov = P.createProviders({ fetch: () => {
+    wideNow++;
+    wideMax = Math.max(wideMax, wideNow);
+    return wideHold.p.then(() => {
+      wideNow--;
+      return { ok: true, status: 200, headers: new Map(),
+        json: () => Promise.resolve({ status: 'ok', moves: [] }) };
+    });
+  }, cache: C.createMemoryCache(now), getToken: () => Promise.resolve('tok'), stats: {}, now, sleep });
+  const wide = [1, 2, 3, 4, 5, 6].map(i => wprov.chessdb(pos(10 + i), null, 1));
+  await tickMs(5);
+  await check('ChessDB gets CDB_IN_FLIGHT (3) lookups at once', () => {
+    assert.strictEqual(P.CDB_IN_FLIGHT, 3);
+    assert.strictEqual(wideMax, 3);
+  });
+  wideHold.open();
+  await Promise.all(wide);
+  await check('  ...and never more', () => assert.strictEqual(wideMax, 3));
+
+  // A 429 from ChessDB pauses the whole lane, then the lookup is tried again.
+  const busyAt = [];
+  const bStats = {};
+  const bprov2 = P.createProviders({ fetch: url => {
+    busyAt.push(t);
+    const refuse = busyAt.length === 1;
+    return Promise.resolve(refuse ? { ok: false, status: 429 } : { ok: true, status: 200,
+      headers: new Map(), json: () => Promise.resolve({ status: 'ok', moves: [] }) });
+  }, cache: C.createMemoryCache(now), getToken: () => Promise.resolve('tok'), stats: bStats, now, sleep });
+  const tb = t;
+  const busy = await bprov2.chessdb(pos(20), null, 1);
+  const after = await bprov2.chessdb(pos(21), null, 1);
+  await check('a ChessDB 429 pauses the lane, and the lookup is tried again after it', () => {
+    assert.strictEqual(busy.status, 'ok');
+    assert.strictEqual(after.status, 'ok');
+    assert.strictEqual(bStats.chessdb429, 1);
+    assert.strictEqual(busyAt.length, 3);
+    assert.ok(busyAt[1] - tb >= P.CDB_PAUSE_MS, 'retried after ' + (busyAt[1] - tb));
+  });
+  const refusedAt = t;
+  let held429 = 0;
+  const heldAt = [];
+  const hprov = P.createProviders({ fetch: () => {
+    held429++;
+    heldAt.push(t);
+    return Promise.resolve(held429 === 1 ? { ok: false, status: 429 } : { ok: true, status: 200,
+      headers: new Map(), json: () => Promise.resolve({ status: 'ok', moves: [] }) });
+  }, cache: C.createMemoryCache(now), getToken: () => Promise.resolve('tok'), stats: {}, now,
+  sleep: ms => new Promise(r => setTimeout(() => { t += ms; r(); }, 1)) });
+  const first = hprov.chessdb(pos(22), null, 1);
+  await tickMs(3);
+  const other = hprov.chessdb(pos(23), null, 1);
+  await Promise.all([first, other]);
+  await check('  ...and a lookup asked during the pause waits it out too', () => {
+    assert.strictEqual(held429, 3);
+    assert.ok(heldAt.slice(1).every(x => x - refusedAt >= P.CDB_PAUSE_MS), 'at ' + heldAt);
   });
 
   // Asking ChessDB to analyse what it doesn't know.

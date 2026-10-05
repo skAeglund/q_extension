@@ -238,7 +238,8 @@ anyway, the table stays at the last depth every row finished, and the responses 
 fetched are cached, so a revisit finishes that depth cheaply. Leaving a position drops its
 waiting requests at once, and coming back picks up where it stopped. Responses are cached (explorer 30 days, ChessDB
 7 days), so revisiting a position costs nothing. The popup shows the cache size and the
-requests made this session. ChessDB is asked to analyse a position or move at most once a
+requests made this session. ChessDB gets at most 3 requests at once, and a rate-limit
+answer from it pauses its requests for 30 s. ChessDB is asked to analyse a position or move at most once a
 day, and at most 30 times per position you look at. After asking, the position is looked
 up again every 2 minutes, only while a search needs it, for an hour at most.
 
@@ -715,6 +716,13 @@ node tools/explorerdb.mjs serve aug26                # http://localhost:9337, Ct
   limit, no per-position budget, so rows deepen as fast as ChessDB answers. Its answers
   aren't cached, since one month's counts and Lichess's shouldn't share a cache. Clear the
   field to go back to Lichess.
+  - Since asking costs nothing, the explorer is asked below rare moves too, which
+    Lichess's path skips to save requests. A position reached by other move orders then
+    counts its games.
+  - The Maia preview waits until the real search has finished at that position: both
+    would wait on the same ChessDB lookups, and the real one is now about as quick.
+  - Both are decided when a position's search starts, so a search already running keeps
+    going the way it began.
 - **repgen:** add `--explorer localhost:9337`. No token is needed, and a new run takes the
   index's filter. The run remembers which explorer it used and notes a switch, since one
   month and all of Lichess count different games.

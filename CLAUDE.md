@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 571 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 581 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -855,7 +855,7 @@ duplicate-source refusal and `merged` list.
   start any whose month is already in (requested the same day, for disk: kept months were
   about 1 GB each, a second copy of what the accumulator holds). `--keep-filtered` keeps
   them. 2020-01..05's, and the old per-month `.xdb` indexes, were deleted by hand that day.
-Covered by the harness (571 checks). Checked against the real `explorer/filtered/`: 76
+Covered by the harness (571 checks at the time). Checked against the real `explorer/filtered/`: 76
 months recognised (2013-01..2019-08, 2017-02..05 still arriving), the others not.
 
 **Repgen: blended choice (2026-09-30).** Requested: choose my move by a weighted blend of
@@ -974,6 +974,25 @@ took 60 minutes for 2026-08 (92 M games read, 28.8 M kept, accumulator 15.1 GB).
   a second connection only helps when it has room to spare. The saved progress is written
   from the data loop, not a `setInterval`: the harness replaces the global `setInterval`
   (`harness.js`) for main-world.js.
+
+**Local explorer: ChessDB is the limit (v1.19.0).** Asked 2026-10-05: with the local
+explorer served, how to make the column faster. ChessDB is now what a search waits on: one
+`queryall` per position, about 340 ms each. Three changes:
+- The ChessDB lane takes 3 requests in flight (`CDB_IN_FLIGHT`, was 2), for lookups and
+  analysis requests together. 150 lookups at 3 in flight went through without an error on
+  2026-09-28. A 429 from ChessDB (never seen yet) pauses the lane for `CDB_PAUSE_MS`
+  (30 s): requests wait out the pause in their slot, and the refused lookup is retried.
+- With a local explorer the Maia preview starts only once the Lichess search has settled
+  (`previewAfter` in `createPreviewedSearch`). Its lookups wait behind the real search's,
+  but one that has started holds a lane slot for its ~340 ms.
+- With a local explorer the search takes `explorerFree`: the explorer is asked below a
+  move with under `skipExplorerBelow` (or, with Maia, `maiaOnlyBelow`) games too. That
+  shortcut only saved Lichess requests, and the bound it rests on is loose (transpositions).
+  This changes values, not speed.
+`background.js` decides both once per position, when its first rows arrive (after
+`limiterReady`, so a restarted worker has read the address). repgen is unchanged: its
+ChessDB pace is its own (`--rate`), and a run searches the way it was made. Harness only;
+the speed-up is not measured live.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

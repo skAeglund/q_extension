@@ -8,9 +8,9 @@
  *   - Lichess explorer: one request in flight, a token bucket of `ratePerMin` (burst
  *     `burst`), and a 60 s pause of every queued call on HTTP 429. Qchess's own Lichess
  *     panel may draw on the same allowance, so the bucket sits under Lichess's own (below).
- *   - ChessDB: at most two requests in flight, lookups and analysis requests together,
- *     the Lichess search's lookups first. A position or move is asked to be analysed at
- *     most once a day.
+ *   - ChessDB: at most CDB_IN_FLIGHT requests in flight, lookups and analysis requests
+ *     together, the Lichess search's lookups first, and a CDB_PAUSE_MS pause of the lane
+ *     on HTTP 429. A position or move is asked to be analysed at most once a day.
  *   - Waiting explorer calls go highest priority first (the search's reach), and each
  *     root position has a request budget (see explorer()).
  *   - A cache hit costs nothing: no token, no budget, no queue slot.
@@ -22,6 +22,16 @@ export var EXPLORER_URL = 'https://explorer.lichess.org/lichess';
 export var CHESSDB_URL = 'https://www.chessdb.cn/cdb.php';
 var CDB_RETRIES = 2;         // a lookup that fails on the network is tried twice more,
 var CDB_RETRY_MS = 1500;     // after 1.5 s and then 3 s
+
+/*
+ * With a local explorer, ChessDB is what a search waits on: one lookup per position, about
+ * 340 ms each. Two in flight managed about 210 a minute. 150 lookups at 3 in flight (450 a
+ * minute) went through without an error on 2026-09-28, so 3. ChessDB is a free service,
+ * so not more: if it ever answers 429, the whole lane waits CDB_PAUSE_MS before its next
+ * request, and the refused lookup is tried again after that.
+ */
+export var CDB_IN_FLIGHT = 3;
+export var CDB_PAUSE_MS = 30000;
 
 /*
  * Lichess's explorer limit, measured with tools/lichess-rate.mjs on 2026-09-27 (it sends
@@ -324,8 +334,24 @@ export function createProviders(o) {
   var stats = o.stats || {};
   var lichess = createRateLimiter({ now: o.now, sleep: o.sleep,
     ratePerMin: o.ratePerMin, burst: o.burst });
-  var cdbLane = createLimiter(2);
+  var cdbLane = createLimiter(CDB_IN_FLIGHT);
   var sleep = o.sleep || function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  var cdbPausedUntil = 0;
+
+  // A ChessDB request waits out a 429 pause in its lane slot, so nothing else goes out
+  // either until the pause is over.
+  function cdbFetch(url) {
+    var wait = cdbPausedUntil - now();
+    return (wait > 0 ? sleep(wait) : Promise.resolve()).then(function () {
+      return o.fetch(url);
+    }).then(function (res) {
+      if (res.status === 429) {
+        stats.chessdb429 = (stats.chessdb429 || 0) + 1;
+        cdbPausedUntil = now() + CDB_PAUSE_MS;
+      }
+      return res;
+    });
+  }
   var inflight = new Map();   // identical concurrent requests share one fetch
   var asking = new Map();     // analysis requests on their way
 
@@ -462,7 +488,7 @@ export function createProviders(o) {
           var p = cdbLane(function () {
             stats.chessdbRequests = (stats.chessdbRequests || 0) + 1;
             var url = CHESSDB_URL + '?action=queryall&json=1&board=' + encodeURIComponent(fen);
-            return o.fetch(url).then(function (res) {
+            return cdbFetch(url).then(function (res) {
               if (!res.ok) throw HttpError(res.status);
               return res.json();
             }).then(function (j) {
@@ -489,11 +515,12 @@ export function createProviders(o) {
    * A dropped connection is retried, not passed on: one failed lookup in a deeper round
    * stops the whole table ('error'). Seen live on 2026-09-28, the page's own ChessDB
    * fetch failing with ERR_CONNECTION_CLOSED once, while 150 lookups at 3 in flight (450 a
-   * minute) all went through: a passing network fault, not a limit. HTTP errors other
-   * than 5xx are ChessDB's answer and final.
+   * minute) all went through: a passing network fault, not a limit. A 429 is tried again
+   * too, once the lane's pause is over. Other HTTP errors under 500 are ChessDB's answer
+   * and final.
    */
   function cdbRetryable(e) {
-    return !!e && !e.cancelled && (!e.status || e.status >= 500);
+    return !!e && !e.cancelled && (!e.status || e.status === 429 || e.status >= 500);
   }
 
   /*
@@ -513,7 +540,7 @@ export function createProviders(o) {
         stats.chessdbAnalyse = (stats.chessdbAnalyse || 0) + 1;
         var url = CHESSDB_URL + '?action=' + (uci ? 'store' : 'queue') + '&json=1&board='
           + encodeURIComponent(fen) + (uci ? '&move=move:' + uci : '');
-        return o.fetch(url).then(function (res) {
+        return cdbFetch(url).then(function (res) {
           if (!res.ok) throw HttpError(res.status);
           var t = { t: now() };
           // The position-level record is what chessdb() checks to know it should look again.
