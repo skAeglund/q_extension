@@ -28,6 +28,12 @@
  * Work goes best first by reach (the chance of the line, from the opponent's move
  * shares), so a run stopped at any point has done the most likely positions.
  *
+ * Given lines (state.given, from a --moves with variations: repgen/lines.mjs) override the
+ * plan where they are: at a given position of theirs only the given replies are followed,
+ * and at one of mine the given move is played without a search. Otherwise they count as any
+ * position does: a given reply's reach is its real share, and it is an opponent decision
+ * for coverage, so where the lines end the plan carries on as it would have there.
+ *
  * A check (repgen/check.mjs) sets `recheck` on done nodes of mine: they are searched
  * again, in reach order like queued work, but stay done meanwhile, so the PGN keeps the
  * old line until the new search replaces it. A re-search that changes the move drops
@@ -393,6 +399,7 @@ export function createGenerator(o) {
   var now = o.now || Date.now;
   var state = o.state;
   var nodes = state.nodes;
+  var given = state.given || {};
 
   // path: the first move order to arrive, for the log.
   function ensure(fen, ply, reach, oi, path) {
@@ -461,7 +468,25 @@ export function createGenerator(o) {
     if (old) prune(state);
   }
 
+  // A given move of mine: played as given. ChessDB is asked only for the PGN's mark.
+  function givenMove(n) {
+    return Promise.resolve(d.chessdb(n.fen)).catch(function () { return null; }).then(function (cdb) {
+      var mv = d.play(n.fen, given[n.key][0]);
+      var side = sideToMove(n.fen);
+      var best = null, own = null;
+      (cdb && cdb.status === 'ok' && cdb.moves || []).forEach(function (m) {
+        var e = { san: m.san, win: scoreToRootWin(m.score, n.fen, side) };
+        if (!best || e.win > best.win) best = e;
+        if (moveKey(m.san) === moveKey(mv.san)) own = e;
+      });
+      settle(n, mv, { pickedBy: 'given', engine: own ? own.win : undefined,
+        bestMove: own && best ? best.san : undefined, bestEngine: own && best ? best.win : undefined });
+      return { type: 'given', node: n };
+    });
+  }
+
   function myStep(n) {
+    if (given[n.key]) return givenMove(n);
     return Promise.all([d.explorer(n.fen), d.chessdb(n.fen)]).then(function (r) {
       var ex = r[0], cdb = r[1];
       n.games = ex ? ex.total : 0;
@@ -626,7 +651,32 @@ export function createGenerator(o) {
     });
   }
 
+  // Given replies: those and no others, most played first like any, each with its real
+  // share. A reply without games gets reach 0, so its line ends at their next move.
+  function givenReplies(n) {
+    return Promise.resolve(d.explorer(n.fen)).then(function (ex) {
+      n.games = ex ? ex.total : 0;
+      var games = {};
+      (ex && ex.moves || []).forEach(function (m) { games[moveKey(m.san)] = m.games; });
+      n.replies = given[n.key].map(function (san) {
+        var mv = d.play(n.fen, san);
+        var g = games[moveKey(mv.san)] || 0;
+        return { san: mv.san, share: n.games ? g / n.games : 0, games: g, given: true, fen: mv.fen };
+      }).sort(function (a, b) { return b.games - a.games; }).map(function (r) {
+        r.child = ensure(r.fen, n.ply + 1, n.reach * r.share, n.oi + 1,
+          (n.path || []).concat(r.san)).key;
+        delete r.fen;
+        return r;
+      });
+      n.status = 'done';
+      n.given = true;
+      delete n.retryAt;
+      return { type: 'expanded', node: n };
+    });
+  }
+
   function oppStep(n) {
+    if (given[n.key]) return givenReplies(n);
     if (n.ply + 1 >= cfg.maxPly) return Promise.resolve(leaf(n, 'max-ply'));
     return Promise.resolve(d.explorer(n.fen)).then(function (ex) {
       n.games = ex ? ex.total : 0;

@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 617 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 628 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -952,6 +952,21 @@ valued move inside it, ChessDB's best is played (`why: 'max-loss'`, PGN "the pra
 lose too much"). Like `weights`, it is saved at creation, and a run without it keeps 0 with a
 note. `--check` passes the fresh best to `choose()` and says when a pick is over the limit.
 Harness only.
+
+**Repgen: lines given with `--moves` (2026-10-05).** Requested: `--moves "1. d4 c5 2. dxc5 Nf6
+3. Nf3 (3. Nc3 e6) (3. c3) Na6"`, each line end a starting point and no other branch
+covered. `repgen/lines.mjs` reads it with pgntree's parser. The moves before the first
+variation stay the prefix (so a plain line runs exactly as before), and the tree's positions
+with a move after them go into `state.given` (fenKey → SANs). There the generator plays the
+given moves only: given replies are followed whatever their games (most played first), and a
+given move of mine is played unsearched (`pickedBy: 'given'`, ChessDB asked only for the
+mark; PGN `given move`, which `clean.mjs` knows). Otherwise given positions count as any:
+a given reply's reach is its real share, and ply and oi go on as usual, so where the lines
+end the plan carries on as a run from the prefix would. (The first version reset reach, ply
+and oi at every line end, the user's "starting point" taken literally; they asked for the
+real shares instead the same day.) Two moves of mine at one position are
+refused, and so is resuming with other lines. `--check` leaves given moves alone (only their
+engine values and marks update). Harness only; no live run yet.
 
 **Whole archive (`explorerdb all`, 2026-09-30).** Requested: all of Lichess's standard rated
 dumps (165 months, 8.13 B games, about 2 TB compressed; the newest, 2026-08, is 30.1 GB for

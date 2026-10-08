@@ -170,6 +170,10 @@ export function toPgn(state, o) {
         });
       if (others.length) s += '; ' + others.join(', ');
       bits.push(s);
+    } else if (n.pickedBy === 'given') {
+      // A move of the lines given with --moves: played, not searched.
+      bits.push('given move' + (n.engine != null ? ', engine ' + win(n.engine) : '') +
+        (e.mark ? ' (best ' + e.best.san + ' ' + win(e.best.win) + ')' : ''));
     } else {
       bits.push('engine move' + (n.engine != null ? ' ' + win(n.engine) : '') +
         (n.why === 'few-games' ? ', few games'
