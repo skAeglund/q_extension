@@ -718,6 +718,8 @@ node tools/explorerdb.mjs serve aug26                # http://localhost:9337, Ct
   limit, no per-position budget, so rows deepen as fast as ChessDB answers. Its answers
   aren't cached, since one month's counts and Lichess's shouldn't share a cache. Clear the
   field to go back to Lichess.
+- **Repworks:** type `localhost:9337` there too. The server answers a web page's cross-origin
+  requests only for `https://dubious-moves.github.io`; another page needs `--origin <url>` (repeatable).
   - Since asking costs nothing, the explorer is asked below rare moves too, which
     Lichess's path skips to save requests. A position reached by other move orders then
     counts its games.

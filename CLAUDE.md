@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 617 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 623 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -290,6 +290,14 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
   index keeps games the ply limit cut off (`CUT`) apart from ended ones (`ENDED`). The answer's
   totals leave the cut games out, because the search reads moves as shares of the total and
   those games' next moves are unknown. Index format 2; format 1 files must be re-imported.
+  Answers carry CORS only for `dubious-moves.github.io` (Repworks) plus `o.origins` (`serve
+  --origin`), matched as exact strings, never `*`: a wildcard would let any site you visit read
+  your index. The extension sends no `Origin` and gets the answer with no CORS headers, as
+  before. An allowed origin gets them on errors too, so the page can read a 400. Its preflight
+  is a 204 with no body, since it only asks whether the GET may follow; the 204 also carries
+  `Access-Control-Allow-Private-Network`, because Chrome's Private Network Access check refuses
+  a public page's fetch to localhost without it. A preflight from any other origin is a 405,
+  as before. Preflights count in `served`.
 - `tools/deeprep.mjs` scores moves from the local index alone (`deeprep/search.mjs`): an
   expectimax over games, mine the max by score, theirs the games-weighted mean, leaves the
   results of the games through a position. It walks one chess.js board with

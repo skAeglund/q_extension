@@ -1333,6 +1333,93 @@ module.exports = async function run(check) {
   const server = SV.createServer(db);
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   const address = 'localhost:' + server.address().port;
+  // Node's fetch won't send Origin (a forbidden header), so these use http.request.
+  const rawReq = (port, method, path, headers) => new Promise((resolve, reject) => {
+    const q = require('http').request({ host: '127.0.0.1', port, method, path, headers }, r => {
+      const parts = [];
+      r.on('data', c => parts.push(c));
+      r.on('end', () => resolve({ status: r.statusCode, headers: r.headers, body: Buffer.concat(parts).toString() }));
+    });
+    q.on('error', reject);
+    q.end();
+  });
+  const ORIGIN = 'https://dubious-moves.github.io';
+  const aoh = 'access-control-allow-origin';
+  const sport = server.address().port;
+  await check('CORS: an allowed origin gets Allow-Origin and Vary on answers and on errors', async () => {
+    const info = await rawReq(sport, 'GET', '/info', { Origin: ORIGIN });
+    assert.strictEqual(info.status, 200);
+    assert.strictEqual(info.headers[aoh], ORIGIN);
+    assert.strictEqual(info.headers.vary, 'Origin');
+    const ok = await rawReq(sport, 'GET', '/lichess?fen=' + encodeURIComponent(START), { Origin: ORIGIN });
+    assert.strictEqual(ok.status, 200);
+    assert.strictEqual(ok.headers[aoh], ORIGIN);
+    const bad = await rawReq(sport, 'GET', '/lichess', { Origin: ORIGIN });
+    assert.strictEqual(bad.status, 400);
+    assert.strictEqual(bad.headers[aoh], ORIGIN);
+    const nf = await rawReq(sport, 'GET', '/masters', { Origin: ORIGIN });
+    assert.strictEqual(nf.status, 404);
+    assert.strictEqual(nf.headers[aoh], ORIGIN);
+    const post = await rawReq(sport, 'POST', '/info', { Origin: ORIGIN });
+    assert.strictEqual(post.status, 405);
+    assert.strictEqual(post.headers[aoh], ORIGIN);
+  });
+  await check('CORS: another origin, or none (the extension), gets the same answer without the header', async () => {
+    const plain = await rawReq(sport, 'GET', '/info', {});
+    for (const h of [{ Origin: 'https://evil.example' }, {}]) {
+      const r = await rawReq(sport, 'GET', '/info', h);
+      assert.strictEqual(r.status, 200);
+      assert.strictEqual(r.headers[aoh], undefined);
+      assert.strictEqual(r.headers.vary, undefined);
+      assert.strictEqual(r.body, plain.body);
+    }
+    assert.deepStrictEqual(JSON.parse(plain.body), ask('/info').body);
+  });
+  await check('CORS: a preflight from the allowed origin is a 204 with the headers it asked for', async () => {
+    const r = await rawReq(sport, 'OPTIONS', '/info', { Origin: ORIGIN,
+      'Access-Control-Request-Method': 'GET', 'Access-Control-Request-Headers': 'content-type,x-test',
+      'Access-Control-Request-Private-Network': 'true' });
+    assert.strictEqual(r.status, 204);
+    assert.strictEqual(r.body, '');
+    assert.strictEqual(r.headers[aoh], ORIGIN);
+    assert.strictEqual(r.headers.vary, 'Origin');
+    assert.strictEqual(r.headers['access-control-allow-methods'], 'GET, OPTIONS');
+    assert.strictEqual(r.headers['access-control-allow-headers'], 'content-type,x-test');
+    assert.ok(Number(r.headers['access-control-max-age']) > 0);
+    assert.strictEqual(r.headers['access-control-allow-private-network'], 'true');
+    const bare = await rawReq(sport, 'OPTIONS', '/info', { Origin: ORIGIN, 'Access-Control-Request-Method': 'GET' });
+    assert.strictEqual(bare.status, 204);
+    assert.strictEqual(bare.headers['access-control-allow-headers'], undefined);
+  });
+  await check('CORS: a preflight from another origin, or without one, is a 405 with no CORS headers', async () => {
+    for (const h of [{ Origin: 'https://evil.example', 'Access-Control-Request-Method': 'GET' }, {}]) {
+      const r = await rawReq(sport, 'OPTIONS', '/info', h);
+      assert.strictEqual(r.status, 405);
+      assert.ok(!Object.keys(r.headers).some(k => /^access-control-|^vary$/.test(k)), Object.keys(r.headers).join());
+    }
+  });
+  await check('CORS: near-miss origins are refused', async () => {
+    for (const o of [ORIGIN + '.evil.example', 'http://dubious-moves.github.io', ORIGIN + '/',
+      'https://evil.dubious-moves.github.io', ORIGIN.toUpperCase(), '*', 'null']) {
+      const r = await rawReq(sport, 'GET', '/info', { Origin: o });
+      assert.strictEqual(r.headers[aoh], undefined, o);
+      const p = await rawReq(sport, 'OPTIONS', '/info', { Origin: o });
+      assert.strictEqual(p.status, 405, o);
+    }
+  });
+  await check('CORS: o.origins adds origins and keeps the default', async () => {
+    const extra = SV.createServer(db, { origins: ['http://localhost:5173'] });
+    await new Promise(r => extra.listen(0, '127.0.0.1', r));
+    const port = extra.address().port;
+    for (const o of ['http://localhost:5173', ORIGIN]) {
+      const r = await rawReq(port, 'GET', '/info', { Origin: o });
+      assert.strictEqual(r.headers[aoh], o);
+      assert.strictEqual((await rawReq(port, 'OPTIONS', '/info', { Origin: o })).status, 204);
+    }
+    assert.strictEqual((await rawReq(port, 'GET', '/info', { Origin: 'http://localhost:5174' })).headers[aoh], undefined);
+    extra.closeAllConnections();
+    await new Promise(r => extra.close(r));
+  });
   const FILTER = { speeds: ['blitz'], ratings: [2000] };
   const noCache = { get: () => Promise.reject(new Error('the cache was read')),
     put: () => Promise.reject(new Error('the cache was written')) };
