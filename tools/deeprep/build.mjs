@@ -7,9 +7,11 @@
  *      opponent doesn't fall for it. Two checks, from ChessDB: my move at most `maxLoss`
  *      win% points under ChessDB's best (as repgen's), and the sound value, the score
  *      after their replies that aren't blunders, at most `soundMargin` under the best
- *      candidate's. The sound value is shrunk as the deep score is: unshrunk, a move with a
- *      few hundred lucky games knocked well-known ones out as "unsound" (the first real
- *      build, 2026-10-03: 3.Be3 Qc7, 201 games, put Nf6 and Nc6, 3,201 and 4,854, out);
+ *      candidate's, taken at its lower bound (`soundZ` SEs under). The sound value is
+ *      shrunk as the deep score is: unshrunk, a move with a few hundred lucky games knocked
+ *      well-known ones out as "unsound" (the first real build, 2026-10-03: 3.Be3 Qc7, 201
+ *      games, put Nf6 and Nc6, 3,201 and 4,854, out). Shrinking alone wasn't enough for a
+ *      move just over minGames, hence the lower bound;
  *   3. a good practical evaluation: ChessDB's eval of my move, and Prac d1 (ChessDB's evals
  *      after each of their replies, weighed by how often people play them, risk-averse),
  *      blended with the deep score by `weights`;
@@ -54,10 +56,13 @@ export var BUILD_DEFAULTS = {
   coverage: 0.9, coverageStep: 0.1, singleBelow: 0.5,
   minReach: 0.005, minShare: 0, lineMinReach: 0.001,
   consider: 4,            // my best moves by deep score that are weighed (plus the most played)
-  weights: [0.1, 0.2, 0.7],   // ChessDB, Prac d1, deep: the blend my move is ranked by
+  weights: [0.3, 0.2, 0.5],   // ChessDB, Prac d1, deep: the blend my move is ranked by
   maxLoss: 5,             // ChessDB: my move at most this many win% under its best (0: off)
   blunder: 8,             // a reply giving me this many win% over their best is a blunder
   soundMargin: 3,         // sound value at most this far under the best candidate's (0: off)
+  soundZ: 1,              // ...whose sound value counts at its lower bound, minus this many SEs
+  enginePrior: 1,         // deep and sound shrink towards the position's score plus this times
+                          // ChessDB's win% for the move over the average move's (0: the score alone)
   learnCost: 1,           // points of the repertoire's score 100 new positions must earn (0: off)
   theme: 0.5,             // a move played elsewhere with the same pawns costs this much less than a new one
   costCap: 300,           // positions counted per move at most
@@ -123,13 +128,14 @@ export function blend(w, parts) {
  * index's replies `rp` (createSearch().candidates() there: their replies with deep scores
  * for me). `pull` ({ mu, w }, optional): the candidate's own shrinkage at my move, from
  * candidates() there (mu its position's score, w its weight). Returns { prac, sound, trap,
- * refute, refuteValue }:
+ * refute, refuteValue, pulled }:
  *   prac   Prac d1: the risk-averse mean of ChessDB's eval after each reply played, by games
  *   sound  the frequency-weighted deep score over the replies that aren't blunders (a
  *          blunder gives me more than `blunder` win% over their best reply), pulled to mu
  *          as the candidate's deep score is, so the two compare; with none played,
  *          ChessDB's eval after their best one
  *   trap   the share of the games that are blunders
+ *   pulled whether sound was pulled to mu (not ChessDB's eval for want of replies)
  * All null when ChessDB doesn't know the position.
  */
 export function replyCheck(cdb, fen, side, rp, cfg, pull) {
@@ -152,10 +158,12 @@ export function replyCheck(cdb, fen, side, rp, cfg, pull) {
     ss += r.games * 100 * r.s;
   });
   var sound = sw > 0 ? ss / sw : bestMe;
-  if (sw > 0 && pull && isFinite(pull.mu)) sound = pull.mu + pull.w * (sound - pull.mu);
+  var pulled = sw > 0 && pull && isFinite(pull.mu);
+  if (pulled) sound = pull.mu + pull.w * (sound - pull.mu);
   return {
     prac: items.length ? riskMean(items, cfg.risk) : null,
     sound: sound,
+    pulled: !!pulled,
     trap: rp.total ? blunders / rp.total : 0,
     refute: bestSan,
     refuteValue: bestMe
@@ -430,6 +438,16 @@ export function createBuilder(db, o) {
       });
     }
     n.engineBest = bestSan != null ? { san: bestSan, win: best } : null;
+    // ChessDB's view of the average move here, by games: what the position's score stands for.
+    var eref = null;
+    if (cfg.enginePrior > 0) {
+      var ew = 0, es = 0;
+      op.list.forEach(function (x) {
+        var v = wins.get(moveKey(x.san));
+        if (v != null) { ew += x.games; es += x.games * v; }
+      });
+      if (ew > 0) eref = es / ew;
+    }
     n.cands.forEach(function (c, i) {
       if (wins.has(moveKey(c.san))) c.engine = wins.get(moveKey(c.san));
       if (c.out) return;
@@ -442,11 +460,29 @@ export function createBuilder(db, o) {
       // A move ChessDB lists no eval for here still has one: after it, their best reply.
       // Without it, the loss limit would pass exactly the moves it knows least about.
       if (c.engine == null && chk.refuteValue != null) c.engine = chk.refuteValue;
+      // Shrink towards what ChessDB predicts for the move, not the position's score alone:
+      // v'' = T + w (v - T), T = mu + enginePrior x (engine - eref), which is the search's
+      // v' plus (1 - w) x that lean. A thin move then keeps its games' lead only as far as
+      // the engine backs it; a well-known one barely moves. Asked 2026-10-19, after the
+      // Scandi build: 6.Bg5 Qb6 (ChessDB -0.29, 153 games) and 10.Bxf6 Rxf6 (58 games, over
+      // Qxf6, ChessDB's best) were both decided by thin games' luck pulled to the average.
+      c.lean = 0;
+      if (eref != null && c.engine != null && c.w != null) {
+        c.lean = (1 - c.w) * cfg.enginePrior * (c.engine - eref);
+        c.deep += c.lean;
+        if (chk.pulled) c.sound += c.lean;
+      }
       if (cfg.maxLoss > 0 && c.engine != null && best != null && best - c.engine > cfg.maxLoss + 1e-9) c.out = 'max-loss';
     });
     n.cands.forEach(function (c) { c.blend = blend(cfg.weights, [c.engine, c.prac, c.deep]); });
     if (cfg.soundMargin > 0) {
-      var sounds = n.cands.filter(function (c) { return !c.out && c.sound != null; }).map(function (c) { return c.sound; });
+      // The bar is the best sound value at its lower bound, with the move's deep SE: a thin
+      // move's luck is its sound value too. The Scandi build (2026-10-19) put 10...Qxf6 (982
+      // games, 6% blunders, sound 64.4) out as unsound by 0.12 against Rxf6's 67.6 ±5.5 on
+      // 58 games, and Rxf6 won.
+      var sounds = n.cands.filter(function (c) { return !c.out && c.sound != null; }).map(function (c) {
+        return c.sound - cfg.soundZ * (c.se || 0);
+      });
       var top = sounds.length ? Math.max.apply(null, sounds) : null;
       n.cands.forEach(function (c) {
         if (!c.out && c.sound != null && c.sound < top - cfg.soundMargin - 1e-9) c.out = 'unsound';

@@ -1175,6 +1175,32 @@ requests): 87 positions, 58.54% in sample, against v2's 98 and 58.61%. So the cu
 6.Bg5 Qb6 7.Bxf6 Bxf2+, the refutation of 7.Bxf6 (ChessDB mates). The 3.c4 branch is still
 at 55.0: its refutation lines stay under the limit.
 
+**Thin moves and the sound check (2026-10-19).** The Scandi Gambit build
+(`scandi_gambit_deep_v2`, Black after 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6) played 10...Rxf6 after
+4.Nf3 e5 5.d3 f5 6.Be2 Nf6 7.O-O Bd6 8.Nc3 O-O 9.Bg5 h6 10.Bxf6: 58 games at 75% raw, deep
+67.6 ±5.5, a leaf just over `minGames`. Qxf6 (982 games, 64.5, 6% blunders, better by ChessDB
+and Prac) was put out as unsound by 0.12, against Rxf6's sound value, which was the same 58
+games' luck. The bar is now the best sound value minus `soundZ` (1) times its candidate's
+SE. Rxf6 can still win on its deep score; the review now lists a thin pick that beat a move
+with 4x its games (`thin-lead`), where before `thin` alone never made the list.
+
+**ChessDB in deeprep's shrinkage, and its weight (2026-10-19).** The user, on 4.Nc3 e5 5.d3
+Nf6 6.Bg5 of the same build: Qb6 (ChessDB -0.29 for Black, 52.7 win%, 153 games at 76.8 raw)
+lost to Bc5 (50.0, 2,787 games), and "if one move gives us the advantage, this should be
+valued higher than a couple of % in prepared score". Two changes in `build.mjs`, not in
+`search.mjs` (the search's inner choices still shrink towards the position's score):
+- `enginePrior` (1): a candidate shrinks towards mu + enginePrior x (its ChessDB win% - the
+  games-weighted ChessDB win% of the position's moves), which is the search's value plus
+  `(1 - w)` times that lean (`c.lean` in the JSON). The sound value leans the same, unless
+  it is ChessDB's own eval for want of replies (`replyCheck`'s `pulled`).
+- `weights` default 0.3/0.2/0.5 (was 0.1/0.2/0.7). repgen's own `weights` are unchanged.
+Offline from v3's JSON, before building: either alone changed 5 picks, together 6
+(46% of reach). `scandi_gambit_deep_v4` (same decisions file): 116 positions (128), 56.6%
+in sample (56.9), holdout 53.6% ±2.4 (51.3; the holdout's month is in the index). 3 picks
+changed: 5.d3 Nf6 over f5 (ChessDB 48.2 vs 45.5, 14.8% reach), which drops the 10...Rxf6
+line; 7.d3 Nd5 over Bd6 after 4.Nc3 e5 5.Bb5 Nf6 6.Bxc6+ bxc6 (57 games, lean +4.1); and one
+at 0.1%. 6.Bg5 stays Bc5: Qb6 now blends 1.8 higher, but learning costs it 2.7 to Bc5's 0.3.
+
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where
 the site already consults `REP_STATE.map`.
