@@ -1,0 +1,52 @@
+[Event "Practical repertoire"]
+[Site "repgen"]
+[Date "2026.10.28"]
+[White "Lichess"]
+[Black "Repertoire"]
+[Result "*"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qd6 4. Nf3 {41% of 4,527,370 games} (4. d4 {37% of
+4,527,370 games} 4... Nf6 {engine move 48.7} 5. Nf3 {62% of 995,886 games ·
+transposes to 4. Nf3 Nf6 5. d4} (5. Bc4 {10% of 995,886 games} 5... a6 {engine
+move 49.9} 6. Nge2 {38% of 57,231 games · not searched yet} (6. Nf3 {31% of
+57,231 games · not searched yet})) (5. g3 {7% of 995,886 games} 5... Bg4
+{engine move 49.9} 6. f3 {24% of 18,269 games · not searched yet} (6. Be2 {21%
+of 18,269 games · not searched yet})) (5. Be3 {5% of 995,886 games} 5... a6
+{engine move 48.8 · not searched yet})) (4. Bc4 {10% of 4,527,370 games}
+4... Nf6 {engine move 49.8} 5. d3 {37% of 238,996 games} (5. Nf3 {28% of
+238,996 games · transposes to 4. Nf3 Nf6 5. Bc4}) (5. Nge2 {12% of 238,996
+games · not searched yet}) (5. d4 {9% of 238,996 games · transposes to 4. d4
+Nf6 5. Bc4}) 5... Nc6 {engine move 50.0} 6. Nge2 {28% of 18,963 games · not
+searched yet} (6. Nf3 {25% of 18,963 games · transposes to 4. Nf3 Nf6 5. Bc4
+Nc6 6. d3})) (4. d3 {3% of 4,527,370 games} 4... Nc6 {engine move 49.9} 5. Nf3
+{43% of 27,326 games · not searched yet} (5. g3 {17% of 27,326 games · not
+searched yet})) 4... Nf6 {engine move 48.8} 5. d4 {38% of 868,999 games}
+(5. Bc4 {25% of 868,999 games} 5... Nc6 {engine move 49.7} 6. O-O {45% of
+32,888 games} (6. d3 {27% of 32,888 games} 6... a6 {engine move 50.0} 7. O-O
+{36% of 8,399 games · not searched yet} (7. Bg5 {15% of 8,399 games · not
+searched yet})) 6... Bg4 {engine move 50.0} 7. h3 {43% of 20,129 games · not
+searched yet} (7. d3 {20% of 20,129 games · not searched yet})) (5. Be2 {14% of
+868,999 games} 5... Nc6 {engine move 49.0} 6. O-O {61% of 23,112 games} (6. d3
+{16% of 23,112 games} 6... Bf5 {engine move 49.9} 7. O-O {52% of 3,619 games ·
+not searched yet}) 6... a6 {engine move 49.0} 7. d4 {40% of 16,448 games}
+(7. d3 {35% of 16,448 games · not searched yet}) 7... Bf5 {engine move 48.8}
+8. Be3 {28% of 11,784 games · not searched yet} (8. a3 {15% of 11,784 games ·
+not searched yet})) (5. d3 {8% of 868,999 games} 5... Nc6 {engine move 49.4}
+6. Be2 {36% of 16,298 games · transposes to 4. Nf3 Nf6 5. Be2 Nc6 6. d3} (6. g3
+{21% of 16,298 games · not searched yet})) 5... Nc6 {engine move 48.6} 6. Bb5
+{24% of 91,296 games} (6. Be3 {19% of 91,296 games} 6... a6 {engine move 48.7}
+7. Bd3 {25% of 18,454 games · not searched yet} (7. Be2 {23% of 18,454 games ·
+not searched yet}) (7. Bc4 {21% of 18,454 games · not searched yet})) (6. Nb5
+{10% of 91,296 games} 6... Qd8 {engine move 48.5} 7. Bf4 {57% of 6,321 games}
+(7. c4 {19% of 6,321 games · not searched yet}) 7... Nd5 {engine move 48.9}
+8. Bg3 {94% of 3,157 games} 8... a6 {engine move 48.8} 9. Nc3 {53% of 2,896
+games · not searched yet}) (6. Bc4 {9% of 91,296 games} 6... Bg4 {engine move
+49.6} 7. Be3 {43% of 15,983 games · not searched yet} (7. O-O {19% of 15,983
+games · not searched yet})) (6. Be2 {9% of 91,296 games} 6... a6 {engine move
+48.8} 7. O-O {63% of 22,670 games · transposes to 4. Nf3 Nf6 5. Be2 Nc6 6. O-O
+a6 7. d4}) 6... a6 {engine move 49.4} 7. Ba4 {49% of 8,763 games} (7. Bxc6+
+{46% of 8,763 games} 7... Qxc6 {engine move 49.2} 8. O-O {53% of 4,254 games}
+8... Nd5 {engine move 49.1} 9. Nxd5 {52% of 87 games · not searched yet})
+7... b5 {engine move 51.1} 8. Bb3 {98% of 2,711 games} 8... Na5 {engine move
+51.1} 9. O-O {66% of 742 games} 9... e6 {engine move 51.4} 10. Re1 {43% of 204
+games · not searched yet} *
