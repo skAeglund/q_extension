@@ -58,3 +58,89 @@
 09:45:18 Me   [2.07%] 4.Nf3 Nf6 5.Be2 Nc6 6.d3: Bf5 (engine 49.9)
 09:45:22 Opp  [2.07%] 4.Nf3 Nf6 5.Be2 Nc6 6.d3 Bf5: O-O 52% of 3619 games
 09:45:22 Me   [1.96%] 4.d4 Nf6 5.Be3: a6 (engine 48.8)
+09:45:26 Opp  [1.96%] 4.d4 Nf6 5.Be3 a6: Nf3 35% of 23987 games
+09:45:26 Me   [1.92%] 4.Nf3 Nf6 5.Bc4 Nc6 6.O-O Bg4 7.h3: Bxf3 (engine 50.0)
+09:45:30 Opp  [1.92%] 4.Nf3 Nf6 5.Bc4 Nc6 6.O-O Bg4 7.h3 Bxf3: Qxf3 100% of 853 games
+09:45:32 Me   [1.92%] 4.Nf3 Nf6 5.Bc4 Nc6 6.O-O Bg4 7.h3 Bxf3 8.Qxf3: O-O-O (engine 49.9)
+09:45:34 Opp  [1.92%] 4.Nf3 Nf6 5.Bc4 Nc6 6.O-O Bg4 7.h3 Bxf3 8.Qxf3 O-O-O: d3 47% of 938 games
+09:45:34 Me   [1.82%] 4.Nf3 Nf6 5.d4 Nc6 6.Be3 a6 7.Bd3: Bg4 (engine 48.9)
+09:45:38 Opp  [1.82%] 4.Nf3 Nf6 5.d4 Nc6 6.Be3 a6 7.Bd3 Bg4: h3 31% of 13773 games
+09:45:38 Me   [1.80%] 4.d4 Nf6 5.Bc4 a6 6.Nge2: b5 (engine 50.0)
+09:45:42 Opp  [1.80%] 4.d4 Nf6 5.Bc4 a6 6.Nge2 b5: Bb3 56%, Bf4 35% of 13226 games
+09:45:42 Me   [1.65%] 4.Nf3 Nf6 5.d4 Nc6 6.Be3 a6 7.Be2: Bf5 (engine 48.8)
+09:45:46 Opp  [1.65%] 4.Nf3 Nf6 5.d4 Nc6 6.Be3 a6 7.Be2 Bf5: O-O 54% of 3946 games
+09:45:46 Me   [1.91%] 4.Nf3 Nf6 5.d4 Nc6 6.Be2 a6 7.O-O Bf5 8.Be3: e6 (engine 48.9)
+09:45:50 Opp  [1.91%] 4.Nf3 Nf6 5.d4 Nc6 6.Be2 a6 7.O-O Bf5 8.Be3 e6: Qd2 23% of 2586 games
+09:45:50 Me   [1.53%] 4.Nf3 Nf6 5.d4 Nc6 6.Bc4 Bg4 7.Be3: O-O-O (engine 50.1)
+09:45:54 Opp  [1.53%] 4.Nf3 Nf6 5.d4 Nc6 6.Bc4 Bg4 7.Be3 O-O-O: O-O 25% of 4034 games
+09:45:54 Me   [1.51%] 4.Nf3 Nf6 5.d4 Nc6 6.Be3 a6 7.Bc4: b5 (engine 49.0)
+09:45:58 Opp  [1.51%] 4.Nf3 Nf6 5.d4 Nc6 6.Be3 a6 7.Bc4 b5: Bb3 84% of 532 games
+09:45:58 Me   [1.48%] 4.d4 Nf6 5.Bc4 a6 6.Nf3: b5 (engine 49.9)
+09:46:02 Opp  [1.48%] 4.d4 Nf6 5.Bc4 a6 6.Nf3 b5: Bb3 89% of 56531 games
+09:46:02 Me   [1.33%] 4.Nf3 Nf6 5.Bc4 Nc6 6.d3 a6 7.O-O: Bg4 (engine 50.2)
+09:46:06 Opp  [1.33%] 4.Nf3 Nf6 5.Bc4 Nc6 6.d3 a6 7.O-O Bg4: h3 50% of 8494 games
+09:46:06 Me   [1.32%] 4.d4 Nf6 5.Bc4 a6 6.Nf3 b5 7.Bb3: c5 (engine 50.0)
+09:46:10 Opp  [1.32%] 4.d4 Nf6 5.Bc4 a6 6.Nf3 b5 7.Bb3 c5: dxc5 84% of 5267 games
+09:46:10 Me   [1.28%] 4.d3 Nc6 5.Nf3: e5 (engine 50.0)
+09:46:14 Opp  [1.28%] 4.d3 Nc6 5.Nf3 e5: Be2 39% of 19858 games
+09:46:15 Me   [1.28%] 4.Nf3 Nf6 5.d4 Nc6 6.Bb5 a6 7.Ba4 b5 8.Bb3 Na5 9.O-O e6 10.Re1: c5 (engine 52.2)
+09:46:18 Me   [1.27%] 4.Nf3 Nf6 5.d4 Nc6 6.Be3 a6 7.Bc4 b5 8.Bb3: Na5 (engine 50.1)
+09:46:22 Opp  [1.27%] 4.Nf3 Nf6 5.d4 Nc6 6.Be3 a6 7.Bc4 b5 8.Bb3 Na5: O-O 40% of 228 games
+09:46:23 Me   [1.21%] 4.Nf3 Nf6 5.Be2 Nc6 6.O-O a6 7.d3: e5 (engine 49.9)
+09:46:25 Opp  [1.21%] 4.Nf3 Nf6 5.Be2 Nc6 6.O-O a6 7.d3 e5: Bg5 42% of 2748 games
+09:46:26 Me   [1.19%] 4.Nf3 Nf6 5.d4 Nc6 6.Bb5 a6 7.Bxc6+ Qxc6 8.O-O Nd5 9.Nxd5: Qxd5 (engine 49.2)
+09:46:30 Opp  [1.19%] 4.Nf3 Nf6 5.d4 Nc6 6.Bb5 a6 7.Bxc6+ Qxc6 8.O-O Nd5 9.Nxd5 Qxd5: h3 23% of 48 games
+09:46:30 Me   [1.17%] 4.Bc4 Nf6 5.Nge2: a6 (engine 50.0)
+09:46:34 Opp  [1.17%] 4.Bc4 Nf6 5.Nge2 a6: O-O 33% of 11132 games
+09:46:34 Me   [1.14%] 4.Nf3 Nf6 5.d4 Nc6 6.Nb5 Qd8 7.Bf4 Nd5 8.Bg3 a6 9.Nc3: Bg4 (engine 48.6)
+09:46:37 Opp  [1.14%] 4.Nf3 Nf6 5.d4 Nc6 6.Nb5 Qd8 7.Bf4 Nd5 8.Bg3 a6 9.Nc3 Bg4: Be2 57% of 649 games
+09:46:38 Me   [1.11%] 4.d4 Nf6 5.Bc4 a6 6.Nf3 b5 7.Bb3 c5 8.dxc5: Qxd1+ (engine 50.0)
+09:46:42 Opp  [1.11%] 4.d4 Nf6 5.Bc4 a6 6.Nf3 b5 7.Bb3 c5 8.dxc5 Qxd1+: Nxd1 86% of 22026 games
+09:46:42 Me   [1.07%] 4.Nf3 Nf6 5.Be2 Nc6 6.d3 Bf5 7.O-O: e5 (engine 49.9)
+09:46:46 Opp  [1.07%] 4.Nf3 Nf6 5.Be2 Nc6 6.d3 Bf5 7.O-O e5: Bg5 38% of 2349 games
+09:46:47 Me   [1.02%] 4.Bc4 Nf6 5.d3 Nc6 6.Nge2: a6 (engine 50.7)
+09:46:50 Opp  [1.02%] 4.Bc4 Nf6 5.d3 Nc6 6.Nge2 a6: Bf4 43% of 3383 games
+09:46:53 Me   [1.01%] 4.d4 Nf6 5.Bc4 a6 6.Nge2 b5 7.Bb3: Bb7 (engine 50.0)
+09:46:58 Opp  [1.01%] 4.d4 Nf6 5.Bc4 a6 6.Nge2 b5 7.Bb3 Bb7: O-O 46% of 6582 games
+09:46:59 Me   [0.95%] 4.d4 Nf6 5.Bc4 a6 6.Nf3 b5 7.Bb3 c5 8.dxc5 Qxd1+ 9.Nxd1: e6 (engine 50.0)
+09:47:02 Opp  [0.95%] 4.d4 Nf6 5.Bc4 a6 6.Nf3 b5 7.Bb3 c5 8.dxc5 Qxd1+ 9.Nxd1 e6: Be3 77% of 15479 games
+09:47:02 Me   [0.91%] 4.Nf3 Nf6 5.Bc4 Nc6 6.O-O Bg4 7.h3 Bxf3 8.Qxf3 O-O-O 9.d3: Nd4 (engine 49.8)
+09:47:06 Opp  [0.91%] 4.Nf3 Nf6 5.Bc4 Nc6 6.O-O Bg4 7.h3 Bxf3 8.Qxf3 O-O-O 9.d3 Nd4: Qd1 83% of 224 games
+09:47:06 Me   [0.90%] 4.Nf3 Nf6 5.Bc4 Nc6 6.O-O Bg4 7.d3: e6 (engine 50.8)
+09:47:10 Opp  [0.90%] 4.Nf3 Nf6 5.Bc4 Nc6 6.O-O Bg4 7.d3 e6: h3 33% of 2937 games
+09:47:11 Me   [0.78%] 4.Nf3 Nf6 5.d4 Nc6 6.Nb5 Qd8 7.c4: e6 (engine 48.3)
+09:47:14 Opp  [0.78%] 4.Nf3 Nf6 5.d4 Nc6 6.Nb5 Qd8 7.c4 e6: Bf4 35% of 360 games
+09:47:14 Me   [0.75%] 4.Nf3 Nf6 5.Bc4 Nc6 6.O-O Bg4 7.h3 Bxf3 8.Qxf3 O-O-O 9.d3 Nd4 10.Qd1: e6 (engine 49.8)
+09:47:17 Opp  [0.75%] 4.Nf3 Nf6 5.Bc4 Nc6 6.O-O Bg4 7.h3 Bxf3 8.Qxf3 O-O-O 9.d3 Nd4 10.Qd1 e6: Be3 63% of 110 games
+09:47:18 Me   [0.73%] 4.d4 Nf6 5.Bc4 a6 6.Nf3 b5 7.Bb3 c5 8.dxc5 Qxd1+ 9.Nxd1 e6 10.Be3: Bb7 (engine 50.0)
+09:47:22 Opp  [0.73%] 4.d4 Nf6 5.Bc4 a6 6.Nf3 b5 7.Bb3 c5 8.dxc5 Qxd1+ 9.Nxd1 e6 10.Be3 Bb7: Nc3 25% of 8895 games
+09:47:22 Me   [0.68%] 4.d4 Nf6 5.Be3 a6 6.Nf3: Nc6 (engine 48.7)
+09:47:23 Me   [0.67%] 4.Nf3 Nf6 5.d4 Nc6 6.Bc4 Bg4 7.O-O: O-O-O (engine 50.1)
+09:47:25 Opp  [0.67%] 4.Nf3 Nf6 5.d4 Nc6 6.Bc4 Bg4 7.O-O O-O-O: Be3 41% of 1806 games
+09:47:26 Me   [0.67%] 4.Nf3 Nf6 5.Bc4 Nc6 6.d3 a6 7.O-O Bg4 8.h3: Bh5 (engine 50.0)
+09:47:30 Opp  [0.67%] 4.Nf3 Nf6 5.Bc4 Nc6 6.d3 a6 7.O-O Bg4 8.h3 Bh5: Re1 23% of 4601 games
+09:47:30 Me   [0.67%] 4.Nf3 Nf6 5.d3 Nc6 6.g3: e5 (engine 49.3)
+09:47:34 Opp  [0.67%] 4.Nf3 Nf6 5.d3 Nc6 6.g3 e5: Bg2 85% of 1151 games
+09:47:34 Me   [0.66%] 4.Nf3 Nf6 5.d4 Nc6 6.Bc4 Bg4 7.Be3 O-O-O 8.O-O: Qb4 (engine 50.5)
+09:47:38 Opp  [0.66%] 4.Nf3 Nf6 5.d4 Nc6 6.Bc4 Bg4 7.Be3 O-O-O 8.O-O Qb4: Bxf7 47% of 136 games
+09:47:38 Me   [0.65%] 4.Nf3 Nf6 5.d4 Nc6 6.Nb5 Qd8 7.Bf4 Nd5 8.Bg3 a6 9.Nc3 Bg4 10.Be2: Nxc3 (engine 48.7)
+09:47:42 Opp  [0.65%] 4.Nf3 Nf6 5.d4 Nc6 6.Nb5 Qd8 7.Bf4 Nd5 8.Bg3 a6 9.Nc3 Bg4 10.Be2 Nxc3: bxc3 99% of 137 games
+09:47:42 Me   [0.65%] 4.Nf3 Nf6 5.d4 Nc6 6.Nb5 Qd8 7.Bf4 Nd5 8.Bg3 a6 9.Nc3 Bg4 10.Be2 Nxc3 11.bxc3: e6 (engine 48.5)
+09:47:46 Opp  [0.65%] 4.Nf3 Nf6 5.d4 Nc6 6.Nb5 Qd8 7.Bf4 Nd5 8.Bg3 a6 9.Nc3 Bg4 10.Be2 Nxc3 11.bxc3 e6: O-O 66% of 244 games
+09:47:46 Me   [0.64%] 4.d4 Nf6 5.Bc4 a6 6.Nge2 b5 7.Bf4: Qd7 (engine 50.0)
+09:47:49 Opp  [0.64%] 4.d4 Nf6 5.Bc4 a6 6.Nge2 b5 7.Bf4 Qd7: Bb3 78% of 426 games
+09:47:50 Me   [0.63%] 4.d4 Nf6 5.g3 Bg4 6.f3: Bf5 (engine 50.0)
+09:47:54 Opp  [0.63%] 4.d4 Nf6 5.g3 Bg4 6.f3 Bf5: Bf4 66% of 2213 games
+09:47:54 Me   [0.57%] 4.Nf3 Nf6 5.d3 Nc6 6.g3 e5 7.Bg2: Qd8 (engine 49.4)
+09:47:57 Opp  [0.57%] 4.Nf3 Nf6 5.d3 Nc6 6.g3 e5 7.Bg2 Qd8: O-O 50% of 44 games
+09:47:58 Me   [0.56%] 4.Nf3 Nf6 5.d4 Nc6 6.Be3 a6 7.Bd3 Bg4 8.h3: Bh5 (engine 48.9)
+09:48:02 Opp  [0.56%] 4.Nf3 Nf6 5.d4 Nc6 6.Be3 a6 7.Bd3 Bg4 8.h3 Bh5: g4 51% of 4246 games
+09:48:02 Me   [0.56%] 4.Nf3 Nf6 5.d4 Nc6 6.Be2 a6 7.O-O Bf5 8.a3: O-O-O (engine 50.0)
+09:48:06 Opp  [0.56%] 4.Nf3 Nf6 5.d4 Nc6 6.Be2 a6 7.O-O Bf5 8.a3 O-O-O: Be3 73% of 1082 games
+09:48:06 Me   [0.55%] 4.Nf3 Nf6 5.Bc4 Nc6 6.d3 a6 7.Bg5: b5 (engine 50.9)
+09:48:09 Opp  [0.55%] 4.Nf3 Nf6 5.Bc4 Nc6 6.d3 a6 7.Bg5 b5: Bb3 93% of 40 games
+09:48:10 Me   [0.55%] 4.d4 Nf6 5.g3 Bg4 6.Be2: Bxe2 (engine 50.0)
+09:48:14 Opp  [0.55%] 4.d4 Nf6 5.g3 Bg4 6.Be2 Bxe2: Ngxe2 78% of 2858 games
+09:48:15 Me   [0.52%] 4.d3 Nc6 5.g3: Bf5 (engine 50.0)
+09:48:18 Opp  [0.52%] 4.d3 Nc6 5.g3 Bf5: Bf4 51% of 1667 games
+09:48:18 Me   [0.51%] 4.Nf3 Nf6 5.Bc4 Nc6 6.d3 a6 7.Bg5 b5 8.Bb3: e6 (engine 50.9)
