@@ -1,0 +1,39 @@
+[Event "Practical repertoire"]
+[Site "repgen"]
+[Date "2026.10.28"]
+[White "Lichess"]
+[Black "Repertoire"]
+[Result "*"]
+
+1. e4 d5 2. exd5 Qxd5 3. Nc3 Qd6 4. Nf3 {41%} (4. d4 {37%} 4... Nf6 {Nf3
+transposes into 4. Nf3 Nf6 5. d4} 5. Bc4 {10%} (5. g3 {7%} 5... Bg4 6. f3 {24%}
+(6. Be2 {21%} 6... Bxe2 7. Ngxe2 Nc6 8. Bf4 Qd7) 6... Bf5 7. Bf4 Qb6) (5. Be3
+{5%} 5... a6 6. Nf3 Nc6 {Transposes into 4. Nf3 Nf6 5. d4 Nc6 6. Be3 a6})
+5... a6 6. Nge2 {38%} (6. Nf3 {31%} 6... b5 7. Bb3 c5 8. dxc5 Qxd1+ 9. Nxd1 e6
+10. Be3 Bb7 11. Nc3 Nbd7 12. O-O-O Nxc5) 6... b5 7. Bb3 {56%} (7. Bf4 {35%}
+7... Qd7 8. Bb3 e6 9. O-O Bb7) 7... Bb7 8. O-O Nc6 9. Bf4 Qd7 10. d5 Na5)
+(4. Bc4 {10%} 4... Nf6 {Nf3 transposes into 4. Nf3 Nf6 5. Bc4
+
+d4 transposes into 4. d4 Nf6 5. Bc4} 5. d3 {37%} (5. Nge2 {12%} 5... a6 6. O-O
+b5 7. Bb3 c5 8. d3 e6) 5... Nc6 {Nf3 transposes into 4. Nf3 Nf6 5. Bc4 Nc6
+6. d3} 6. Nge2 a6 7. Bf4 e5 8. Bg3 Be6 9. Bxe6 Qxe6 10. O-O O-O-O) (4. d3 {3%}
+4... Nc6 5. Nf3 {43%} (5. g3 {17%} 5... Bf5 6. Bf4 e5 7. Be3 Nge7) 5... e5
+6. Be2 Bd7 7. O-O O-O-O) 4... Nf6 5. d4 {38%} (5. Bc4 {25%} 5... Nc6 6. O-O
+{45%} (6. d3 {27%} 6... a6 7. O-O {36%} (7. Bg5 {15%} 7... b5 8. Bb3 e6)
+7... Bg4 8. h3 Bh5 9. Re1 O-O-O) 6... Bg4 7. h3 {43%} (7. d3 {20%} 7... e6
+8. h3 Bh5) 7... Bxf3 8. Qxf3 O-O-O 9. d3 Nd4 10. Qd1 e6 11. Be3 a6) (5. Be2
+{14%} 5... Nc6 6. O-O {61%} (6. d3 {16%} 6... Bf5 7. O-O e5 8. Bg5 O-O-O)
+6... a6 7. d4 {40%} (7. d3 {35%} 7... e5 8. Bg5 Be6 9. Bxf6 gxf6 10. Ne4 Qe7)
+7... Bf5 8. Be3 {28%} (8. a3 {15%} 8... O-O-O 9. Be3 e5 10. dxe5 Nxe5 11. Qxd6
+Nxf3+ 12. Bxf3 Bxd6 13. Rac1 Be5) 8... e6 9. Qd2 O-O-O 10. Rad1 Qb4) (5. d3
+{8%} 5... Nc6 {Be2 transposes into 5. Be2 Nc6 6. d3} 6. g3 e5 7. Bg2 Qd8 8. O-O
+Bd6 9. Bg5 h6) 5... Nc6 6. Bb5 {24%} (6. Be3 {19%} 6... a6 7. Bd3 {25%} (7. Be2
+{23%} 7... Bf5 {O-O transposes into 5. Be2 Nc6 6. O-O a6 7. d4 Bf5 8. Be3})
+(7. Bc4 {21%} 7... b5 8. Bb3 Na5 9. O-O e6) 7... Bg4 8. h3 Bh5 9. g4 Bg6
+10. Bxg6 hxg6) (6. Nb5 {10%} 6... Qd8 7. Bf4 {57%} (7. c4 {19%} 7... e6 8. Bf4
+Bb4+ 9. Nc3 e5) 7... Nd5 8. Bg3 a6 9. Nc3 Bg4 10. Be2 Nxc3 11. bxc3 e6 12. O-O
+Bd6 13. Rb1 Rb8) (6. Bc4 {9%} 6... Bg4 7. Be3 {43%} (7. O-O {19%} 7... O-O-O
+{Be3 transposes into 7. Be3 O-O-O 8. O-O}) 7... O-O-O 8. O-O Qb4 9. Bxf7 e5)
+(6. Be2 {9%} 6... a6 {O-O transposes into 5. Be2 Nc6 6. O-O a6 7. d4}) 6... a6
+7. Ba4 {49%} (7. Bxc6+ {46%} 7... Qxc6 8. O-O Nd5 9. Nxd5 Qxd5 10. h3 e6)
+7... b5 8. Bb3 Na5 9. O-O e6 10. Re1 c5 *
