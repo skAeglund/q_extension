@@ -176,7 +176,8 @@ export function toPgn(state, o) {
         (e.mark ? ' (best ' + e.best.san + ' ' + win(e.best.win) + ')' : ''));
     } else {
       bits.push('engine move' + (n.engine != null ? ' ' + win(n.engine) : '') +
-        (n.why === 'few-games' ? ', few games'
+        (n.why === 'engine-only' ? ''
+          : n.why === 'few-games' ? ', few games'
           : n.why === 'max-loss' ? ', the practical moves lose too much' : ', no practical value'));
     }
     var c = e.child && nodes[e.child];

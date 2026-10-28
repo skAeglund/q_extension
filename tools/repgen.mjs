@@ -85,7 +85,9 @@ function usage() {
     '           repertoires/' + MAIA_FILE + ', downloaded on first use), --maia-elo <n>',
     '           (default: from --ratings, 2150 for the default ratings), --maia-until 100,',
     '           --maia-only-below 10, --maia-weight 20',
-    'Choice:    --weights <ChessDB>,<Practical>,<prepared> (default ' + REPGEN_DEFAULTS.weights + ';',
+    'Choice:    --engine-only [on|off] (off; kept with the run): no Practical search, ChessDB\'s',
+    '           best move is played (the more played one on a tie); the replies are chosen as usual',
+    '           --weights <ChessDB>,<Practical>,<prepared> (default ' + REPGEN_DEFAULTS.weights + ';',
     '           kept with the run, and runs from before it have 0,1,0), --prep-prior-games 50',
     '           (games\' worth of trust in the Practical value at a prepared score\'s leaf)',
     'Plan:      ' + Object.keys(REPGEN_DEFAULTS).filter(function (k) { return k !== 'weights'; }).map(function (k) {
@@ -148,12 +150,12 @@ function sideOf(v, fen) {
   throw new Error('--side is white or black');
 }
 
-function onOff(v) {
+function onOff(v, name) {
   if (v === true) return true;
   var s = String(v).toLowerCase();
   if (s === 'on' || s === 'true' || s === 'yes' || s === '1') return true;
   if (s === 'off' || s === 'false' || s === 'no' || s === '0') return false;
-  throw new Error('--maia is on or off, got ' + v);
+  throw new Error('--' + (name || 'maia') + ' is on or off, got ' + v);
 }
 
 function readToken(args) {
@@ -278,6 +280,16 @@ function run(args, local) {
     log('Note: the positions searched so far keep the values they had with risk aversion ' +
       riskWas + '. --check searches them again.');
   }
+  if (args.engineOnly != null) {
+    var engineWas = !!state.config.engineOnly;
+    state.config.engineOnly = onOff(args.engineOnly, 'engine-only');
+    if (engineWas !== state.config.engineOnly && Object.keys(state.nodes).length > 1 && !checking) {
+      log(state.config.engineOnly
+        ? 'Note: the positions done so far keep their moves. --check plays ChessDB\'s best ' +
+          'where it differs.'
+        : 'Note: the positions done so far keep ChessDB\'s best move; only new ones are searched.');
+    }
+  }
   if (args.maia != null) {
     var maiaWas = !!state.search.maia;
     state.search.maia = onOff(args.maia);
@@ -291,7 +303,8 @@ function run(args, local) {
   if (state.search.maiaElo) state.search.maiaElo = clampElo(state.search.maiaElo);
   // Maia plays at the filter's rating unless told otherwise, so a run that changes its
   // filter moves Maia with it.
-  var maiaOn = !!state.search.maia;
+  // An engine-only run searches nothing, so Maia isn't loaded.
+  var maiaOn = !!state.search.maia && !state.config.engineOnly;
   var maiaElo = state.search.maiaElo || maiaEloFor(state.filter.ratings);
   var maiaFile = args.maiaModel && args.maiaModel !== true ? path.resolve(String(args.maiaModel))
     : path.join(REPERTOIRES, MAIA_FILE);
@@ -522,6 +535,7 @@ function run(args, local) {
             }).join(', ') : '') +
             (alts.length ? '; ' + alts.join(', ') : '') +
             (n.ms != null ? '; ' + mmss(n.ms) + ', ' + n.spent + ' requests' : '') + ')'
+          : n.why === 'engine-only' ? ' (engine ' + n.engine.toFixed(1) + ')'
           : ' (engine, ' + n.why + ')') +
           (n.checkPrev && n.checkPrev.move
             ? (n.checkPrev.move === n.move ? ', kept' : ', was ' + n.checkPrev.move) : ''));
