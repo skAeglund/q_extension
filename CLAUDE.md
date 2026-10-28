@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 628 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 635 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -967,6 +967,18 @@ and oi at every line end, the user's "starting point" taken literally; they aske
 real shares instead the same day.) Two moves of mine at one position are
 refused, and so is resuming with other lines. `--check` leaves given moves alone (only their
 engine values and marks update). Harness only; no live run yet.
+
+**Repgen: engine only (`--engine-only`, 2026-10-28).** Requested: a repertoire from
+ChessDB's evals alone, with the opponent's replies from the games as usual and no time spent
+on Practical values. A position of mine is then one ChessDB request and no search: ChessDB's
+best move is played (`pickedBy: 'engine'`, `why: 'engine-only'`, PGN `engine move N`). The
+explorer is asked there only when ChessDB scores two moves the same, and the more played one
+goes. No margin for a more played move near the best: the user didn't want one. Maia isn't
+loaded. Saved in `state.config` like the weights; switching it mid-run keeps the moves made so
+far. `--check` asks no explorer for such a run, and searches again where ChessDB's best now
+beats the move (a tie is no reason), Practical picks from before the switch included.
+`state.searches` stays at 0, so `--max-searches` doesn't stop such a run; `--hours` does.
+Harness only; no live run yet.
 
 **Whole archive (`explorerdb all`, 2026-09-30).** Requested: all of Lichess's standard rated
 dumps (165 months, 8.13 B games, about 2 TB compressed; the newest, 2026-08, is 30.1 GB for

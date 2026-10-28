@@ -1271,4 +1271,81 @@ module.exports = async function run(check) {
     assert.strictEqual(a.action, null);
     assert.strictEqual(a.engine.bestMove, 'x');
   });
+
+  console.log('\nrepertoire generator: engine only');
+  // White at S: ChessDB ties e4 and d4, and d4 is the more played. ChessDB doesn't know P.
+  const ew = {
+    'S w - - 0 1': { ex: ex(1000, [['e4', 100], ['d4', 900]]),
+      cdb: cdb([['e4', 30], ['d4', 30], ['c4', 10]]), next: { e4: 'D b - - 0 1', d4: 'D b - - 0 1' } },
+    'D b - - 0 1': { ex: ex(1000, [['Nf6', 600], ['d5', 400]]),
+      next: { Nf6: 'N w - - 0 2', d5: 'P w - - 0 2' } },
+    'N w - - 0 2': { ex: ex(600, [['Nf3', 500], ['c4', 100]]), cdb: cdb([['c4', 20], ['Nf3', 10]]),
+      next: { c4: 'NC b - - 0 2' } },
+    'P w - - 0 2': { ex: ex(400, [['c4', 400]]) },
+    'NC b - - 0 2': { ex: ex(3, [['e6', 3]]) }
+  };
+  const ed = deps(ew);
+  const eAsked = [];
+  const edx = Object.assign({}, ed, { explorer: fen => { eAsked.push(fen); return ed.explorer(fen); } });
+  const es = G.newState('S w - - 0 1', 'w');
+  es.config = { weights: G.REPGEN_DEFAULTS.weights.slice(), maxLoss: 5, engineOnly: true };
+  const eclock = { t: 0 };
+  const eev = await drain(G.createGenerator({ state: es, deps: edx, now: () => eclock.t, config: es.config }), eclock);
+  const EN = es.nodes;
+  await check('engine only: ChessDB\'s best is played, and nothing is searched', () => {
+    assert.strictEqual(eev[eev.length - 1].type, 'done');
+    assert.strictEqual(ed.log.roots.length, 0);
+    assert.strictEqual(EN['N w - -'].move, 'c4');
+    assert.deepStrictEqual([EN['N w - -'].pickedBy, EN['N w - -'].why], ['engine', 'engine-only']);
+    assert.strictEqual(EN['N w - -'].engine, EN['N w - -'].bestEngine);
+    assert.strictEqual(es.searches, 0);
+  });
+  await check('  ...a tie goes to the more played move, and only a tie asks the explorer', () => {
+    assert.strictEqual(EN['S w - -'].move, 'd4');
+    assert.strictEqual(EN['S w - -'].games, 1000);
+    assert.ok(eAsked.indexOf('S w - - 0 1') >= 0);
+    assert.ok(eAsked.indexOf('N w - - 0 2') < 0, eAsked);
+    assert.ok(eAsked.indexOf('D b - - 0 1') >= 0, eAsked);
+  });
+  await check('  ...replies are followed as usual, and an unknown position waits for ChessDB', () => {
+    assert.deepStrictEqual(EN['D b - -'].replies.map(r => r.san), ['Nf6', 'd5']);
+    assert.deepStrictEqual([EN['P w - -'].status, EN['P w - -'].reason], ['leaf', 'no-eval']);
+    assert.ok(ed.log.analysed.indexOf('P w - - 0 2') >= 0);
+  });
+  const epgn = PG.toPgn(es).split('\n\n')[1].replace(/\n/g, ' ');
+  await check('  ...the PGN calls it an engine move, and pgnclean takes that note out', () => {
+    assert.ok(/1\. d4 \{engine move \d+\.\d \}/.test(epgn) || /1\. d4 \{engine move \d+\.\d\}/.test(epgn), epgn);
+    assert.strictEqual(CL.cleanComment('engine move 54.3 · end: few games (3)'), null);
+  });
+  const EC = Object.assign({}, G.REPGEN_DEFAULTS, es.config);
+  await check('  ...a check looks again only when ChessDB\'s best beats the move', () => {
+    const n = Object.assign({}, EN['S w - -']);
+    assert.strictEqual(CK.assess(n, null, cdb([['e4', 30], ['d4', 30]]), EC, G.SEARCH_DEFAULTS).action, null);
+    const r = CK.assess(n, null, cdb([['e4', 40], ['d4', 30]]), EC, G.SEARCH_DEFAULTS);
+    assert.strictEqual(r.action, 'recheck');
+    assert.ok(/ChessDB's best is now e4/.test(r.reasons.join('; ')), r.reasons);
+  });
+  await check('  ...and a Practical pick from before the run went engine only is played again', () => {
+    const n = Object.assign({}, EN['S w - -'], { pickedBy: 'practical', why: undefined, move: 'e4' });
+    const r = CK.assess(n, null, cdb([['e4', 20], ['d4', 30]]), EC, G.SEARCH_DEFAULTS);
+    assert.strictEqual(r.action, 'recheck');
+    assert.ok(/engine only/.test(r.reasons.join('; ')), r.reasons);
+    assert.strictEqual(CK.assess(n, null, cdb([['e4', 30], ['d4', 30]]), EC, G.SEARCH_DEFAULTS).action, null);
+  });
+  await check('  ...without asking the explorer, and the re-search plays the new best', async () => {
+    const cw = JSON.parse(JSON.stringify(ew));
+    cw['N w - - 0 2'].cdb = cdb([['c4', 20], ['Nf3', 40]]);
+    cw['N w - - 0 2'].next.Nf3 = 'NC b - - 0 2';
+    const cd = deps(cw);
+    let exCalls = 0;
+    const cdx = Object.assign({}, cd, { explorer: fen => { exCalls++; return cd.explorer(fen); } });
+    const cs2 = JSON.parse(JSON.stringify(es));
+    const found = await CK.runCheck({ state: cs2, deps: cdx });
+    assert.strictEqual(exCalls, 0);
+    CK.apply(cs2, found.found);
+    assert.ok(cs2.nodes['N w - -'].recheck);
+    await drain(G.createGenerator({ state: cs2, deps: cdx, now: () => 1e9, config: cs2.config }), { t: 1e9 });
+    assert.strictEqual(cs2.nodes['N w - -'].move, 'Nf3');
+    assert.strictEqual(cd.log.roots.length, 0);
+  });
 };

@@ -17,7 +17,8 @@
  * Two kinds of node, keyed by fenKey so a transposition is one node:
  *   me   my move. The candidates are searched like the Practical column's rows, and the
  *        best practical value wins - compared at one depth only, as the column's green
- *        does, because deeper values drift upwards.
+ *        does, because deeper values drift upwards. With `engineOnly` (repgen
+ *        --engine-only) there is no search: ChessDB's best move is played.
  *   opp  their move. Replies are followed most played first until they cover
  *        `coverage` of the games. Coverage drops by `coverageStep` at every later
  *        opponent decision on the line; below `singleBelow` only the top reply goes on.
@@ -208,6 +209,29 @@ export function pickCandidates(ex, cdb, fen, cfg, sopts) {
     scores: scores,
     wins: rows.reduce(function (m, e) { m[e.san] = e.win; return m; }, {}),
     cps: rows.reduce(function (m, e) { if (e.cp != null) m[e.san] = e.cp; return m; }, {}) };
+}
+
+/*
+ * ChessDB's best moves for the side to move (more than one when it scores them the same),
+ * each with its win% for that side. Empty when ChessDB has no eval.
+ */
+export function engineTops(cdb, fen) {
+  var side = sideToMove(fen);
+  var moves = cdb && cdb.status === 'ok' && cdb.moves || [];
+  var top = -Infinity;
+  moves.forEach(function (m) { if (m.score > top) top = m.score; });
+  return moves.filter(function (m) { return m.score === top; }).map(function (m) {
+    return { san: m.san, win: scoreToRootWin(m.score, fen, side) };
+  });
+}
+
+// The most played of `tops` in the explorer's answer `ex` (none: the first).
+export function mostPlayed(tops, ex) {
+  var games = new Map();
+  (ex && ex.moves || []).forEach(function (m) { games.set(moveKey(m.san), m.games || 0); });
+  return tops.reduce(function (b, t) {
+    return (games.get(moveKey(t.san)) || 0) > (games.get(moveKey(b.san)) || 0) ? t : b;
+  });
 }
 
 // Practical alone: no weight on ChessDB or the prepared score. Also what a missing
@@ -485,8 +509,43 @@ export function createGenerator(o) {
     });
   }
 
+  // ChessDB doesn't know my position: ask it to analyse, and look again later.
+  function noEval(n) {
+    // ChessDB knew it when it was searched; keep that search rather than lose the line.
+    if (n.recheck) throw new Error('ChessDB has no eval for it now');
+    n.noEval = (n.noEval || 0) + 1;
+    if (n.noEval > cfg.noEvalRetries) return leaf(n, 'no-eval');
+    try {
+      if (d.analyse) Promise.resolve(d.analyse(n.fen)).catch(function () {});
+    } catch (e) { /* a hint only */ }
+    n.status = 'wait';
+    n.retryAt = now() + cfg.noEvalWaitMs;
+    return { type: 'no-eval', node: n };
+  }
+
+  // Engine only: ChessDB's best move, no search. The explorer is asked only when ChessDB
+  // rates two moves the same, and the more played one goes; a position of mine otherwise
+  // costs one ChessDB request and no Lichess one.
+  function engineStep(n) {
+    return Promise.resolve(d.chessdb(n.fen)).then(function (cdb) {
+      if (cdb && (cdb.status === 'checkmate' || cdb.status === 'stalemate')) {
+        return leaf(n, 'game-over');
+      }
+      var tops = engineTops(cdb, n.fen);
+      if (!tops.length) return noEval(n);
+      return Promise.resolve(tops.length > 1 ? d.explorer(n.fen) : null).then(function (ex) {
+        if (ex) n.games = ex.total;
+        var best = mostPlayed(tops, ex);
+        settle(n, d.play(n.fen, best.san), { pickedBy: 'engine', why: 'engine-only',
+          engine: best.win, bestMove: best.san, bestEngine: best.win });
+        return { type: 'searched', node: n };
+      });
+    });
+  }
+
   function myStep(n) {
     if (given[n.key]) return givenMove(n);
+    if (cfg.engineOnly) return engineStep(n);
     return Promise.all([d.explorer(n.fen), d.chessdb(n.fen)]).then(function (r) {
       var ex = r[0], cdb = r[1];
       n.games = ex ? ex.total : 0;
@@ -494,18 +553,7 @@ export function createGenerator(o) {
         return leaf(n, 'game-over');
       }
       var c = pickCandidates(ex, cdb, n.fen, cfg, sopts);
-      if (!c.rows.length) {
-        // ChessDB knew it when it was searched; keep that search rather than lose the line.
-        if (n.recheck) throw new Error('ChessDB has no eval for it now');
-        n.noEval = (n.noEval || 0) + 1;
-        if (n.noEval > cfg.noEvalRetries) return leaf(n, 'no-eval');
-        try {
-          if (d.analyse) Promise.resolve(d.analyse(n.fen)).catch(function () {});
-        } catch (e) { /* a hint only */ }
-        n.status = 'wait';
-        n.retryAt = now() + cfg.noEvalWaitMs;
-        return { type: 'no-eval', node: n };
-      }
+      if (!c.rows.length) return noEval(n);
       // Too few games to say anything practical: the engine's move ends the line.
       if (n.games < cfg.stopGames) {
         settle(n, d.play(n.fen, c.best.san), { pickedBy: 'engine', why: 'few-games',

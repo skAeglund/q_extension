@@ -98,7 +98,10 @@ export function assess(n, ex, cdb, cfg, sopts, all) {
   out.markFrom = markFor(engineLoss(n), cfg);
   out.markTo = markFor(engineLoss(Object.assign({}, n, out.engine)), cfg);
 
-  if (n.pickedBy === 'practical' || n.why === 'no-value' || n.why === 'max-loss') {
+  // An engine-only run plays ChessDB's best everywhere (a move picked before the run
+  // went engine only too); a tie with the played move is no reason to look again.
+  var engineOnly = !!cfg.engineOnly && n.pickedBy !== 'given';
+  if (!engineOnly && (n.pickedBy === 'practical' || n.why === 'no-value' || n.why === 'max-loss')) {
     var had = new Set((n.rows || []).map(function (r) { return moveKey(r.san); }));
     c.rows.filter(function (san) { return !had.has(moveKey(san)); }).forEach(function (san) {
       out.reasons.push('new candidate ' + san + ' (engine ' + win(c.wins[san]) + ')');
@@ -175,7 +178,13 @@ export function assess(n, ex, cdb, cfg, sopts, all) {
       }
     }
   }
-  if (n.pickedBy === 'engine' && moveKey(best.san) !== moveKey(n.move)) {
+  // Under ChessDB's best now (a move ChessDB scores the same as its best is a tie).
+  var notBest = !(out.engine.engine >= best.win - 1e-9);
+  if (engineOnly && n.pickedBy !== 'engine' && notBest) {
+    out.reasons.push('the run is engine only, and ChessDB\'s best is ' + best.san + ' (' +
+      win(best.win) + '), not ' + n.move + ' (' + win(out.engine.engine) + ')');
+  } else if (n.pickedBy === 'engine' &&
+    (n.why === 'engine-only' ? notBest : moveKey(best.san) !== moveKey(n.move))) {
     out.reasons.push('ChessDB\'s best is now ' + best.san + ' (' + win(best.win) + '), was ' +
       n.move + ' (' + win(n.engine) + ')');
   }
@@ -205,7 +214,8 @@ export function runCheck(o) {
   function next() {
     if (i >= keys.length) return Promise.resolve(found);
     var n = state.nodes[keys[i++]];
-    var needsGames = n.status === 'done';
+    // Engine only: the games decide nothing at my moves (a tie is no reason, see assess()).
+    var needsGames = n.status === 'done' && !cfg.engineOnly;
     return Promise.all([needsGames ? d.explorer(n.fen) : null, d.chessdb(n.fen)]).then(function (r) {
       var res = assess(n, r[0], r[1], cfg, sopts, o.all);
       if (res.still === 'no-eval' && d.analyse) {

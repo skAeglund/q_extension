@@ -384,6 +384,14 @@ groups (`--speeds`, `--ratings`). A run keeps the filter it started with.
   ChessDB's eval instead, which its Practical value would be at least about; the PGN says
   `Prac at least …, few games`. With fewer than 10 games in the position, or no Practical
   value at all, ChessDB's best move is played instead and the PGN says so.
+- **Engine only** (`--engine-only`): no Practical search at all. At each position of yours
+  ChessDB's best move is played, the more played one when ChessDB scores two the same, and
+  the PGN says `{engine move 54.1}`. A position of yours then costs one ChessDB request and
+  no Lichess one (the explorer is asked only for a tie), so a run is limited by the
+  opponent's positions alone. Their replies, and where lines end, work as below. A run
+  keeps the setting; `--engine-only off` goes back to searching from where it is, and
+  `--check` plays ChessDB's best again wherever its eval has moved. `--max-searches`
+  doesn't apply (there are no searches); use `--hours`.
 - **Their moves.** The most played replies are followed until they cover 90% of the games
   (`--coverage`). Coverage drops by 10 points at each later opponent decision on the line
   (`--coverage-step`). Once it falls below 50% (`--single-below`), only the most played reply
