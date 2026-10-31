@@ -1,0 +1,1932 @@
+{
+ "targets": {
+  "r1b1kbnr/pp3ppp/8/6q1/2Bnp3/8/PPPP1PPP/RNBQ1KNR b kq -": {
+   "fen": "r1b1kbnr/pp3ppp/8/6q1/2Bnp3/8/PPPP1PPP/RNBQ1KNR b kq - 7 9",
+   "line": "[45.00%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.Bc4 e4 6.Qe2 Qe7 7.Ng1 Nd4 8.Qd1 Qg5 9.Kf1",
+   "reason": "decision",
+   "reach": 0.45,
+   "before": {
+    "best": {
+     "san": "b5",
+     "score": 43
+    },
+    "mine": {
+     "san": "b5",
+     "score": 43
+    },
+    "rival": {
+     "san": "Qc5",
+     "score": 26
+    },
+    "line": 6
+   },
+   "after": {
+    "best": {
+     "san": "b5",
+     "score": 35
+    },
+    "mine": {
+     "san": "b5",
+     "score": 35
+    },
+    "rival": {
+     "san": "Qc5",
+     "score": 26
+    },
+    "line": 6
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "b5",
+     "score": 34
+    },
+    {
+     "depth": 2,
+     "best": "b5",
+     "score": 35
+    },
+    {
+     "depth": 3,
+     "best": "b5",
+     "score": 35
+    },
+    {
+     "depth": 4,
+     "best": "b5",
+     "score": 37
+    },
+    {
+     "depth": 5,
+     "best": "b5",
+     "score": 39
+    },
+    {
+     "depth": 6,
+     "best": "b5",
+     "score": 38
+    }
+   ],
+   "stopped": "stable",
+   "requests": 97,
+   "queued": 20,
+   "ms": 187829,
+   "at": "2026-10-30T19:26:39.490Z"
+  },
+  "r1b1kbnr/p4ppp/8/1p4q1/2Bnp3/3P4/PPP2PPP/RNBQ1KNR b kq -": {
+   "fen": "r1b1kbnr/p4ppp/8/1p4q1/2Bnp3/3P4/PPP2PPP/RNBQ1KNR b kq - 0 10",
+   "line": "[45.00%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.Bc4 e4 6.Qe2 Qe7 7.Ng1 Nd4 8.Qd1 Qg5 9.Kf1 b5 10.d3",
+   "reason": "decision",
+   "reach": 0.45,
+   "before": {
+    "best": {
+     "san": "Qg4",
+     "score": 52
+    },
+    "mine": {
+     "san": "Qg4",
+     "score": 52
+    },
+    "rival": {
+     "san": "Qd8",
+     "score": 39
+    },
+    "line": 9
+   },
+   "after": {
+    "best": {
+     "san": "Qd8",
+     "score": 47
+    },
+    "mine": {
+     "san": "Qg4",
+     "score": 37
+    },
+    "rival": {
+     "san": "Qd8",
+     "score": 47
+    },
+    "line": 8
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Qd8",
+     "score": 70
+    },
+    {
+     "depth": 2,
+     "best": "Qd8",
+     "score": 70
+    },
+    {
+     "depth": 3,
+     "best": "Qd8",
+     "score": 45
+    },
+    {
+     "depth": 4,
+     "best": "Qd8",
+     "score": 50
+    },
+    {
+     "depth": 5,
+     "best": "Qd8",
+     "score": 58
+    },
+    {
+     "depth": 6,
+     "best": "Qd8",
+     "score": 63
+    },
+    {
+     "depth": 7,
+     "best": "Qd8",
+     "score": 49
+    }
+   ],
+   "stopped": "time",
+   "requests": 255,
+   "queued": 115,
+   "ms": 1221492,
+   "at": "2026-10-30T19:47:00.983Z"
+  },
+  "r3kbnr/p4ppp/8/1p3b2/3n4/1B1P4/PP3PPP/RNB2KNR w kq -": {
+   "fen": "r3kbnr/p4ppp/8/1p3b2/3n4/1B1P4/PP3PPP/RNB2KNR w kq - 1 14",
+   "line": "[45.00%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.Bc4 e4 6.Qe2 Qe7 7.Ng1 Nd4 8.Qd1 Qg5 9.Kf1 b5 10.d3 Qg4 11.Qxg4 Bxg4 12.Bb3 exd3 13.cxd3 Bf5",
+   "reason": "line end",
+   "reach": 0.45,
+   "before": {
+    "best": {
+     "san": "Nc3",
+     "score": -66
+    },
+    "mine": null,
+    "rival": null,
+    "line": 2
+   },
+   "after": {
+    "best": {
+     "san": "g3",
+     "score": -48
+    },
+    "mine": null,
+    "rival": null,
+    "line": 3
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Nc3",
+     "score": -48
+    },
+    {
+     "depth": 2,
+     "best": "g3",
+     "score": -52
+    },
+    {
+     "depth": 3,
+     "best": "g3",
+     "score": -45
+    },
+    {
+     "depth": 4,
+     "best": "g3",
+     "score": -56
+    },
+    {
+     "depth": 5,
+     "best": "g3",
+     "score": -57
+    },
+    {
+     "depth": 6,
+     "best": "g3",
+     "score": -37
+    },
+    {
+     "depth": 7,
+     "best": "g3",
+     "score": -44
+    }
+   ],
+   "stopped": "time",
+   "requests": 272,
+   "queued": 145,
+   "ms": 1234781,
+   "at": "2026-10-30T20:07:35.765Z"
+  },
+  "r1bq1rk1/pp2nppp/2n5/1B2Q3/8/8/PPPP1PPP/RNB1K2R w KQ -": {
+   "fen": "r1bq1rk1/pp2nppp/2n5/1B2Q3/8/8/PPPP1PPP/RNB1K2R w KQ - 1 9",
+   "line": "[16.65%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.Bb5 Bd6 6.Qe2 Ne7 7.Nxe5 Bxe5 8.Qxe5 O-O",
+   "reason": "line end",
+   "reach": 0.1665,
+   "before": {
+    "best": {
+     "san": "Qh5",
+     "score": -189
+    },
+    "mine": null,
+    "rival": null,
+    "line": 8
+   },
+   "after": {
+    "best": {
+     "san": "Qh5",
+     "score": -170
+    },
+    "mine": null,
+    "rival": null,
+    "line": 10
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Qh5",
+     "score": -170
+    },
+    {
+     "depth": 2,
+     "best": "Qh5",
+     "score": -170
+    },
+    {
+     "depth": 3,
+     "best": "Qh5",
+     "score": -170
+    },
+    {
+     "depth": 4,
+     "best": "Qh5",
+     "score": -170
+    },
+    {
+     "depth": 5,
+     "best": "Qg5",
+     "score": -195
+    },
+    {
+     "depth": 6,
+     "best": "Qg5",
+     "score": -132
+    }
+   ],
+   "stopped": "time",
+   "requests": 309,
+   "queued": 159,
+   "ms": 1226461,
+   "at": "2026-10-30T20:28:02.229Z"
+  },
+  "r1bqkb1r/pp3ppp/2n2n2/4p1B1/8/3P1N2/PPP2PPP/RN1QKB1R b KQkq -": {
+   "fen": "r1bqkb1r/pp3ppp/2n2n2/4p1B1/8/3P1N2/PPP2PPP/RN1QKB1R b KQkq - 2 6",
+   "line": "[13.95%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.d3 Nf6 6.Bg5",
+   "reason": "decision",
+   "reach": 0.1395,
+   "before": {
+    "best": {
+     "san": "Qb6",
+     "score": 21
+    },
+    "mine": {
+     "san": "Qb6",
+     "score": 21
+    },
+    "rival": {
+     "san": "Be6",
+     "score": 20
+    },
+    "line": 7
+   },
+   "after": {
+    "best": {
+     "san": "Be6",
+     "score": 13
+    },
+    "mine": {
+     "san": "Qb6",
+     "score": 7
+    },
+    "rival": {
+     "san": "Be6",
+     "score": 13
+    },
+    "line": 10
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Be6",
+     "score": 8
+    },
+    {
+     "depth": 2,
+     "best": "Be6",
+     "score": 8
+    },
+    {
+     "depth": 3,
+     "best": "Be6",
+     "score": 8
+    },
+    {
+     "depth": 4,
+     "best": "Be6",
+     "score": 9
+    },
+    {
+     "depth": 5,
+     "best": "Be6",
+     "score": 9
+    },
+    {
+     "depth": 6,
+     "best": "Be6",
+     "score": 14
+    }
+   ],
+   "stopped": "stable",
+   "requests": 57,
+   "queued": 7,
+   "ms": 65995,
+   "at": "2026-10-30T20:29:08.228Z"
+  },
+  "r1b1k2r/pp3ppp/1qn2n2/2b1p1B1/8/1P1P1N2/P1PQ1PPP/RN2KB1R b KQkq -": {
+   "fen": "r1b1k2r/pp3ppp/1qn2n2/2b1p1B1/8/1P1P1N2/P1PQ1PPP/RN2KB1R b KQkq - 2 8",
+   "line": "[13.95%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.d3 Nf6 6.Bg5 Qb6 7.b3 Bc5 8.Qd2",
+   "reason": "decision",
+   "reach": 0.1395,
+   "before": {
+    "best": {
+     "san": "Bg4",
+     "score": 261
+    },
+    "mine": {
+     "san": "e4",
+     "score": 242
+    },
+    "rival": {
+     "san": "Bg4",
+     "score": 261
+    },
+    "line": 4
+   },
+   "after": {
+    "best": {
+     "san": "e4",
+     "score": 377
+    },
+    "mine": {
+     "san": "e4",
+     "score": 377
+    },
+    "rival": {
+     "san": "Bg4",
+     "score": 261
+    },
+    "line": 10
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "e4",
+     "score": 300
+    },
+    {
+     "depth": 2,
+     "best": "e4",
+     "score": 300
+    },
+    {
+     "depth": 3,
+     "best": "e4",
+     "score": 314
+    },
+    {
+     "depth": 4,
+     "best": "e4",
+     "score": 377
+    },
+    {
+     "depth": 5,
+     "best": "e4",
+     "score": 390
+    }
+   ],
+   "stopped": "time",
+   "requests": 213,
+   "queued": 116,
+   "ms": 1221109,
+   "at": "2026-10-30T20:49:29.338Z"
+  },
+  "r1b1k2r/pp3ppp/1qn2n2/2b3B1/4p3/1P1P1N2/P1PQ1PPP/RN2KB1R w KQkq -": {
+   "fen": "r1b1k2r/pp3ppp/1qn2n2/2b3B1/4p3/1P1P1N2/P1PQ1PPP/RN2KB1R w KQkq - 0 9",
+   "line": "[13.95%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.d3 Nf6 6.Bg5 Qb6 7.b3 Bc5 8.Qd2 e4",
+   "reason": "line end",
+   "reach": 0.1395,
+   "before": {
+    "best": {
+     "san": "Qe2",
+     "score": -300
+    },
+    "mine": null,
+    "rival": null,
+    "line": 2
+   },
+   "after": {
+    "best": {
+     "san": "d4",
+     "score": -395
+    },
+    "mine": null,
+    "rival": null,
+    "line": 6
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Qe2",
+     "score": -425
+    },
+    {
+     "depth": 2,
+     "best": "Bxf6",
+     "score": -428
+    },
+    {
+     "depth": 3,
+     "best": "Bxf6",
+     "score": -428
+    },
+    {
+     "depth": 4,
+     "best": "Bxf6",
+     "score": -428
+    },
+    {
+     "depth": 5,
+     "best": "Bxf6",
+     "score": -428
+    },
+    {
+     "depth": 6,
+     "best": "Bxf6",
+     "score": -406
+    }
+   ],
+   "stopped": "time",
+   "requests": 213,
+   "queued": 109,
+   "ms": 1223461,
+   "at": "2026-10-30T21:09:52.801Z"
+  },
+  "r1bq1rk1/p3nppp/2pb4/8/2N5/8/PPPPQPPP/RNB1K2R b KQ -": {
+   "fen": "r1bq1rk1/p3nppp/2pb4/8/2N5/8/PPPPQPPP/RNB1K2R b KQ - 2 9",
+   "line": "[7.38%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Bb5 e5 5.Bxc6+ bxc6 6.Nf3 Bd6 7.Qe2 Ne7 8.Nxe5 O-O 9.Nc4",
+   "reason": "decision",
+   "reach": 0.0738,
+   "before": {
+    "best": {
+     "san": "Nf5",
+     "score": 25
+    },
+    "mine": {
+     "san": "Nf5",
+     "score": 25
+    },
+    "rival": {
+     "san": "Bf4",
+     "score": 1
+    },
+    "line": 3
+   },
+   "after": {
+    "best": {
+     "san": "Nf5",
+     "score": 13
+    },
+    "mine": {
+     "san": "Nf5",
+     "score": 13
+    },
+    "rival": {
+     "san": "Bf4",
+     "score": 1
+    },
+    "line": 12
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Nf5",
+     "score": 20
+    },
+    {
+     "depth": 2,
+     "best": "Nf5",
+     "score": 20
+    },
+    {
+     "depth": 3,
+     "best": "Nf5",
+     "score": 20
+    },
+    {
+     "depth": 4,
+     "best": "Nf5",
+     "score": 38
+    },
+    {
+     "depth": 5,
+     "best": "Bf4",
+     "score": 1
+    },
+    {
+     "depth": 6,
+     "best": "Ba6",
+     "score": 0
+    },
+    {
+     "depth": 7,
+     "best": "Nf5",
+     "score": 0
+    },
+    {
+     "depth": 8,
+     "best": "Nf5",
+     "score": 0
+    },
+    {
+     "depth": 9,
+     "best": "Nf5",
+     "score": 0
+    }
+   ],
+   "stopped": "stable",
+   "requests": 256,
+   "queued": 96,
+   "ms": 763462,
+   "at": "2026-10-30T21:22:36.264Z"
+  },
+  "r1bq1rk1/p4ppp/2pb1n2/8/8/2Q5/PPPPNPPP/RNB2RK1 b - -": {
+   "fen": "r1bq1rk1/p4ppp/2pb1n2/8/8/2Q5/PPPPNPPP/RNB2RK1 b - - 6 10",
+   "line": "[7.38%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Bb5 e5 5.Bxc6+ bxc6 6.Qe2 Nf6 7.Qxe5+ Be7 8.Ne2 O-O 9.O-O Bd6 10.Qc3",
+   "reason": "decision",
+   "reach": 0.0738,
+   "before": {
+    "best": {
+     "san": "Re8",
+     "score": 46
+    },
+    "mine": {
+     "san": "Re8",
+     "score": 46
+    },
+    "rival": {
+     "san": "Qc7",
+     "score": 41
+    },
+    "line": 5
+   },
+   "after": {
+    "best": {
+     "san": "Re8",
+     "score": 77
+    },
+    "mine": {
+     "san": "Re8",
+     "score": 77
+    },
+    "rival": {
+     "san": "Qc7",
+     "score": 41
+    },
+    "line": 18
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Re8",
+     "score": 78
+    },
+    {
+     "depth": 2,
+     "best": "Re8",
+     "score": 78
+    },
+    {
+     "depth": 3,
+     "best": "Re8",
+     "score": 79
+    },
+    {
+     "depth": 4,
+     "best": "Re8",
+     "score": 79
+    },
+    {
+     "depth": 5,
+     "best": "Re8",
+     "score": 80
+    }
+   ],
+   "stopped": "time",
+   "requests": 236,
+   "queued": 126,
+   "ms": 1222790,
+   "at": "2026-10-30T21:42:59.055Z"
+  },
+  "r1bq1rk1/p4ppp/2pb4/4Nn2/3P4/2P5/PP2QPPP/RNB1K2R b KQ -": {
+   "fen": "r1bq1rk1/p4ppp/2pb4/4Nn2/3P4/2P5/PP2QPPP/RNB1K2R b KQ - 0 10",
+   "line": "[7.38%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Bb5 e5 5.Bxc6+ bxc6 6.Nf3 Bd6 7.Qe2 Ne7 8.Nxe5 O-O 9.d4 Nf5 10.c3",
+   "reason": "decision",
+   "reach": 0.0738,
+   "before": {
+    "best": {
+     "san": "a5",
+     "score": 109
+    },
+    "mine": {
+     "san": "c5",
+     "score": 105
+    },
+    "rival": {
+     "san": "a5",
+     "score": 109
+    },
+    "line": 3
+   },
+   "after": {
+    "best": {
+     "san": "c5",
+     "score": 120
+    },
+    "mine": {
+     "san": "c5",
+     "score": 120
+    },
+    "rival": {
+     "san": "a5",
+     "score": 89
+    },
+    "line": 20
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "a5",
+     "score": 130
+    },
+    {
+     "depth": 2,
+     "best": "a5",
+     "score": 130
+    },
+    {
+     "depth": 3,
+     "best": "a5",
+     "score": 130
+    },
+    {
+     "depth": 4,
+     "best": "c5",
+     "score": 106
+    }
+   ],
+   "stopped": "time",
+   "requests": 227,
+   "queued": 127,
+   "ms": 1225876,
+   "at": "2026-10-30T22:03:24.932Z"
+  },
+  "r1bq1rk1/p4ppp/1bp5/3np3/4N3/3P4/PPP1NPPP/R1BQ1RK1 w - -": {
+   "fen": "r1bq1rk1/p4ppp/1bp5/3np3/4N3/3P4/PPP1NPPP/R1BQ1RK1 w - - 3 11",
+   "line": "[7.38%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Bb5 e5 5.Bxc6+ bxc6 6.Nc3 Nf6 7.Nge2 Bc5 8.O-O O-O 9.d3 Nd5 10.Ne4 Bb6",
+   "reason": "line end",
+   "reach": 0.0738,
+   "before": {
+    "best": {
+     "san": "c4",
+     "score": 0
+    },
+    "mine": null,
+    "rival": null,
+    "line": 3
+   },
+   "after": {
+    "best": {
+     "san": "c4",
+     "score": 0
+    },
+    "mine": null,
+    "rival": null,
+    "line": 7
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "c4",
+     "score": 0
+    },
+    {
+     "depth": 2,
+     "best": "c4",
+     "score": 1
+    },
+    {
+     "depth": 3,
+     "best": "c4",
+     "score": 1
+    },
+    {
+     "depth": 4,
+     "best": "c4",
+     "score": -1
+    },
+    {
+     "depth": 5,
+     "best": "c4",
+     "score": 2
+    },
+    {
+     "depth": 6,
+     "best": "c4",
+     "score": 0
+    }
+   ],
+   "stopped": "stable",
+   "requests": 115,
+   "queued": 45,
+   "ms": 218651,
+   "at": "2026-10-30T22:07:03.584Z"
+  },
+  "r1bqr1k1/p4ppp/2pb1n2/8/8/2Q3N1/PPPP1PPP/RNB2RK1 b - -": {
+   "fen": "r1bqr1k1/p4ppp/2pb1n2/8/8/2Q3N1/PPPP1PPP/RNB2RK1 b - - 8 11",
+   "line": "[7.38%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Bb5 e5 5.Bxc6+ bxc6 6.Qe2 Nf6 7.Qxe5+ Be7 8.Ne2 O-O 9.O-O Bd6 10.Qc3 Re8 11.Ng3",
+   "reason": "decision",
+   "reach": 0.0738,
+   "before": {
+    "best": {
+     "san": "h5",
+     "score": 78
+    },
+    "mine": {
+     "san": "Rb8",
+     "score": 48
+    },
+    "rival": {
+     "san": "h5",
+     "score": 78
+    },
+    "line": 3
+   },
+   "after": {
+    "best": {
+     "san": "h5",
+     "score": 77
+    },
+    "mine": {
+     "san": "Rb8",
+     "score": 48
+    },
+    "rival": {
+     "san": "h5",
+     "score": 77
+    },
+    "line": 19
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "h5",
+     "score": 88
+    },
+    {
+     "depth": 2,
+     "best": "h5",
+     "score": 88
+    },
+    {
+     "depth": 3,
+     "best": "h5",
+     "score": 88
+    },
+    {
+     "depth": 4,
+     "best": "h5",
+     "score": 88
+    },
+    {
+     "depth": 5,
+     "best": "h5",
+     "score": 69
+    },
+    {
+     "depth": 6,
+     "best": "h5",
+     "score": 69
+    }
+   ],
+   "stopped": "time",
+   "requests": 218,
+   "queued": 99,
+   "ms": 1223912,
+   "at": "2026-10-30T22:27:27.497Z"
+  },
+  "r1bq1rk1/p4ppp/3b4/4Nn2/3p4/2P5/PP2QPPP/RNB2RK1 w - -": {
+   "fen": "r1bq1rk1/p4ppp/3b4/4Nn2/3p4/2P5/PP2QPPP/RNB2RK1 w - - 0 12",
+   "line": "[7.38%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Bb5 e5 5.Bxc6+ bxc6 6.Nf3 Bd6 7.Qe2 Ne7 8.Nxe5 O-O 9.d4 Nf5 10.c3 c5 11.O-O cxd4",
+   "reason": "line end",
+   "reach": 0.0738,
+   "before": {
+    "best": {
+     "san": "Qe4",
+     "score": -120
+    },
+    "mine": null,
+    "rival": null,
+    "line": 2
+   },
+   "after": {
+    "best": {
+     "san": "Qe4",
+     "score": -145
+    },
+    "mine": null,
+    "rival": null,
+    "line": 3
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Nf3",
+     "score": -96
+    },
+    {
+     "depth": 2,
+     "best": "Nf3",
+     "score": -96
+    },
+    {
+     "depth": 3,
+     "best": "Nf3",
+     "score": -96
+    },
+    {
+     "depth": 4,
+     "best": "Nf3",
+     "score": -96
+    },
+    {
+     "depth": 5,
+     "best": "Nf3",
+     "score": -60
+    },
+    {
+     "depth": 6,
+     "best": "Nf3",
+     "score": -43
+    },
+    {
+     "depth": 7,
+     "best": "Nf3",
+     "score": -17
+    }
+   ],
+   "stopped": "time",
+   "requests": 397,
+   "queued": 140,
+   "ms": 1225577,
+   "at": "2026-10-30T22:47:53.077Z"
+  },
+  "1r1qr1k1/pb3pp1/5n2/2Q1b1Bp/8/3P2N1/PPP2PPP/RN3RK1 b - -": {
+   "fen": "1r1qr1k1/pb3pp1/5n2/2Q1b1Bp/8/3P2N1/PPP2PPP/RN3RK1 b - - 2 15",
+   "line": "[7.38%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Bb5 e5 5.Bxc6+ bxc6 6.Qe2 Nf6 7.Qxe5+ Be7 8.Ne2 O-O 9.O-O Bd6 10.Qc3 Re8 11.Ng3 Rb8 12.d3 h5 13.Bg5 Be5 14.Qxc6 Bb7 15.Qc5",
+   "reason": "line end",
+   "reach": 0.0738,
+   "before": {
+    "best": {
+     "san": "Rc8",
+     "score": 58
+    },
+    "mine": null,
+    "rival": null,
+    "line": 2
+   },
+   "after": {
+    "best": {
+     "san": "Rc8",
+     "score": 68
+    },
+    "mine": null,
+    "rival": null,
+    "line": 4
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Rc8",
+     "score": 66
+    },
+    {
+     "depth": 2,
+     "best": "Rc8",
+     "score": 61
+    },
+    {
+     "depth": 3,
+     "best": "Rc8",
+     "score": 56
+    },
+    {
+     "depth": 4,
+     "best": "Bxb2",
+     "score": 54
+    },
+    {
+     "depth": 5,
+     "best": "Bxb2",
+     "score": 59
+    },
+    {
+     "depth": 6,
+     "best": "Bd4",
+     "score": 76
+    },
+    {
+     "depth": 7,
+     "best": "Bd4",
+     "score": 46
+    }
+   ],
+   "stopped": "time",
+   "requests": 297,
+   "queued": 141,
+   "ms": 1231056,
+   "at": "2026-10-30T23:08:24.134Z"
+  },
+  "r2q2k1/p4ppp/3b4/3p3r/5P2/3P4/PPP2PQP/R1B2RK1 w - -": {
+   "fen": "r2q2k1/p4ppp/3b4/3p3r/5P2/3P4/PPP2PQP/R1B2RK1 w - - 0 17",
+   "line": "[7.38%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Bb5 e5 5.Bxc6+ bxc6 6.Qe2 Nf6 7.Qxe5+ Be7 8.Nf3 O-O 9.O-O Bd6 10.Qg5 Bg4 11.d3 Bxf3 12.gxf3 Re8 13.Nc3 Re5 14.Qg2 Rh5 15.f4 Nd5 16.Nxd5 cxd5",
+   "reason": "line end",
+   "reach": 0.0738,
+   "before": {
+    "best": {
+     "san": "c3",
+     "score": 0
+    },
+    "mine": null,
+    "rival": null,
+    "line": 2
+   },
+   "after": {
+    "best": {
+     "san": "c3",
+     "score": -13
+    },
+    "mine": null,
+    "rival": null,
+    "line": 4
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "c3",
+     "score": -5
+    },
+    {
+     "depth": 2,
+     "best": "c3",
+     "score": -5
+    },
+    {
+     "depth": 3,
+     "best": "c3",
+     "score": -9
+    },
+    {
+     "depth": 4,
+     "best": "Be3",
+     "score": -2
+    },
+    {
+     "depth": 5,
+     "best": "Be3",
+     "score": 0
+    },
+    {
+     "depth": 6,
+     "best": "Be3",
+     "score": 0
+    }
+   ],
+   "stopped": "stable",
+   "requests": 155,
+   "queued": 59,
+   "ms": 396767,
+   "at": "2026-10-30T23:15:00.902Z"
+  },
+  "r1b3k1/p4ppp/2p5/3q3r/7Q/N2P4/PPP1nPPP/R1B2R1K w - -": {
+   "fen": "r1b3k1/p4ppp/2p5/3q3r/7Q/N2P4/PPP1nPPP/R1B2R1K w - - 3 17",
+   "line": "[7.38%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Bb5 e5 5.Bxc6+ bxc6 6.Nf3 Bd6 7.Qe2 Ne7 8.Nxe5 O-O 9.Nc4 Nf5 10.O-O Re8 11.Qh5 Nd4 12.Nxd6 Qxd6 13.Na3 Re5 14.Qh4 Qd5 15.d3 Ne2+ 16.Kh1 Rh5",
+   "reason": "line end",
+   "reach": 0.0738,
+   "before": {
+    "best": {
+     "san": "c4",
+     "score": -282
+    },
+    "mine": null,
+    "rival": null,
+    "line": 2
+   },
+   "after": {
+    "best": {
+     "san": "c4",
+     "score": -265
+    },
+    "mine": null,
+    "rival": null,
+    "line": 6
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "c4",
+     "score": -290
+    },
+    {
+     "depth": 2,
+     "best": "c4",
+     "score": -290
+    },
+    {
+     "depth": 3,
+     "best": "c4",
+     "score": -270
+    },
+    {
+     "depth": 4,
+     "best": "c4",
+     "score": -192
+    },
+    {
+     "depth": 5,
+     "best": "c4",
+     "score": 0
+    },
+    {
+     "depth": 6,
+     "best": "c4",
+     "score": 0
+    },
+    {
+     "depth": 7,
+     "best": "c4",
+     "score": 0
+    }
+   ],
+   "stopped": "stable",
+   "requests": 117,
+   "queued": 17,
+   "ms": 286915,
+   "at": "2026-10-30T23:19:47.819Z"
+  },
+  "r4rk1/p1q2pp1/2N4p/3Q4/8/3P4/PPP2PPb/RNB2b1K b - -": {
+   "fen": "r4rk1/p1q2pp1/2N4p/3Q4/8/3P4/PPP2PPb/RNB2b1K b - - 0 17",
+   "line": "[7.38%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Bb5 e5 5.Bxc6+ bxc6 6.Qe2 Nf6 7.Qxe5+ Be7 8.Nf3 O-O 9.O-O Bd6 10.Qg5 Bg4 11.Ne5 h6 12.Qe3 Nd5 13.Qd4 Be2 14.Nxc6 Qc7 15.Qxd5 Bxh2+ 16.Kh1 Bxf1 17.d3",
+   "reason": "decision",
+   "reach": 0.0738,
+   "before": {
+    "best": {
+     "san": "Rae8",
+     "score": 48
+    },
+    "mine": {
+     "san": "Rae8",
+     "score": 48
+    },
+    "rival": {
+     "san": "a5",
+     "score": 18
+    },
+    "line": 3
+   },
+   "after": {
+    "best": {
+     "san": "Rae8",
+     "score": 47
+    },
+    "mine": {
+     "san": "Rae8",
+     "score": 47
+    },
+    "rival": {
+     "san": "a5",
+     "score": 0
+    },
+    "line": 8
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Rae8",
+     "score": 43
+    },
+    {
+     "depth": 2,
+     "best": "Rae8",
+     "score": 41
+    },
+    {
+     "depth": 3,
+     "best": "Rae8",
+     "score": 41
+    },
+    {
+     "depth": 4,
+     "best": "Rae8",
+     "score": 45
+    },
+    {
+     "depth": 5,
+     "best": "a5",
+     "score": 18
+    },
+    {
+     "depth": 6,
+     "best": "Rae8",
+     "score": 16
+    },
+    {
+     "depth": 7,
+     "best": "Rae8",
+     "score": 24
+    }
+   ],
+   "stopped": "time",
+   "requests": 292,
+   "queued": 141,
+   "ms": 1240145,
+   "at": "2026-10-30T23:40:27.965Z"
+  },
+  "r1bqkb1r/pp3ppp/2n2n2/4p3/8/3P1N2/PPP1BPPP/RNBQK2R b KQkq -": {
+   "fen": "r1bqkb1r/pp3ppp/2n2n2/4p3/8/3P1N2/PPP1BPPP/RNBQK2R b KQkq - 2 6",
+   "line": "[7.11%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.d3 Nf6 6.Be2",
+   "reason": "decision",
+   "reach": 0.071145,
+   "before": {
+    "best": {
+     "san": "Be7",
+     "score": -21
+    },
+    "mine": {
+     "san": "Be7",
+     "score": -21
+    },
+    "rival": {
+     "san": "Qc7",
+     "score": -22
+    },
+    "line": 9
+   },
+   "after": {
+    "best": {
+     "san": "Be7",
+     "score": -21
+    },
+    "mine": {
+     "san": "Be7",
+     "score": -21
+    },
+    "rival": {
+     "san": "Qc7",
+     "score": -22
+    },
+    "line": 18
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Be7",
+     "score": -21
+    },
+    {
+     "depth": 2,
+     "best": "Be7",
+     "score": -20
+    },
+    {
+     "depth": 3,
+     "best": "Be7",
+     "score": -21
+    },
+    {
+     "depth": 4,
+     "best": "Be7",
+     "score": -20
+    },
+    {
+     "depth": 5,
+     "best": "Be7",
+     "score": -21
+    },
+    {
+     "depth": 6,
+     "best": "Be7",
+     "score": -21
+    }
+   ],
+   "stopped": "stable",
+   "requests": 161,
+   "queued": 6,
+   "ms": 169067,
+   "at": "2026-10-30T23:43:17.033Z"
+  },
+  "r1bq1rk1/p4ppp/2Bb1n2/8/3Pp3/2N5/PPP2PPP/R1BQK2R b KQ -": {
+   "fen": "r1bq1rk1/p4ppp/2Bb1n2/8/3Pp3/2N5/PPP2PPP/R1BQK2R b KQ - 0 10",
+   "line": "[6.30%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.Nc3 Nf6 6.Bb5 Bd6 7.d4 e4 8.Ne5 O-O 9.Nxc6 bxc6 10.Bxc6",
+   "reason": "decision",
+   "reach": 0.063,
+   "before": {
+    "best": {
+     "san": "Bg4",
+     "score": 1
+    },
+    "mine": {
+     "san": "Rb8",
+     "score": 0
+    },
+    "rival": {
+     "san": "Bg4",
+     "score": 1
+    },
+    "line": 7
+   },
+   "after": {
+    "best": {
+     "san": "Rb8",
+     "score": 0
+    },
+    "mine": {
+     "san": "Rb8",
+     "score": 0
+    },
+    "rival": {
+     "san": "Bg4",
+     "score": 0
+    },
+    "line": 6
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Bg4",
+     "score": 5
+    },
+    {
+     "depth": 2,
+     "best": "Bg4",
+     "score": 6
+    },
+    {
+     "depth": 3,
+     "best": "Bg4",
+     "score": 6
+    },
+    {
+     "depth": 4,
+     "best": "Bg4",
+     "score": 0
+    },
+    {
+     "depth": 5,
+     "best": "Rb8",
+     "score": 0
+    },
+    {
+     "depth": 6,
+     "best": "Rb8",
+     "score": 0
+    },
+    {
+     "depth": 7,
+     "best": "Rb8",
+     "score": 0
+    }
+   ],
+   "stopped": "stable",
+   "requests": 102,
+   "queued": 18,
+   "ms": 121936,
+   "at": "2026-10-30T23:45:18.971Z"
+  },
+  "1rbq1rk1/p4ppp/2B2n2/8/3Pp3/2N5/PPP2PPK/R1BQ1R2 b - -": {
+   "fen": "1rbq1rk1/p4ppp/2B2n2/8/3Pp3/2N5/PPP2PPK/R1BQ1R2 b - - 0 12",
+   "line": "[6.30%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.Nc3 Nf6 6.Bb5 Bd6 7.d4 e4 8.Ne5 O-O 9.Nxc6 bxc6 10.Bxc6 Rb8 11.O-O Bxh2+ 12.Kxh2",
+   "reason": "decision",
+   "reach": 0.063,
+   "before": {
+    "best": {
+     "san": "Qc7+",
+     "score": 166
+    },
+    "mine": {
+     "san": "Qd6+",
+     "score": 166
+    },
+    "rival": {
+     "san": "Qc7+",
+     "score": 166
+    },
+    "line": 6
+   },
+   "after": {
+    "best": {
+     "san": "Qc7+",
+     "score": 196
+    },
+    "mine": {
+     "san": "Qd6+",
+     "score": 176
+    },
+    "rival": {
+     "san": "Qc7+",
+     "score": 196
+    },
+    "line": 10
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Qd6+",
+     "score": 185
+    },
+    {
+     "depth": 2,
+     "best": "Qc7+",
+     "score": 179
+    },
+    {
+     "depth": 3,
+     "best": "Qc7+",
+     "score": 179
+    },
+    {
+     "depth": 4,
+     "best": "Qc7+",
+     "score": 196
+    },
+    {
+     "depth": 5,
+     "best": "Qd6+",
+     "score": 176
+    },
+    {
+     "depth": 6,
+     "best": "Ng4+",
+     "score": 130
+    }
+   ],
+   "stopped": "time",
+   "requests": 239,
+   "queued": 120,
+   "ms": 1228334,
+   "at": "2026-10-31T00:05:47.307Z"
+  },
+  "r1b2rk1/ppq1bppp/2n2n2/4p1B1/8/2NP1N2/PPP1BPPP/R2Q1RK1 b - -": {
+   "fen": "r1b2rk1/ppq1bppp/2n2n2/4p1B1/8/2NP1N2/PPP1BPPP/R2Q1RK1 b - - 8 9",
+   "line": "[3.56%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O 8.Nc3 Qc7 9.Bg5",
+   "reason": "decision",
+   "reach": 0.0355725,
+   "before": {
+    "best": {
+     "san": "Be6",
+     "score": -19
+    },
+    "mine": {
+     "san": "Be6",
+     "score": -19
+    },
+    "rival": {
+     "san": "Rd8",
+     "score": -35
+    },
+    "line": 5
+   },
+   "after": {
+    "best": {
+     "san": "Be6",
+     "score": -25
+    },
+    "mine": {
+     "san": "Be6",
+     "score": -25
+    },
+    "rival": {
+     "san": "Rd8",
+     "score": -35
+    },
+    "line": 14
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Be6",
+     "score": -23
+    },
+    {
+     "depth": 2,
+     "best": "Be6",
+     "score": -23
+    },
+    {
+     "depth": 3,
+     "best": "Be6",
+     "score": -24
+    },
+    {
+     "depth": 4,
+     "best": "Be6",
+     "score": -27
+    },
+    {
+     "depth": 5,
+     "best": "Be6",
+     "score": -25
+    },
+    {
+     "depth": 6,
+     "best": "Be6",
+     "score": -30
+    }
+   ],
+   "stopped": "stable",
+   "requests": 76,
+   "queued": 3,
+   "ms": 81052,
+   "at": "2026-10-31T00:07:08.360Z"
+  },
+  "r4rk1/ppq1bppp/2n1bn2/4p1B1/8/2NP1N2/PPP1BPPP/R2QR1K1 b - -": {
+   "fen": "r4rk1/ppq1bppp/2n1bn2/4p1B1/8/2NP1N2/PPP1BPPP/R2QR1K1 b - - 10 10",
+   "line": "[3.56%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O 8.Nc3 Qc7 9.Bg5 Be6 10.Re1",
+   "reason": "decision",
+   "reach": 0.0355725,
+   "before": {
+    "best": {
+     "san": "Rad8",
+     "score": -20
+    },
+    "mine": {
+     "san": "Rad8",
+     "score": -20
+    },
+    "rival": {
+     "san": "h6",
+     "score": -22
+    },
+    "line": 8
+   },
+   "after": {
+    "best": {
+     "san": "Rad8",
+     "score": -20
+    },
+    "mine": {
+     "san": "Rad8",
+     "score": -20
+    },
+    "rival": {
+     "san": "h6",
+     "score": -23
+    },
+    "line": 15
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Rad8",
+     "score": -30
+    },
+    {
+     "depth": 2,
+     "best": "Rad8",
+     "score": -30
+    },
+    {
+     "depth": 3,
+     "best": "Rad8",
+     "score": -30
+    },
+    {
+     "depth": 4,
+     "best": "Rad8",
+     "score": -30
+    },
+    {
+     "depth": 5,
+     "best": "h6",
+     "score": -22
+    },
+    {
+     "depth": 6,
+     "best": "Rad8",
+     "score": -21
+    },
+    {
+     "depth": 7,
+     "best": "h6",
+     "score": -22
+    },
+    {
+     "depth": 8,
+     "best": "h6",
+     "score": -27
+    },
+    {
+     "depth": 9,
+     "best": "Rad8",
+     "score": -25
+    },
+    {
+     "depth": 10,
+     "best": "Rad8",
+     "score": -23
+    },
+    {
+     "depth": 11,
+     "best": "Rad8",
+     "score": -26
+    }
+   ],
+   "stopped": "stable",
+   "requests": 501,
+   "queued": 225,
+   "ms": 1004710,
+   "at": "2026-10-31T00:23:53.071Z"
+  },
+  "3r1rk1/ppq1bppp/2n1bn2/4p1B1/8/2NP1N2/PPP2PPP/R2QRBK1 b - -": {
+   "fen": "3r1rk1/ppq1bppp/2n1bn2/4p1B1/8/2NP1N2/PPP2PPP/R2QRBK1 b - - 12 11",
+   "line": "[3.56%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O 8.Nc3 Qc7 9.Bg5 Be6 10.Re1 Rad8 11.Bf1",
+   "reason": "decision",
+   "reach": 0.0355725,
+   "before": {
+    "best": {
+     "san": "h6",
+     "score": -22
+    },
+    "mine": {
+     "san": "h6",
+     "score": -22
+    },
+    "rival": {
+     "san": "Rfe8",
+     "score": -22
+    },
+    "line": 9
+   },
+   "after": {
+    "best": {
+     "san": "h6",
+     "score": -18
+    },
+    "mine": {
+     "san": "h6",
+     "score": -18
+    },
+    "rival": {
+     "san": "Rfe8",
+     "score": -21
+    },
+    "line": 17
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Rfe8",
+     "score": -24
+    },
+    {
+     "depth": 2,
+     "best": "Rfe8",
+     "score": -24
+    },
+    {
+     "depth": 3,
+     "best": "h6",
+     "score": -21
+    },
+    {
+     "depth": 4,
+     "best": "Rfe8",
+     "score": -24
+    },
+    {
+     "depth": 5,
+     "best": "Rfe8",
+     "score": -24
+    },
+    {
+     "depth": 6,
+     "best": "h6",
+     "score": -21
+    },
+    {
+     "depth": 7,
+     "best": "Rfe8",
+     "score": -21
+    },
+    {
+     "depth": 8,
+     "best": "Rfe8",
+     "score": -32
+    },
+    {
+     "depth": 9,
+     "best": "h6",
+     "score": -22
+    }
+   ],
+   "stopped": "time",
+   "requests": 430,
+   "queued": 216,
+   "ms": 1227975,
+   "at": "2026-10-31T00:44:21.048Z"
+  },
+  "3r1rk1/ppq1bppp/2n1bn2/4p1B1/8/2NP1N2/PPP1BPPP/R1Q1R1K1 b - -": {
+   "fen": "3r1rk1/ppq1bppp/2n1bn2/4p1B1/8/2NP1N2/PPP1BPPP/R1Q1R1K1 b - - 12 11",
+   "line": "[3.56%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O 8.Nc3 Qc7 9.Bg5 Be6 10.Re1 Rad8 11.Qc1",
+   "reason": "decision",
+   "reach": 0.0355725,
+   "before": {
+    "best": {
+     "san": "h6",
+     "score": -19
+    },
+    "mine": {
+     "san": "h6",
+     "score": -19
+    },
+    "rival": {
+     "san": "Rfe8",
+     "score": -31
+    },
+    "line": 9
+   },
+   "after": {
+    "best": {
+     "san": "h6",
+     "score": -19
+    },
+    "mine": {
+     "san": "h6",
+     "score": -19
+    },
+    "rival": {
+     "san": "a6",
+     "score": -22
+    },
+    "line": 12
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "h6",
+     "score": -26
+    },
+    {
+     "depth": 2,
+     "best": "h6",
+     "score": -26
+    },
+    {
+     "depth": 3,
+     "best": "h6",
+     "score": -26
+    },
+    {
+     "depth": 4,
+     "best": "h6",
+     "score": -26
+    },
+    {
+     "depth": 5,
+     "best": "h6",
+     "score": -26
+    },
+    {
+     "depth": 6,
+     "best": "h6",
+     "score": -26
+    }
+   ],
+   "stopped": "stable",
+   "requests": 55,
+   "queued": 0,
+   "ms": 56977,
+   "at": "2026-10-31T00:45:18.028Z"
+  },
+  "3r1rk1/ppq1bpp1/2n1bn1p/4p3/7B/2NP1N2/PPP1BPPP/R1Q1R1K1 b - -": {
+   "fen": "3r1rk1/ppq1bpp1/2n1bn1p/4p3/7B/2NP1N2/PPP1BPPP/R1Q1R1K1 b - - 1 12",
+   "line": "[3.56%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O 8.Nc3 Qc7 9.Bg5 Be6 10.Re1 Rad8 11.Qc1 h6 12.Bh4",
+   "reason": "decision",
+   "reach": 0.0355725,
+   "before": {
+    "best": {
+     "san": "a6",
+     "score": -20
+    },
+    "mine": {
+     "san": "Rfe8",
+     "score": -21
+    },
+    "rival": {
+     "san": "a6",
+     "score": -20
+    },
+    "line": 7
+   },
+   "after": {
+    "best": {
+     "san": "a6",
+     "score": -20
+    },
+    "mine": {
+     "san": "Rfe8",
+     "score": -21
+    },
+    "rival": {
+     "san": "a6",
+     "score": -20
+    },
+    "line": 7
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Rfe8",
+     "score": -26
+    },
+    {
+     "depth": 2,
+     "best": "Rfe8",
+     "score": -26
+    },
+    {
+     "depth": 3,
+     "best": "Rfe8",
+     "score": -26
+    },
+    {
+     "depth": 4,
+     "best": "Rfe8",
+     "score": -26
+    },
+    {
+     "depth": 5,
+     "best": "Rfe8",
+     "score": -26
+    },
+    {
+     "depth": 6,
+     "best": "Rfe8",
+     "score": -27
+    }
+   ],
+   "stopped": "stable",
+   "requests": 59,
+   "queued": 1,
+   "ms": 61990,
+   "at": "2026-10-31T00:46:20.019Z"
+  },
+  "3rr1k1/ppq1bpp1/2n1bn1p/4p3/7B/2NP1N2/PPP2PPP/R2QRBK1 w - -": {
+   "fen": "3rr1k1/ppq1bpp1/2n1bn1p/4p3/7B/2NP1N2/PPP2PPP/R2QRBK1 w - - 2 13",
+   "line": "[3.56%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O 8.Nc3 Qc7 9.Bg5 Be6 10.Re1 Rad8 11.Bf1 h6 12.Bh4 Rfe8",
+   "reason": "line end",
+   "reach": 0.0355725,
+   "before": {
+    "best": {
+     "san": "a3",
+     "score": 24
+    },
+    "mine": null,
+    "rival": null,
+    "line": 5
+   },
+   "after": {
+    "best": {
+     "san": "h3",
+     "score": 20
+    },
+    "mine": null,
+    "rival": null,
+    "line": 6
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Rc1",
+     "score": 45
+    },
+    {
+     "depth": 2,
+     "best": "Rc1",
+     "score": 45
+    },
+    {
+     "depth": 3,
+     "best": "Rc1",
+     "score": 45
+    },
+    {
+     "depth": 4,
+     "best": "Rc1",
+     "score": 45
+    },
+    {
+     "depth": 5,
+     "best": "Rc1",
+     "score": 34
+    },
+    {
+     "depth": 6,
+     "best": "Rc1",
+     "score": 33
+    },
+    {
+     "depth": 7,
+     "best": "Rc1",
+     "score": 26
+    }
+   ],
+   "stopped": "stable",
+   "requests": 299,
+   "queued": 143,
+   "ms": 1172950,
+   "at": "2026-10-31T01:05:52.970Z"
+  },
+  "3rr1k1/ppq1bpp1/2n1b2p/4p2n/8/2NP1NB1/PPP2PPP/R1Q1RBK1 b - -": {
+   "fen": "3rr1k1/ppq1bpp1/2n1b2p/4p2n/8/2NP1NB1/PPP2PPP/R1Q1RBK1 b - - 5 14",
+   "line": "[3.56%] 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.d3 Nf6 6.Be2 Be7 7.O-O O-O 8.Nc3 Qc7 9.Bg5 Be6 10.Re1 Rad8 11.Qc1 h6 12.Bh4 Rfe8 13.Bg3 Nh5 14.Bf1",
+   "reason": "decision",
+   "reach": 0.0355725,
+   "before": {
+    "best": {
+     "san": "Nxg3",
+     "score": 18
+    },
+    "mine": {
+     "san": "Nxg3",
+     "score": 18
+    },
+    "rival": {
+     "san": "Bf6",
+     "score": 14
+    },
+    "line": 5
+   },
+   "after": {
+    "best": {
+     "san": "Nxg3",
+     "score": 24
+    },
+    "mine": {
+     "san": "Nxg3",
+     "score": 24
+    },
+    "rival": {
+     "san": "Bf6",
+     "score": 14
+    },
+    "line": 6
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Nxg3",
+     "score": 32
+    },
+    {
+     "depth": 2,
+     "best": "Nxg3",
+     "score": 32
+    },
+    {
+     "depth": 3,
+     "best": "Nxg3",
+     "score": 29
+    },
+    {
+     "depth": 4,
+     "best": "Nxg3",
+     "score": 28
+    }
+   ],
+   "stopped": "time",
+   "requests": 52,
+   "queued": 7,
+   "ms": 60972,
+   "at": "2026-10-31T01:06:53.944Z"
+  }
+ }
+}
