@@ -55,3 +55,14 @@
 15:48:47 Exploring 5/16: 1.Nf3 d5 2.c4 c6 3.g3 Nf6 4.Bg2 Bf5 5.Qb3 Qc7 6.d3 e6 7.Bf4 Qc8 8.Nc3 Nbd7 (decision)
 15:48:49   depth 1: O-O +0.41
 15:48:52   depth 2: O-O +0.42
+15:48:56   depth 3: O-O +0.42
+15:49:01   depth 4: O-O +0.44
+15:54:54   depth 5: cxd5 +0.32
+15:55:45   depth 6: cxd5 +0.40
+15:56:35   depth 7: cxd5 +0.31
+15:57:00   stable after 8m13s, 147 requests, 66 queued. ChessDB now: best O-O +0.41; mine cxd5 +0.37 vs O-O +0.41 (was best cxd5 +0.57; mine cxd5 +0.57 vs O-O +0.41), stored line 7 -> 11
+15:57:00 Exploring 6/16: 1.Nf3 d5 2.c4 c6 3.g3 Bg4 4.Ne5 Bf5 5.Qb3 Qb6 6.cxd5 Qxb3 7.axb3 cxd5 8.Nc3 e6 9.Nb5 (line end)
+15:57:02   depth 1: f6 +1.57
+15:57:05   depth 2: f6 +1.57
+15:57:10   depth 3: f6 +1.57
+15:57:22   depth 4: f6 +1.41
