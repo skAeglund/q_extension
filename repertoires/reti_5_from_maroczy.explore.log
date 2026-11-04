@@ -262,3 +262,12 @@
 20:52:13   depth 1: Ne8 +1.26
 20:52:16   depth 2: Ne8 +1.36
 20:52:22   depth 3: Ne8 +1.36
+20:52:57   depth 4: Ne8 +1.33
+21:01:37   depth 5: Ne8 +1.20
+21:12:36   time after 20m24s, 223 requests, 124 queued. ChessDB now: best Ne8 +1.39 (was best Ne8 +1.39), stored line 2 -> 4
+21:12:36 Exploring 27/45: 9...Be6 10.b3 a6 11.Be3 Qa5 12.Bd2 Qc7 13.Rc1 Rac8 14.Ne3 Qb8 15.Ned5 Bxd5 16.exd5 Nd4 (decision)
+21:12:36   depth 1: a4 +0.70
+21:12:39   depth 2: a4 +0.70
+21:12:43   depth 3: a4 +0.70
+21:12:48   depth 4: a4 +0.70
+21:12:57   depth 5: Re1 +0.66
