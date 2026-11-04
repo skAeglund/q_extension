@@ -158,3 +158,13 @@
 19:14:51   depth 1: Kh1 +0.94
 19:14:54   depth 2: Kh1 +0.94
 19:14:58   depth 3: Kh1 +0.94
+19:15:05   depth 4: Kh1 +0.94
+19:15:14   depth 5: Kh1 +0.94
+19:15:44   depth 6: Kh1 +0.95
+19:16:06   stable after 1m17s, 65 requests, 6 queued. ChessDB now: best Kh1 +0.94; mine f4 +0.86 vs Kh1 +0.94 (was best Kh1 +1.00; mine f4 +0.86 vs Kh1 +1.00), stored line 5 -> 8
+19:16:06 Exploring 14/45: 9...Bd7 10.b3 a5 11.Rb1 Nb4 12.a3 Nxc2 13.Qxc2 Bc6 (decision)
+19:16:06   depth 1: Be3 +0.46
+19:16:09   depth 2: Be3 +0.46
+19:16:13   depth 3: Be3 +0.46
+19:16:18   depth 4: Be3 +0.46
+19:16:24   depth 5: Be3 +0.46
