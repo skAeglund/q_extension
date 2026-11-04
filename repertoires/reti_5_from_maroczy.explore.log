@@ -330,3 +330,11 @@
 22:14:09 Exploring 34/45: 9...Be6 10.b3 Rc8 11.Be3 a6 12.Rc1 Qa5 13.Bd2 Qd8 14.f3 Nd7 15.Kh1 Nd4 16.Nxd4 Bxd4 17.f4 f5 (decision)
 22:14:11   depth 1: exf5 +1.19
 22:14:14   depth 2: exf5 +1.12
+22:14:18   depth 3: exf5 +1.12
+22:14:23   depth 4: exf5 +1.12
+22:14:31   depth 5: exf5 +1.12
+22:14:56   depth 6: Be1 +1.03
+22:34:31   time after 20m22s, 275 requests, 137 queued. ChessDB now: best exf5 +1.33; mine Bf3 +1.01 vs exf5 +1.33 (was best Bf3 +1.41; mine Bf3 +1.41 vs exf5 +1.19), stored line 4 -> 8
+22:34:31 Exploring 35/45: 9...Be6 10.b3 a6 11.Be3 Qa5 12.Bd2 Qc7 13.Rc1 Rac8 14.Ne3 Qb8 15.Ned5 Bxd5 16.exd5 Nd4 17.Be3 Nxe2+ (decision)
+22:34:34   depth 1: Qxe2 +0.40
+22:34:45   depth 2: Nxe2 +0.36
