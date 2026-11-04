@@ -82,3 +82,15 @@
 16:21:19   depth 1: Nc3 +0.58
 16:21:22   depth 2: Nc3 +0.59
 16:21:26   depth 3: Nc3 +0.59
+16:21:32   depth 4: Nc3 +0.60
+16:29:10   depth 5: Nc3 +0.51
+16:29:34   depth 6: Bb5+ +0.57
+16:31:38   depth 7: Nc3 +0.48
+16:40:36   depth 8: Nc3 +0.47
+16:41:41   time after 20m24s, 302 requests, 155 queued. ChessDB now: best Nc3 +0.59; mine Bb5+ +0.55 vs Nc3 +0.59 (was best Nc3 +0.63; mine Bb5+ +0.60 vs Nc3 +0.63), stored line 5 -> 8
+16:41:41 Exploring 9/16: 1.Nf3 d5 2.c4 c6 3.g3 Bg4 4.Ne5 Bh5 5.Qb3 Qb6 6.cxd5 Qxb3 7.axb3 cxd5 8.g4 Bg6 9.e4 dxe4 10.Bb5+ Kd8 (decision)
+16:41:41   depth 1: Nc3 +0.46
+16:41:44   depth 2: Nc3 +0.46
+16:41:48   depth 3: Nc3 +0.46
+16:41:53   depth 4: Nc3 +0.46
+16:42:00   depth 5: Nc3 +0.42
