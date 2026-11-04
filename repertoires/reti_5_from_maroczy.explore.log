@@ -188,3 +188,13 @@
 19:39:29 Exploring 17/45: 9...Be6 10.b3 a6 11.Be3 Qa5 12.Bd2 Qc7 13.Rc1 Rac8 14.Ne3 Nd4 (decision)
 19:39:31   depth 1: Kh1 +0.44
 19:39:35   depth 2: Kh1 +0.49
+19:39:47   depth 3: Re1 +0.39
+19:40:27   depth 4: f3 +0.51
+19:41:37   depth 5: f3 +0.51
+19:42:42   depth 6: f3 +0.52
+19:43:20   stable after 3m51s, 88 requests, 37 queued. ChessDB now: best Ned5 +0.46; mine Bd3 +0.38 vs Ned5 +0.46 (was best Re1 +0.44; mine Bd3 +0.38 vs Re1 +0.44), stored line 2 -> 3
+19:43:20 Exploring 18/45: 9...Be6 10.b3 Nd7 11.Bd2 Nc5 12.Rb1 Bxc3 13.Bxc3 Nxe4 14.Ba1 f6 (decision)
+19:43:22   depth 1: Bf3 +0.49
+19:43:25   depth 2: Bf3 +0.50
+19:43:29   depth 3: Bf3 +0.50
+19:43:35   depth 4: Bf3 +0.51
