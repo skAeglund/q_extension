@@ -98,3 +98,11 @@
 18:13:51   depth 2: b5 +0.26
 18:13:55   depth 3: b5 +0.28
 18:14:01   depth 4: b5 +0.28
+18:16:05   depth 5: b5 +0.28
+18:16:39   depth 6: b5 +0.28
+18:17:17   stable after 3m32s, 92 requests, 32 queued. ChessDB now: best b5 +0.18 (was best b5 +0.24), stored line 7 -> 17
+18:17:17 Exploring 7/45: 9...Be6 10.b3 Rc8 11.Be3 Ng4 12.Bd2 h5 (decision)
+18:17:20   depth 1: h3 +1.03
+18:17:25   depth 2: h3 +1.03
+18:17:29   depth 3: h3 +1.03
+18:17:35   depth 4: h3 +1.03

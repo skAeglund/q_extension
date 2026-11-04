@@ -379,6 +379,67 @@
    "queued": 67,
    "ms": 367239,
    "at": "2026-11-04T18:13:45.383Z"
+  },
+  "1r1q1rk1/1p1bppbp/p1np1np1/8/2P1P3/1PN2P2/P1NBB1PP/R2Q1RK1 b - -": {
+   "fen": "1r1q1rk1/1p1bppbp/p1np1np1/8/2P1P3/1PN2P2/P1NBB1PP/R2Q1RK1 b - - 0 12",
+   "line": "9...Bd7 10.b3 a6 11.Bd2 Rb8 12.f3",
+   "reason": "line end",
+   "reach": null,
+   "before": {
+    "best": {
+     "san": "b5",
+     "score": -24
+    },
+    "mine": null,
+    "rival": null,
+    "line": 7
+   },
+   "after": {
+    "best": {
+     "san": "b5",
+     "score": -18
+    },
+    "mine": null,
+    "rival": null,
+    "line": 17
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "b5",
+     "score": -26
+    },
+    {
+     "depth": 2,
+     "best": "b5",
+     "score": -26
+    },
+    {
+     "depth": 3,
+     "best": "b5",
+     "score": -28
+    },
+    {
+     "depth": 4,
+     "best": "b5",
+     "score": -28
+    },
+    {
+     "depth": 5,
+     "best": "b5",
+     "score": -28
+    },
+    {
+     "depth": 6,
+     "best": "b5",
+     "score": -28
+    }
+   ],
+   "stopped": "stable",
+   "requests": 92,
+   "queued": 32,
+   "ms": 212485,
+   "at": "2026-11-04T18:17:17.870Z"
   }
  }
 }
