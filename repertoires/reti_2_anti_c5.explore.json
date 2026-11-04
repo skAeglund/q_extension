@@ -618,6 +618,72 @@
    "queued": 4,
    "ms": 66698,
    "at": "2026-11-04T23:27:50.186Z"
+  },
+  "r2q1rk1/1p3ppp/p1npbn2/2b1p3/2P5/1PN1B1P1/P1N1PPBP/R2Q1RK1 b - -": {
+   "fen": "r2q1rk1/1p3ppp/p1npbn2/2b1p3/2P5/1PN1B1P1/P1N1PPBP/R2Q1RK1 b - - 1 11",
+   "line": "1.Nf3 c5 2.c4 Nc6 3.d4 cxd4 4.Nxd4 e5 5.Nc2 Nf6 6.Nc3 Bc5 7.g3 O-O 8.Bg2 d6 9.O-O Be6 10.b3 a6 11.Be3",
+   "reason": "line end",
+   "reach": null,
+   "before": {
+    "best": {
+     "san": "Qe7",
+     "score": -66
+    },
+    "mine": null,
+    "rival": null,
+    "line": 3
+   },
+   "after": {
+    "best": {
+     "san": "Qe7",
+     "score": -43
+    },
+    "mine": null,
+    "rival": null,
+    "line": 16
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Qe7",
+     "score": -62
+    },
+    {
+     "depth": 2,
+     "best": "Qe7",
+     "score": -57
+    },
+    {
+     "depth": 3,
+     "best": "Qe7",
+     "score": -62
+    },
+    {
+     "depth": 4,
+     "best": "Qe7",
+     "score": -66
+    },
+    {
+     "depth": 5,
+     "best": "Qe7",
+     "score": -41
+    },
+    {
+     "depth": 6,
+     "best": "Qe7",
+     "score": -42
+    },
+    {
+     "depth": 7,
+     "best": "Qe7",
+     "score": -57
+    }
+   ],
+   "stopped": "time",
+   "requests": 282,
+   "queued": 165,
+   "ms": 1228099,
+   "at": "2026-11-04T23:48:18.286Z"
   }
  }
 }
