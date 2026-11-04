@@ -1,0 +1,77 @@
+{
+ "targets": {
+  "r2q1rk1/pp1bppbp/2np1np1/8/2P1P3/2N5/PPN1BPPP/R1BQ1RK1 w - -": {
+   "fen": "r2q1rk1/pp1bppbp/2np1np1/8/2P1P3/2N5/PPN1BPPP/R1BQ1RK1 w - - 2 10",
+   "line": "9...Bd7",
+   "reason": "decision",
+   "reach": null,
+   "before": {
+    "best": {
+     "san": "b3",
+     "score": 25
+    },
+    "mine": {
+     "san": "b3",
+     "score": 25
+    },
+    "rival": {
+     "san": "Bd2",
+     "score": 25
+    },
+    "line": 8
+   },
+   "after": {
+    "best": {
+     "san": "Bd2",
+     "score": 26
+    },
+    "mine": {
+     "san": "b3",
+     "score": 24
+    },
+    "rival": {
+     "san": "Bd2",
+     "score": 26
+    },
+    "line": 16
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Bd2",
+     "score": 24
+    },
+    {
+     "depth": 2,
+     "best": "Bd2",
+     "score": 25
+    },
+    {
+     "depth": 3,
+     "best": "Bd2",
+     "score": 25
+    },
+    {
+     "depth": 4,
+     "best": "Bd2",
+     "score": 26
+    },
+    {
+     "depth": 5,
+     "best": "Bd2",
+     "score": 26
+    },
+    {
+     "depth": 6,
+     "best": "Bd2",
+     "score": 28
+    }
+   ],
+   "stopped": "stable",
+   "requests": 196,
+   "queued": 0,
+   "ms": 197993,
+   "at": "2026-11-04T18:03:40.993Z"
+  }
+ }
+}
