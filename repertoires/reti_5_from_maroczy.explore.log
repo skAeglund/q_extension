@@ -357,3 +357,7 @@
 23:15:36   depth 3: Ne7 +1.25
 23:15:41   depth 4: Ne7 +1.25
 23:15:47   depth 5: Ne7 +1.25
+23:15:55   depth 6: Ne7 +1.25
+23:16:25   stable after 0m56s, 53 requests, 1 queued. ChessDB now: best Ne7 +1.25 (was best b5 +1.23), stored line 2 -> 17
+23:16:25 Exploring 38/45: 9...Be6 10.b3 Rc8 11.Be3 a6 12.Rc1 Qa5 13.Bd2 Qd8 14.f3 Nd7 15.Kh1 Nd4 16.Nxd4 Bxd4 17.f4 f5 18.Bf3 (line end)
+23:16:25   depth 1: Nc5 +1.39
