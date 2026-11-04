@@ -204,3 +204,12 @@
 19:46:09 Exploring 19/45: 9...Bd7 10.b3 a5 11.Rb1 Nb4 12.a3 Nxc2 13.Qxc2 Bc6 14.Be3 Nd7 (decision)
 19:46:09   depth 1: Rfd1 +0.47
 19:46:12   depth 2: Rfd1 +0.47
+19:46:16   depth 3: Rfd1 +0.47
+19:46:21   depth 4: Rfd1 +0.47
+19:46:27   depth 5: Rfd1 +0.46
+19:46:56   depth 6: Rfd1 +0.48
+19:47:22   stable after 1m13s, 62 requests, 9 queued. ChessDB now: best Rfd1 +0.42; mine Rfd1 +0.42 vs f3 +0.40 (was best Rfd1 +0.53; mine Rfd1 +0.53 vs f3 +0.40), stored line 3 -> 8
+19:47:22 Exploring 20/45: 9...Be6 10.b3 Rc8 11.Be3 a6 12.Rc1 Qa5 13.Bd2 Qd8 14.f3 Qb6+ 15.Kh1 Nh5 (decision)
+19:47:24   depth 1: f4 +1.53
+19:47:28   depth 2: f4 +1.53
+19:47:34   depth 3: f4 +1.53
