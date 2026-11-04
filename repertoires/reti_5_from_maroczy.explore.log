@@ -229,3 +229,12 @@
 20:09:07 Exploring 22/45: 9...Be6 10.b3 a6 11.Be3 Qa5 12.Bd2 Qc7 13.Rc1 Rac8 14.Ne3 Nd4 15.Bd3 Nd7 (decision)
 20:09:09   depth 1: Bb1 +1.12
 20:09:14   depth 2: Bb1 +1.12
+20:09:26   depth 3: f4 +1.03
+20:09:40   depth 4: Bb1 +1.02
+20:18:29   depth 5: Bb1 +1.07
+20:29:29   time after 20m22s, 255 requests, 159 queued. ChessDB now: best Bb1 +1.11; mine f4 +1.03 vs Bb1 +1.11 (was best f4 +1.09; mine f4 +1.09 vs Bb1 +1.09), stored line 2 -> 7
+20:29:29 Exploring 23/45: 9...Be6 10.b3 Nd7 11.Bd2 Nc5 12.Rb1 Bxc3 13.Bxc3 Nxe4 14.Ba1 f6 15.Bf3 Nc5 (decision)
+20:29:29   depth 1: b4 +0.48
+20:29:32   depth 2: b4 +0.48
+20:29:36   depth 3: b4 +0.48
+20:29:41   depth 4: b4 +0.48
