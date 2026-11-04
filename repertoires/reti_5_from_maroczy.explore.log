@@ -63,3 +63,12 @@
 18:03:43   depth 2: Bd2 +0.28
 18:03:48   depth 3: Bd2 +0.28
 18:03:53   depth 4: Bd2 +0.28
+18:04:03   depth 5: Rb1 +0.33
+18:04:13   depth 6: Rb1 +0.35
+18:04:30   depth 7: Rb1 +0.36
+18:04:46   stable after 1m06s, 63 requests, 1 queued. ChessDB now: best Rb1 +0.31; mine Bd2 +0.25 vs Rb1 +0.31 (was best Bd2 +0.30; mine Bd2 +0.30 vs Rb1 +0.24), stored line 8 -> 17
+18:04:46 Exploring 3/45: 9...Be6 10.b3 a6 11.Be3 Nd7 (decision)
+18:04:49   depth 1: Nd4 +0.18
+18:04:53   depth 2: Nd4 +0.19
+18:04:57   depth 3: Nd4 +0.18
+18:05:03   depth 4: Nd4 +0.19
