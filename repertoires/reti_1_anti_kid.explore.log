@@ -277,3 +277,10 @@
 13:09:31   depth 2: bxc5 +0.26
 13:09:38   depth 3: bxc5 +0.26
 13:09:45   depth 4: bxc5 +0.26
+13:09:59   depth 5: Qb3 +0.27
+13:10:20   depth 6: Qb3 +0.28
+13:10:46   depth 7: Qb3 +0.27
+13:11:13   stable after 1m48s, 93 requests, 11 queued. ChessDB now: best bxc5 +0.26; mine b5 +0.16 vs bxc5 +0.26 (was best bxc5 +0.26; mine b5 +0.16 vs bxc5 +0.26), stored line 9 -> 13
+13:11:13 Exploring 3/58: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 a5 6.b5 c6 7.a4 cxb5 8.cxb5 b6 (decision)
+13:11:16   depth 1: d3 +0.20
+13:11:22   depth 2: d3 +0.21
