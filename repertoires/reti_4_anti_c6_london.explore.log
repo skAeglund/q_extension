@@ -66,3 +66,11 @@
 15:57:05   depth 2: f6 +1.57
 15:57:10   depth 3: f6 +1.57
 15:57:22   depth 4: f6 +1.41
+16:04:22   depth 5: f6 +0.90
+16:08:46   depth 6: f6 +0.00
+16:11:37   depth 7: f6 +0.12
+16:17:19   time after 20m19s, 269 requests, 137 queued. ChessDB now: best Nd7 +1.77 (was best f6 +1.57), stored line 4 -> 2
+16:17:19 Exploring 7/16: 1.Nf3 d5 2.c4 c6 3.g3 Nf6 4.Bg2 Bf5 5.Qb3 Qc7 6.d3 e6 7.Bf4 Qc8 8.Nc3 Nbd7 9.cxd5 exd5 (decision)
+16:17:19   depth 1: Qc2 +0.31
+16:17:22   depth 2: Qc2 +0.31
+16:17:27   depth 3: Qc2 +0.31
