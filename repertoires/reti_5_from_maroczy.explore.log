@@ -314,3 +314,12 @@
 21:51:28   depth 1: a4 +0.23
 21:51:31   depth 2: a4 +0.21
 21:51:36   depth 3: a4 +0.29
+21:51:42   depth 4: a4 +0.29
+21:57:56   depth 5: a4 +0.31
+22:03:52   depth 6: a4 +0.52
+22:09:44   depth 7: a4 +0.13
+22:11:53   time after 20m25s, 373 requests, 229 queued. ChessDB now: best a4 +0.16 (was best f6 +0.82), stored line 2 -> 11
+22:11:53 Exploring 33/45: 9...Be6 10.b3 Rc8 11.Be3 a6 12.Rc1 Qa5 13.Bd2 Qd8 14.f3 Ne5 15.f4 Nc6 16.Kh1 Bd7 17.Qe1 e6 (decision)
+22:11:55   depth 1: Be3 +1.25
+22:11:58   depth 2: Be3 +1.25
+22:12:03   depth 3: Be3 +1.25
