@@ -386,3 +386,11 @@
 23:58:23   depth 2: Qb7 +0.43
 23:58:27   depth 3: Qb7 +0.43
 23:58:32   depth 4: Qb7 +0.43
+23:58:38   depth 5: Qb7 +0.50
+23:58:45   depth 6: Qb7 +0.43
+23:59:19   stable after 0m59s, 57 requests, 0 queued. ChessDB now: best Rfe8 +0.44 (was best Rfe8 +0.38), stored line 2 -> 4
+23:59:19 Exploring 42/45: 9...Be6 10.b3 Nd7 11.Bd2 Nc5 12.Rb1 Bxc3 13.Bxc3 Nxe4 14.Ba1 f6 15.Bf3 Nc5 16.b4 Nd7 17.Ne3 Nde5 18.Bd5 Bxd5 19.cxd5 Nb8 (decision)
+23:59:21   depth 1: f4 +1.76
+23:59:24   depth 2: f4 +1.76
+23:59:28   depth 3: f4 +1.76
+23:59:33   depth 4: f4 +1.76
