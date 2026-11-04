@@ -703,3 +703,11 @@
 19:13:28 Exploring 25/38: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 c6 6.Bg2 d5 7.cxd5 cxd5 8.O-O Nc6 9.b5 Na5 10.d3 b6 11.Nbd2 Bb7 12.Nb3 Nxb3 13.Qxb3 Rc8 14.Rac1 (line end)
 19:13:30   depth 1: Qd7 +0.71
 19:13:36   depth 2: Qd7 +0.74
+19:13:56   depth 3: Nd7 +1.19
+19:14:44   depth 4: Nd7 +1.17
+19:19:02   depth 5: Nd7 +1.10
+19:21:17   depth 6: Nd7 +1.07
+19:22:27   stable after 8m59s, 161 requests, 57 queued. ChessDB now: best Qd7 +1.28 (was best Qd7 +0.78), stored line 2 -> 4
+19:22:27 Exploring 26/38: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 d6 6.Bg2 e5 7.d3 a5 8.b5 Nbd7 9.O-O Nc5 10.Nc3 a4 11.Ba3 e4 12.Ne1 exd3 13.Nxd3 Nxd3 14.Qxd3 Re8 (decision)
+19:22:29   depth 1: Rad1 +0.84
+19:22:33   depth 2: Rad1 +0.79
