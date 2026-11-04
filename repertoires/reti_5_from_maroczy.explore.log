@@ -289,3 +289,10 @@
 21:38:43 Exploring 29/45: 9...Be6 10.b3 Nd7 11.Bd2 Nc5 12.Rb1 Bxc3 13.Bxc3 Nxe4 14.Ba1 Nc5 15.b4 Nd7 16.Ne3 a6 (decision)
 21:38:45   depth 1: a3 +1.40
 21:38:51   depth 2: a3 +1.40
+21:39:13   depth 3: a3 +1.65
+21:40:03   depth 4: a3 +1.49
+21:40:11   depth 5: a3 +1.50
+21:41:33   depth 6: a3 +1.58
+21:41:56   stable after 3m13s, 77 requests, 26 queued. ChessDB now: best Qd2 +1.45; mine Kh1 +1.24 vs Qd2 +1.45 (was best a3 +1.42; mine Kh1 +1.41 vs a3 +1.42), stored line 2 -> 4
+21:41:56 Exploring 30/45: 9...Be6 10.b3 a5 11.Be3 Nd7 12.Nd4 Nxd4 13.Bxd4 Bxd4 14.Qxd4 Qb6 15.Qd2 Nc5 16.Rab1 Qb4 (decision)
+21:41:59   depth 1: Qb2 +0.87
