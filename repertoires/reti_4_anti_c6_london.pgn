@@ -1,0 +1,13 @@
+[White "Anti c6 / London"]
+[Event "Anti c6 / London"]
+[Result "*"]
+[ChapterName "Anti c6 / London"]
+[Orientation "white"]
+[StudyName "Reti"]
+
+1. Nf3 d5 2. c4 c6 3. g3 Nf6 (3... Bg4 4. Ne5 Bf5 (4... Bh5 5. Qb3 Qb6 6. cxd5 Qxb3 7. axb3 cxd5 8. g4 Bg6 9. e4 { Sacrificing a pawn to open up the bishop.
+Might continue something like: ( 9... Bxe4 10. Bb5+ Nc6 11. Nxc6 Bxh1 12. Ne5+ Kd8 13. Nxf7+ Kc7 14. Nxh8) } { [%csl Gb5][%cal Gf1b5] } 9... dxe4 (9... Bxe4 10. Bb5+ Kd8 11. Nxf7+ Kc7 12. O-O) 10. Bb5+ Kd8 11. Nc3 f6 12. Nxg6 hxg6) (4... Be6 5. d4 Nd7 6. cxd5 cxd5 7. Bg2) 5. Qb3 Qb6 (5... Qc7 6. Nxf7 Kxf7 7. Qf3 Qe5 8. g4 { Might continue like: (8... e6 9. gxf5 Qxf5 10. cxd5 cxd5 11. Qxf5+ exf5) }) 6. cxd5 Qxb3 7. axb3 cxd5 8. Nc3 e6 9. Nb5) 4. Bg2 Bf5 (4... Bg4 5. Ne5 Bf5 (5... Bh5 6. cxd5 cxd5 7. Qa4+ (7. Nc3 e6 8. g4 Bg6 { Black can't take due to: (8... Nxg4 9. Nxg4 Bxg4 10. Qa4+) } 9. h4 h5 10. g5 Nfd7 11. Nxg6 fxg6 12. Qc2 Kf7 13. Nxd5 { If white takes: (13... exd5 14. Bxd5+ Ke7 15. Qe4+ Kd6 16. Bxb7)
+Example if they don't: (13... Nc6 14. Nf4 Nde5 15. Bxc6 bxc6 16. Qe4) }) 7... Nbd7 8. Nc3) 6. cxd5 cxd5 7. Nc3 e6 8. g4 Be4 (8... Bg6 9. h4 h6 10. Nxg6 fxg6 11. Qc2 Kf7 12. h5 gxh5 13. gxh5 Nc6 14. Qg6+ Kg8 15. b3 { Get the bishop to b2 if you have time. Remember that e6 is really weak and can be targeted with Bh3. } { [%csl Be6][%cal Gc1b2,Bg2h3,Bh3e6] }) 9. f3 Bg6 10. h4 h6 11. Nxg6 fxg6 12. Qc2 { [%cal Gc2g6,Be8f7,Bh4h5] }) 5. Qb3 Qb6 (5... Qc7 6. d3 e6 7. Bf4! { A move not available in the black version of this. } 7... Qb6 (7... Bd6?? 8. Bxd6 Qxd6 9. Qxb7 O-O 10. Qxa8 Qc7 11. Nd4! { Important move! We need to make sure the queen can escape to c6 in case of knight jump discoveries. } { [%cal Gc4d5,Ge6d5] } 11... Nfd7 12. cxd5 Nb6 { If black is patient and take the pawn, we'll have to sac the queen for some pieces: (11... Nfd7 12. cxd5 exd5 13. Nxf5 Nb6 14. Qxb8 Rxb8) } 13. d6 Qd7 14. Bxc6) (7... Qc8 8. Nc3 Nbd7 9. cxd5 exd5 10. Qc2 Be7 11. e4) 8. Nc3) (5... Qc8 6. d3 e6 7. Nc3 Nbd7 8. cxd5 exd5 9. Qc2 { [%cal Ge2e4] }) 6. d3 e6 7. Be3 Qxb3 8. axb3 a6 9. O-O Nbd7 10. Bd2 Be7 11. Bc3 O-O 12. Nbd2 h6 13. b4 Rfe8 14. Nb3 { Heading to Na5 if allowed.
+Black can prevent it with Bd8 but that disconnects the rooks: (14... Bd8 15. b5 cxb5 16. cxb5 Bb6 17. bxa6 bxa6 18. Nfd4)
+
+Another more likely continuation: (14... dxc4 15. dxc4 Ne4 16. c5 Nxc3 17. bxc3 Bf6 18. Nfd4) we don't mind giving up the bishop. Get some knights to outposts. } { [%cal Gb3a5] } *
