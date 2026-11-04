@@ -327,3 +327,12 @@
 13:37:55   depth 2: d4 +0.21
 13:37:59   depth 3: d4 +0.21
 13:38:06   depth 4: d4 +0.22
+13:38:21   depth 5: d4 +0.24
+13:38:47   depth 6: d4 +0.21
+13:39:14   stable after 1m21s, 64 requests, 11 queued. ChessDB now: best d4 +0.23; mine O-O +0.19 vs d4 +0.23 (was best d4 +0.21; mine O-O +0.19 vs d4 +0.21), stored line 3 -> 9
+13:39:14 Exploring 9/58: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 d5 6.cxd5 Nxd5 7.Bxg7 Kxg7 8.Qc1 Kg8 9.Bg2 Nxb4 (decision)
+13:39:14   depth 1: O-O +0.17
+13:39:17   depth 2: O-O +0.17
+13:39:21   depth 3: O-O +0.17
+13:39:26   depth 4: O-O +0.15
+13:39:36   depth 5: O-O +0.19
