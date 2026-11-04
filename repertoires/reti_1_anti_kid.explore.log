@@ -637,3 +637,10 @@
 18:07:01   depth 2: Nde4 +0.89
 18:07:06   depth 3: Nde4 +0.89
 18:07:17   depth 4: Rb1 +0.92
+18:07:32   depth 5: Nde4 +0.88
+18:08:56   depth 6: Nde4 +1.02
+18:22:17   depth 7: Nce4 +0.88
+18:27:33   time after 20m35s, 334 requests, 217 queued. ChessDB now: best Nde4 +0.95; mine Nde4 +0.95 vs Rb1 +0.90 (was best Nde4 +0.95; mine Nde4 +0.95 vs Rb1 +0.85), stored line 7 -> 7
+18:27:33 Exploring 18/38: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 a5 6.b5 c6 7.a4 d5 8.Bg2 dxc4 9.O-O cxb5 10.axb5 Nbd7 11.Na3 Nb6 12.Ne5 Qc7 13.Rc1 Be6 (decision)
+18:27:35   depth 1: Naxc4 +0.07
+18:27:55   depth 2: Naxc4 +0.01
