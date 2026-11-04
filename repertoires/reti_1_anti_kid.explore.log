@@ -711,3 +711,11 @@
 19:22:27 Exploring 26/38: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 d6 6.Bg2 e5 7.d3 a5 8.b5 Nbd7 9.O-O Nc5 10.Nc3 a4 11.Ba3 e4 12.Ne1 exd3 13.Nxd3 Nxd3 14.Qxd3 Re8 (decision)
 19:22:29   depth 1: Rad1 +0.84
 19:22:33   depth 2: Rad1 +0.79
+19:22:57   depth 3: Rfd1 +0.85
+19:23:33   depth 4: Rad1 +0.79
+19:38:21   depth 5: h3 +0.62
+19:43:00   time after 20m32s, 309 requests, 189 queued. ChessDB now: best Rad1 +0.79; mine Rad1 +0.79 vs Rac1 +0.65 (was best Rad1 +0.99; mine Rad1 +0.99 vs Rfd1 +0.77), stored line 4 -> 10
+19:43:00 Exploring 27/38: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 a5 6.b5 c6 7.a4 d5 8.Bg2 dxc4 9.O-O cxb5 10.axb5 Nbd7 11.Na3 Nb6 12.Ne5 Qc7 13.Rc1 Be6 14.d3 Rfd8 (decision)
+19:43:02   depth 1: Naxc4 +0.10
+19:43:08   depth 2: Naxc4 +0.17
+19:43:13   depth 3: Naxc4 +0.17
