@@ -733,3 +733,12 @@
 20:03:34   depth 2: Qb4 +0.46
 20:03:38   depth 3: Bh3 +0.34
 20:03:41   depth 4: Qb4 +0.36
+20:04:34   depth 5: Bh3 +0.34
+20:05:44   depth 6: Bh3 +0.34
+20:11:25   depth 7: Bh3 +0.42
+20:12:05   stable after 8m34s, 180 requests, 98 queued. ChessDB now: best Nbd2 +0.42; mine Rc1 +0.32 vs Nbd2 +0.42 (was best Rc1 +0.45; mine Rc1 +0.45 vs Bh3 +0.42), stored line 3 -> 4
+20:12:05 Exploring 29/38: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 d6 6.Bg2 e5 7.d3 Nc6 8.b5 Ne7 9.Nbd2 c6 10.a4 a6 11.O-O axb5 12.axb5 Rxa1 13.Qxa1 cxb5 14.cxb5 Qb6 15.Nc4 (line end)
+20:12:07   depth 1: Qd8 +2.28
+20:12:10   depth 2: Qd8 +2.28
+20:12:14   depth 3: Qd8 +2.28
+20:12:20   depth 4: Qd8 +2.28
