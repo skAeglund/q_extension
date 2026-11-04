@@ -644,3 +644,14 @@
 18:27:33 Exploring 18/38: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 a5 6.b5 c6 7.a4 d5 8.Bg2 dxc4 9.O-O cxb5 10.axb5 Nbd7 11.Na3 Nb6 12.Ne5 Qc7 13.Rc1 Be6 (decision)
 18:27:35   depth 1: Naxc4 +0.07
 18:27:55   depth 2: Naxc4 +0.01
+18:28:19   depth 3: Naxc4 +0.01
+18:28:36   depth 4: Nexc4 +0.24
+18:31:24   depth 5: d3 +0.01
+18:31:59   depth 6: d3 +0.02
+18:35:14   depth 7: d3 +0.09
+18:36:04   stable after 8m31s, 192 requests, 85 queued. ChessDB now: best Nexc4 +0.04; mine d3 +0.01 vs Nexc4 +0.04 (was best d3 +0.02; mine d3 +0.02 vs Naxc4 +0.00), stored line 2 -> 7
+18:36:04 Exploring 19/38: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 a5 6.b5 d5 7.cxd5 Nxd5 8.Bxg7 Kxg7 9.Bg2 c6 10.Qb3 a4 11.Qb2+ Kg8 12.O-O cxb5 13.Qxb5 Nc6 (decision)
+18:36:06   depth 1: Qb2 +0.17
+18:36:09   depth 2: Qb2 +0.18
+18:36:13   depth 3: Qb2 +0.16
+18:36:19   depth 4: Qb2 +0.16
