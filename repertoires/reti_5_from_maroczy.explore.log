@@ -323,3 +323,10 @@
 22:11:55   depth 1: Be3 +1.25
 22:11:58   depth 2: Be3 +1.25
 22:12:03   depth 3: Be3 +1.25
+22:12:19   depth 4: Be3 +1.25
+22:13:02   depth 5: Be3 +1.25
+22:13:39   depth 6: Be3 +1.25
+22:14:09   stable after 2m15s, 96 requests, 21 queued. ChessDB now: best Be3 +1.25; mine Be3 +1.25 vs Rd1 +1.06 (was best Be3 +1.23; mine Be3 +1.23 vs Rd1 +1.06), stored line 3 -> 17
+22:14:09 Exploring 34/45: 9...Be6 10.b3 Rc8 11.Be3 a6 12.Rc1 Qa5 13.Bd2 Qd8 14.f3 Nd7 15.Kh1 Nd4 16.Nxd4 Bxd4 17.f4 f5 (decision)
+22:14:11   depth 1: exf5 +1.19
+22:14:14   depth 2: exf5 +1.12
