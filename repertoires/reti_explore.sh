@@ -2,9 +2,10 @@
 # cdbexplore over the Reti study (repworks-data studies/0fD2MFez), one chapter at a time.
 # Resumable: cdbexplore skips targets explored in the last 7 days, so just run it again.
 # Progress (.explore.json/.log) is committed and pushed after every finished target.
+# CHAPTERS="reti_4_... reti_7_..." limits it to some chapters; BRANCH defaults to the checked-out one.
 cd "$(dirname "$0")/.."
-BRANCH=claude/reti-study-cdbexplore-amk07g
-CHAPTERS="reti_1_anti_kid reti_2_anti_c5 reti_3_anti_e6_qgd reti_4_anti_c6_london reti_5_from_maroczy reti_6_reti_accepted_e4 reti_7_1_nc6"
+BRANCH=${BRANCH:-$(git branch --show-current)}
+CHAPTERS=${CHAPTERS:-"reti_1_anti_kid reti_2_anti_c5 reti_3_anti_e6_qgd reti_4_anti_c6_london reti_5_from_maroczy reti_6_reti_accepted_e4 reti_7_1_nc6"}
 # The live files are marked skip-worktree between pushes, so a half-written log doesn't
 # show as an uncommitted change.
 live() { git ls-files repertoires | grep -E 'reti_.*\.explore\.(log|json)$'; }
