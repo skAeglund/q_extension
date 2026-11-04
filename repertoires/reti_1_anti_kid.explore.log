@@ -655,3 +655,8 @@
 18:36:09   depth 2: Qb2 +0.18
 18:36:13   depth 3: Qb2 +0.16
 18:36:19   depth 4: Qb2 +0.16
+18:36:38   depth 5: Qb2 +0.14
+18:41:36   depth 6: Qb2 +0.14
+18:42:28   stable after 6m24s, 132 requests, 46 queued. ChessDB now: best Qb2 +0.18; mine Qb2 +0.18 vs a3 -0.09 (was best Qb2 +0.18; mine Qb2 +0.18 vs a3 -0.09), stored line 6 -> 7
+18:42:28 Exploring 20/38: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 d5 6.cxd5 Nxd5 7.Bxg7 Kxg7 8.Qc1 Kg8 9.Bg2 Nxb4 10.O-O N8c6 11.Qb2 Bg4 12.Nc3 Rb8 13.Rfd1 Nd5 (decision)
+18:42:28   depth 1: d4 +0.10
