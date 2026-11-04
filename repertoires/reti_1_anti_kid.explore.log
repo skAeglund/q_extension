@@ -158,3 +158,14 @@
 12:53:06 Exploring 3/59: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 b6 6.Bg2 Bb7 7.Qb3 d5 (decision)
 12:53:08   depth 1: O-O +0.03
 12:53:11   depth 2: O-O +0.04
+12:53:18   depth 3: O-O +0.03
+12:53:25   depth 4: O-O +0.04
+12:53:39   depth 5: O-O +0.04
+12:54:02   depth 6: O-O +0.05
+12:54:26   stable after 1m20s, 77 requests, 1 queued. ChessDB now: best O-O +0.04; mine O-O +0.04 vs cxd5 +0.00 (was best O-O +0.04; mine O-O +0.04 vs cxd5 +0.00), stored line 8 -> 29
+12:54:26 Exploring 4/59: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 d6 6.Bg2 e5 7.d3 Nc6 8.b5 Ne7 (decision)
+12:54:26   depth 1: a4 +0.30
+12:54:29   depth 2: a4 +0.30
+12:54:33   depth 3: a4 +0.30
+12:54:38   depth 4: a4 +0.30
+12:54:44   depth 5: a4 +0.30
