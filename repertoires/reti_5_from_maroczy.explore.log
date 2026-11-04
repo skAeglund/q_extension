@@ -173,3 +173,9 @@
 19:16:57 Exploring 15/45: 9...Be6 10.b3 Rc8 11.Be3 Ng4 12.Bd2 h5 13.h3 Nf6 14.f4 a6 (decision)
 19:16:59   depth 1: Kh1 +1.27
 19:17:03   depth 2: Kh1 +1.27
+19:17:08   depth 3: Kh1 +1.27
+19:17:14   depth 4: Kh1 +1.27
+19:31:35   depth 5: Kh1 +1.32
+19:37:20   time after 20m23s, 238 requests, 131 queued. ChessDB now: best Kh1 +1.34; mine Kh1 +1.34 vs a4 +1.14 (was best Kh1 +1.27; mine Kh1 +1.27 vs a4 +1.14), stored line 9 -> 11
+19:37:20 Exploring 16/45: 9...Be6 10.b3 a6 11.Be3 Qa5 12.Bd2 Qc7 13.Rc1 Rac8 14.Ne3 Qb8 (decision)
+19:37:23   depth 1: Re1 +0.62
