@@ -114,3 +114,14 @@
 18:24:04 Exploring 8/45: 9...Be6 10.b3 Nxe4 11.Nxe4 Bxa1 12.Nxa1 Qa5 (decision)
 18:24:06   depth 1: Bh6 +2.95
 18:24:11   depth 2: Bh6 +2.95
+18:24:40   depth 3: Bh6 +3.26
+18:25:21   depth 4: Bh6 +3.37
+18:27:12   depth 5: Bh6 +3.51
+18:40:25   depth 6: Bh6 +3.72
+18:44:19   time after 20m15s, 214 requests, 106 queued. ChessDB now: best Bh6 +3.37; mine Bh6 +3.37 vs Nc2 +2.78 (was best Bh6 +2.94; mine Bh6 +2.94 vs Nc2 +2.78), stored line 3 -> 9
+18:44:19 Exploring 9/45: 9...Be6 10.b3 a6 11.Be3 Qa5 12.Bd2 Qc7 (decision)
+18:44:21   depth 1: Rc1 +0.71
+18:44:24   depth 2: Rc1 +0.71
+18:44:28   depth 3: Rc1 +0.71
+18:44:34   depth 4: Rc1 +0.71
+18:44:44   depth 5: Rc1 +0.71
