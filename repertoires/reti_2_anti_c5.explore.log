@@ -94,3 +94,10 @@
 23:25:48   depth 3: Rc1 +0.38
 23:25:55   depth 4: cxd5 +0.36
 23:26:02   depth 5: cxd5 +0.35
+23:26:12   depth 6: cxd5 +0.34
+23:26:43   stable after 1m06s, 62 requests, 2 queued. ChessDB now: best cxd5 +0.32; mine cxd5 +0.32 vs Rc1 +0.25 (was best cxd5 +0.33; mine cxd5 +0.33 vs Rc1 +0.29), stored line 8 -> 12
+23:26:43 Exploring 8/26: 1.Nf3 c5 2.c4 Nc6 3.d4 cxd4 4.Nxd4 e6 5.g3 Bc5 6.Nb3 Bb6 7.Nc3 Nf6 8.c5 Bc7 9.Nb5 O-O 10.Nxc7 Qxc7 (decision)
+23:26:43   depth 1: Bg2 +0.20
+23:26:46   depth 2: Bg2 +0.20
+23:26:50   depth 3: Bg2 +0.20
+23:26:55   depth 4: Bg2 +0.22
