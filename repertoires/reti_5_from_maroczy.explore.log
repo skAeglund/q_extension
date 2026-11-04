@@ -369,3 +369,12 @@
 23:36:51 Exploring 39/45: 9...Be6 10.b3 a6 11.Be3 Qa5 12.Bd2 Qc7 13.Rc1 Rac8 14.Ne3 Nd4 15.Bd3 Nd7 16.f4 Nc5 17.Bb1 b5 18.f5 (line end)
 23:36:53   depth 1: b4 +2.87
 23:36:58   depth 2: b4 +2.87
+23:37:25   depth 3: b4 +2.99
+23:37:59   depth 4: b4 +2.78
+23:56:47   depth 5: b4 +3.17
+23:57:15   time after 20m24s, 250 requests, 157 queued. ChessDB now: best b4 +2.88 (was best b4 +2.90), stored line 2 -> 4
+23:57:15 Exploring 40/45: 9...Be6 10.b3 a6 11.Be3 Qa5 12.Bd2 Qc7 13.Rc1 Rac8 14.Ne3 Qb8 15.Ned5 Bxd5 16.exd5 Nd4 17.Be3 Nxe2+ 18.Nxe2 b5 (decision)
+23:57:15   depth 1: Nd4 +0.47
+23:57:18   depth 2: Nd4 +0.47
+23:57:22   depth 3: Nd4 +0.47
+23:57:27   depth 4: Nd4 +0.47
