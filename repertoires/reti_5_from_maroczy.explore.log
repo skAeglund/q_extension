@@ -106,3 +106,11 @@
 18:17:25   depth 2: h3 +1.03
 18:17:29   depth 3: h3 +1.03
 18:17:35   depth 4: h3 +1.03
+18:17:56   depth 5: h3 +1.10
+18:18:38   depth 6: Rc1 +0.93
+18:20:38   depth 7: Rc1 +1.03
+18:23:44   depth 8: Rc1 +0.95
+18:24:04   stable after 6m47s, 180 requests, 94 queued. ChessDB now: best Rc1 +0.93; mine h3 +0.83 vs Rc1 +0.93 (was best Rc1 +1.03; mine h3 +1.03 vs Rc1 +1.03), stored line 5 -> 9
+18:24:04 Exploring 8/45: 9...Be6 10.b3 Nxe4 11.Nxe4 Bxa1 12.Nxa1 Qa5 (decision)
+18:24:06   depth 1: Bh6 +2.95
+18:24:11   depth 2: Bh6 +2.95
