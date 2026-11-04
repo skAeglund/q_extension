@@ -5,9 +5,14 @@
 cd "$(dirname "$0")/.."
 BRANCH=claude/reti-study-cdbexplore-amk07g
 CHAPTERS="reti_1_anti_kid reti_2_anti_c5 reti_3_anti_e6_qgd reti_4_anti_c6_london reti_5_from_maroczy reti_6_reti_accepted_e4 reti_7_1_nc6"
+# The live files are marked skip-worktree between pushes, so a half-written log doesn't
+# show as an uncommitted change.
+live() { git ls-files repertoires | grep -E 'reti_.*\.explore\.(log|json)$'; }
 push() {
+  live | xargs -r git update-index --no-skip-worktree
   git add repertoires/reti_* >/dev/null 2>&1
-  git diff --cached --quiet && return
+  live | xargs -r git update-index --skip-worktree
+  git diff --cached --quiet && { live | xargs -r git update-index --skip-worktree; return; }
   git commit -qm "cdbexplore Reti: $1" && for d in 2 4 8 16; do git push -q -u origin $BRANCH && break; sleep $d; done
 }
 for c in $CHAPTERS; do
