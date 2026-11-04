@@ -348,3 +348,12 @@
 22:54:59 Exploring 36/45: 9...Be6 10.b3 a6 11.Be3 Qa5 12.Bd2 Qc7 13.Rc1 Rac8 14.Ne3 Nd4 15.Bd3 Nd7 16.f4 Nc5 17.Bb1 b5 (decision)
 22:55:01   depth 1: cxb5 +3.31
 22:55:06   depth 2: cxb5 +3.31
+22:55:26   depth 3: cxb5 +3.98
+22:55:47   depth 4: cxb5 +3.61
+23:15:29   time after 20m30s, 197 requests, 90 queued. ChessDB now: best cxb5 +3.50; mine f5 +2.90 vs cxb5 +3.50 (was best cxb5 +2.72; mine f5 +2.49 vs cxb5 +2.72), stored line 2 -> 3
+23:15:29 Exploring 37/45: 9...Be6 10.b3 Rc8 11.Be3 a6 12.Rc1 Qa5 13.Bd2 Qd8 14.f3 Ne5 15.f4 Nc6 16.Kh1 Bd7 17.Qe1 e6 18.Be3 (line end)
+23:15:29   depth 1: Ne7 +1.25
+23:15:32   depth 2: Ne7 +1.25
+23:15:36   depth 3: Ne7 +1.25
+23:15:41   depth 4: Ne7 +1.25
+23:15:47   depth 5: Ne7 +1.25
