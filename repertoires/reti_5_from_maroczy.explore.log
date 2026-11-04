@@ -245,3 +245,12 @@
 20:49:46 Exploring 24/45: 9...Be6 10.b3 a5 11.Be3 Nd7 12.Nd4 Nxd4 13.Bxd4 Bxd4 14.Qxd4 Qb6 15.Qd2 Nc5 (decision)
 20:49:48   depth 1: Rab1 +0.24
 20:49:52   depth 2: Rab1 +0.25
+20:49:57   depth 3: Rab1 +0.25
+20:50:05   depth 4: Rab1 +0.26
+20:50:14   depth 5: Rab1 +0.26
+20:50:50   depth 6: Rab1 +0.29
+20:51:20   stable after 1m34s, 79 requests, 13 queued. ChessDB now: best Rab1 +0.24; mine Rab1 +0.24 vs Rfb1 +0.22 (was best Rab1 +0.28; mine Rab1 +0.28 vs Rfb1 +0.22), stored line 7 -> 9
+20:51:20 Exploring 25/45: 9...Be6 10.b3 Rc8 11.Be3 a6 12.Rc1 Qa5 13.Bd2 Qd8 14.f3 Qb6+ 15.Kh1 Nh5 16.f4 (line end)
+20:51:20   depth 1: Nf6 +1.53
+20:51:23   depth 2: Nf6 +1.53
+20:51:27   depth 3: Nf6 +1.53
