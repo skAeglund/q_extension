@@ -694,3 +694,12 @@
 19:06:30   depth 2: Bxf3 +0.10
 19:06:34   depth 3: Bxf3 +0.10
 19:06:39   depth 4: Bxf3 +0.10
+19:06:45   depth 5: Bxf3 +0.10
+19:06:52   depth 6: Nxc3 +0.10
+19:09:18   depth 7: Bxf3 +0.06
+19:10:56   depth 8: Bxf3 +0.07
+19:12:05   depth 9: Bxf3 +0.09
+19:13:28   stable after 7m01s, 205 requests, 68 queued. ChessDB now: best Nxc3 +0.04 (was best Bxf3 +0.09), stored line 6 -> 8
+19:13:28 Exploring 25/38: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 c6 6.Bg2 d5 7.cxd5 cxd5 8.O-O Nc6 9.b5 Na5 10.d3 b6 11.Nbd2 Bb7 12.Nb3 Nxb3 13.Qxb3 Rc8 14.Rac1 (line end)
+19:13:30   depth 1: Qd7 +0.71
+19:13:36   depth 2: Qd7 +0.74
