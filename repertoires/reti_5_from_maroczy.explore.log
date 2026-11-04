@@ -78,3 +78,9 @@
 18:05:52 Exploring 4/45: 9...Be6 10.b3 a5 11.Rb1 Nb4 (decision)
 18:05:54   depth 1: Nd4 +0.80
 18:05:57   depth 2: Nd4 +0.80
+18:06:09   depth 3: Nd4 +0.96
+18:06:22   depth 4: Nd4 +0.96
+18:06:32   depth 5: Nd4 +0.96
+18:07:18   depth 6: Nd4 +0.95
+18:07:38   stable after 1m45s, 73 requests, 18 queued. ChessDB now: best Nd4 +0.95; mine Nd4 +0.95 vs h3 +0.68 (was best Nd4 +0.80; mine Nd4 +0.80 vs h3 +0.68), stored line 3 -> 6
+18:07:38 Exploring 5/45: 9...Bd7 10.b3 a5 11.Rb1 Nb4 (decision)
