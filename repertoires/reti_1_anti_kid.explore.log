@@ -368,3 +368,13 @@
 14:15:34 Exploring 13/58: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 d5 6.cxd5 Qxd5 7.Bg2 Nc6 8.a3 Bf5 9.d3 a5 10.Nc3 (line end)
 14:15:36   depth 1: Qd7 +0.74
 14:15:49   depth 2: Qd7 +0.72
+14:16:19   depth 3: Qd8 +0.62
+14:16:31   depth 4: Qd8 +0.77
+14:18:00   depth 5: Qd8 +0.63
+14:18:49   depth 6: Qd8 +0.69
+14:22:58   depth 7: Qd7 +0.73
+14:33:04   depth 8: Qd8 +0.51
+14:36:12   time after 20m38s, 388 requests, 199 queued. ChessDB now: best Qd8 +0.58 (was best Qd7 +0.71), stored line 2 -> 9
+14:36:12 Exploring 14/58: 1.Nf3 Nf6 2.c4 g6 3.b4 Bg7 4.Bb2 O-O 5.g3 a5 6.b5 c6 7.a4 cxb5 8.cxb5 b6 9.Bg2 Bb7 10.O-O d6 (decision)
+14:36:14   depth 1: Na3 +0.68
+14:36:18   depth 2: Na3 +0.73
