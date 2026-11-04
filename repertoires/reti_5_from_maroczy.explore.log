@@ -152,3 +152,9 @@
 19:14:11   depth 3: Re1 +0.71
 19:14:16   depth 4: Re1 +0.71
 19:14:22   depth 5: Re1 +0.72
+19:14:31   depth 6: Re1 +0.73
+19:14:49   stable after 0m45s, 42 requests, 1 queued. ChessDB now: best Re1 +0.73; mine Ne3 +0.42 vs Re1 +0.73 (was best Re1 +0.71; mine Ne3 +0.42 vs Re1 +0.71), stored line 7 -> 9
+19:14:49 Exploring 13/45: 9...Bd7 10.b3 Rc8 11.Bd2 a6 12.Rc1 Re8 13.f3 Ne5 (decision)
+19:14:51   depth 1: Kh1 +0.94
+19:14:54   depth 2: Kh1 +0.94
+19:14:58   depth 3: Kh1 +0.94
