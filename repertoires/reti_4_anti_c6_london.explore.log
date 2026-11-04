@@ -32,3 +32,9 @@
 15:26:08   depth 1: Nh4 +0.66
 15:26:11   depth 2: Nh4 +0.67
 15:26:15   depth 3: Nh4 +0.67
+15:26:21   depth 4: Nh4 +0.67
+15:26:39   depth 5: Nh4 +0.65
+15:26:53   depth 6: Nh4 +0.66
+15:27:18   stable after 1m11s, 60 requests, 5 queued. ChessDB now: best Nh4 +0.67; mine Nc3 +0.40 vs Nh4 +0.67 (was best Nh4 +0.66; mine Nc3 +0.56 vs Nh4 +0.66), stored line 6 -> 6
+15:27:18 Exploring 3/16: 1.Nf3 d5 2.c4 c6 3.g3 Nf6 4.Bg2 Bf5 5.Qb3 Qc7 6.d3 e6 7.Bf4 Qb6 8.Nc3 (line end)
+15:27:18   depth 1: Nbd7 +0.18

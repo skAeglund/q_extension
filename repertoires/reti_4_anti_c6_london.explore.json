@@ -72,6 +72,79 @@
    "queued": 7,
    "ms": 105064,
    "at": "2026-11-04T15:26:06.736Z"
+  },
+  "rnq1kb1r/pp3ppp/2p1pn2/3p1b2/2P2B2/1Q1P1NP1/PP2PPBP/RN2K2R w KQkq -": {
+   "fen": "rnq1kb1r/pp3ppp/2p1pn2/3p1b2/2P2B2/1Q1P1NP1/PP2PPBP/RN2K2R w KQkq - 2 8",
+   "line": "1.Nf3 d5 2.c4 c6 3.g3 Nf6 4.Bg2 Bf5 5.Qb3 Qc7 6.d3 e6 7.Bf4 Qc8",
+   "reason": "decision",
+   "reach": null,
+   "before": {
+    "best": {
+     "san": "Nh4",
+     "score": 66
+    },
+    "mine": {
+     "san": "Nc3",
+     "score": 56
+    },
+    "rival": {
+     "san": "Nh4",
+     "score": 66
+    },
+    "line": 6
+   },
+   "after": {
+    "best": {
+     "san": "Nh4",
+     "score": 67
+    },
+    "mine": {
+     "san": "Nc3",
+     "score": 40
+    },
+    "rival": {
+     "san": "Nh4",
+     "score": 67
+    },
+    "line": 6
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Nh4",
+     "score": 66
+    },
+    {
+     "depth": 2,
+     "best": "Nh4",
+     "score": 67
+    },
+    {
+     "depth": 3,
+     "best": "Nh4",
+     "score": 67
+    },
+    {
+     "depth": 4,
+     "best": "Nh4",
+     "score": 67
+    },
+    {
+     "depth": 5,
+     "best": "Nh4",
+     "score": 65
+    },
+    {
+     "depth": 6,
+     "best": "Nh4",
+     "score": 66
+    }
+   ],
+   "stopped": "stable",
+   "requests": 60,
+   "queued": 5,
+   "ms": 71364,
+   "at": "2026-11-04T15:27:18.101Z"
   }
  }
 }
