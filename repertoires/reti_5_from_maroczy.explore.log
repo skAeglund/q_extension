@@ -198,3 +198,9 @@
 19:43:25   depth 2: Bf3 +0.50
 19:43:29   depth 3: Bf3 +0.50
 19:43:35   depth 4: Bf3 +0.51
+19:44:06   depth 5: Bf3 +0.53
+19:45:01   depth 6: Bf3 +0.48
+19:46:09   stable after 2m49s, 77 requests, 23 queued. ChessDB now: best Bf3 +0.50; mine Bf3 +0.50 vs Ne3 +0.47 (was best Ne3 +0.57; mine Bf3 +0.49 vs Ne3 +0.57), stored line 4 -> 9
+19:46:09 Exploring 19/45: 9...Bd7 10.b3 a5 11.Rb1 Nb4 12.a3 Nxc2 13.Qxc2 Bc6 14.Be3 Nd7 (decision)
+19:46:09   depth 1: Rfd1 +0.47
+19:46:12   depth 2: Rfd1 +0.47
