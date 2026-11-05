@@ -35,3 +35,10 @@
 04:50:21   depth 2: f5 +1.33
 04:50:25   depth 3: f5 +1.33
 04:50:30   depth 4: f5 +1.33
+04:50:37   depth 5: f5 +1.33
+04:50:49   depth 6: f5 +1.33
+04:51:23   stable after 1m05s, 62 requests, 1 queued. ChessDB now: best Kh8 +1.27 (was best Kh8 +1.38), stored line 3 -> 6
+04:51:23 Exploring 5/6: 1.Nf3 Nc6 2.d4 d5 3.c4 e6 4.Nc3 Nf6 5.Bg5 Be7 6.e3 O-O 7.Rc1 h6 8.Bh4 Ne4 9.Bxe7 Nxe7 10.Qc2 Nxc3 11.Qxc3 c6 (decision)
+04:51:25   depth 1: Bd3 +0.52
+04:51:28   depth 2: Bd3 +0.53
+04:51:32   depth 3: Bd3 +0.53
