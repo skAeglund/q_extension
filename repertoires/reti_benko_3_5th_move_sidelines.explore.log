@@ -132,3 +132,11 @@
 22:13:55   depth 1: Bb4 +0.46
 22:13:58   depth 2: Bb4 +0.46
 22:14:02   depth 3: Bb4 +0.46
+22:14:07   depth 4: Bb4 +0.46
+22:14:13   depth 5: Bb4 +0.51
+22:15:10   depth 6: Bb4 +0.46
+22:15:49   stable after 1m55s, 70 requests, 8 queued. ChessDB now: best Bb4 +0.40 (was best Bb4 +0.46), stored line 3 -> 11
+22:15:49 Exploring 13/27: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Bc5 12.d3 Nge7 13.Nd2 f5 14.Qb5 (line end)
+22:15:51   depth 1: Bb4 +1.37
+22:15:55   depth 2: Bb4 +1.37
+22:16:00   depth 3: Bb4 +1.37
