@@ -28,3 +28,6 @@ desktop.ini
 node_modules/
 __pycache__/
 *.pyc
+
+# repgen console output redirected by hand (the same lines are in <out>.log)
+repertoires/*.stdout

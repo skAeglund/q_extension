@@ -1,0 +1,14 @@
+[Event "Practical repertoire"]
+[Site "repgen"]
+[Date "2026.11.05"]
+[White "Repertoire"]
+[Black "Lichess"]
+[Result "*"]
+
+1. Nf3 Nc6 2. d4 d5 3. c4 dxc4 {26% of 3,029,168 games} (3... e6 {24% of
+3,029,168 games · not searched yet}) (3... Bg4 {21% of 3,029,168 games · not
+searched yet}) (3... Nf6 {17% of 3,029,168 games · not searched yet}) (3... Bf5
+{6% of 3,029,168 games · not searched yet}) 4. d5 {Prac 71.7 d5, prep 72.7,
+engine 56.6, blend 70.9; Nc3 66.1 (Prac 71.0), e3 63.5 (Prac 63.7), e4 60.0
+(Prac 62.6)} 4... Nb8 {51% of 145,963 games · not searched yet} (4... Nb4 {32%
+of 145,963 games · not searched yet}) *
