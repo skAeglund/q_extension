@@ -145,6 +145,94 @@
    "queued": 11,
    "ms": 141645,
    "at": "2026-11-05T20:39:18.433Z"
+  },
+  "r3k2r/pp1qnppp/2nb4/4p3/Q1Pp4/3P2P1/4PPBP/RNB2RK1 w kq -": {
+   "fen": "r3k2r/pp1qnppp/2nb4/4p3/Q1Pp4/3P2P1/4PPBP/RNB2RK1 w kq - 1 13",
+   "line": "1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Bd6 12.d3 Nge7",
+   "reason": "decision",
+   "reach": null,
+   "before": {
+    "best": {
+     "san": "Nd2",
+     "score": 55
+    },
+    "mine": {
+     "san": "Nd2",
+     "score": 55
+    },
+    "rival": {
+     "san": "Ba3",
+     "score": 54
+    },
+    "line": 5
+   },
+   "after": {
+    "best": {
+     "san": "Ba3",
+     "score": 54
+    },
+    "mine": {
+     "san": "Nd2",
+     "score": 49
+    },
+    "rival": {
+     "san": "Ba3",
+     "score": 54
+    },
+    "line": 7
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Ba3",
+     "score": 54
+    },
+    {
+     "depth": 2,
+     "best": "Ba3",
+     "score": 54
+    },
+    {
+     "depth": 3,
+     "best": "Ba3",
+     "score": 54
+    },
+    {
+     "depth": 4,
+     "best": "Nd2",
+     "score": 56
+    },
+    {
+     "depth": 5,
+     "best": "Ba3",
+     "score": 59
+    },
+    {
+     "depth": 6,
+     "best": "Nd2",
+     "score": 51
+    },
+    {
+     "depth": 7,
+     "best": "Nd2",
+     "score": 63
+    },
+    {
+     "depth": 8,
+     "best": "Nd2",
+     "score": 51
+    },
+    {
+     "depth": 9,
+     "best": "Nd2",
+     "score": 49
+    }
+   ],
+   "stopped": "time",
+   "requests": 344,
+   "queued": 200,
+   "ms": 1228542,
+   "at": "2026-11-05T20:59:46.976Z"
   }
  }
 }
