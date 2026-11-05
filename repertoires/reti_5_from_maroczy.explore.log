@@ -480,3 +480,10 @@
 00:58:22   depth 2: Nh6 +1.94
 00:58:26   depth 3: Nh6 +1.94
 00:58:31   depth 4: Nh6 +2.03
+00:59:07   depth 5: Nh6 +1.52
+01:05:09   depth 6: Nh6 +2.05
+01:18:59   time after 20m41s, 231 requests, 96 queued. ChessDB now: best Nh6 +1.82 (was best Kh8 +1.93), stored line 3 -> 5
+01:18:59 Done: 6 explored, 3 changed; 1704 ChessDB requests in 70m57s.
+01:18:59   9...Bd7 10.b3 Rc8 11.Bd2 a6 12.Rc1 Re8: best a4 +0.38; mine f3 +0.31 vs a4 +0.38 -> best f3 +0.37; mine f3 +0.37 vs Be1 +0.32
+01:18:59   9...Be6 10.b3 Rc8 11.Be3 a6 12.Rc1 Ne5 13.f4 Neg4 14.Bd4 h5 15.h3 Nh6 16.Qd2: best Bd7 +2.36 -> best b5 +2.32
+01:18:59   9...Be6 10.b3 Nd7 11.Bd2 Nc5 12.Rb1 Bxc3 13.Bxc3 Nxe4 14.Ba1 f6 15.Bf3 Nc5 16.b4 Nd7 17.Ne3 Nde5 18.Bd5 Bxd5 19.cxd5 Nb8 20.f4 Nf7 21.h4 Nd7 22.h5: best Kh8 +1.93 -> best Nh6 +1.82
