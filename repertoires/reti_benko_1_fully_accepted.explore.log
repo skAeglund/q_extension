@@ -253,3 +253,11 @@
 12:51:55   depth 2: Kf8 +1.64
 12:51:59   depth 3: h6 +1.80
 12:52:02   depth 4: h6 +1.80
+13:01:47   depth 5: h6 +1.80
+13:08:16   depth 6: h6 +1.80
+13:08:52   stable after 17m00s, 220 requests, 129 queued. ChessDB now: best Kf8 +1.27 (was best g6 +1.44), stored line 2 -> 3
+13:08:52 Exploring 26/29: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 bxa3 6.Bg2 Nc6 7.O-O e5 8.d3 Nf6 9.Qa4 Bd7 10.Bxa3 Bxa3 11.Qxa3 Qe7 12.Nfd2 Qxa3 13.Nxa3 Ke7 14.Nb3 b6 15.c5 Rhb8 16.Nc4 (line end)
+13:08:54   depth 1: e4 +1.87
+13:08:59   depth 2: bxc5 +1.96
+13:09:04   depth 3: bxc5 +1.83
+13:09:11   depth 4: bxc5 +1.83
