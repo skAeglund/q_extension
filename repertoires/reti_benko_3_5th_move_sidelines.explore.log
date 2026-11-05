@@ -86,3 +86,16 @@
 21:27:23   stable after 16m32s, 240 requests, 113 queued. ChessDB now: best a5 +0.49; mine a5 +0.49 vs Qa3 +0.31 (was best a5 +0.44; mine a5 +0.44 vs Qa3 +0.31), stored line 3 -> 7
 21:27:23 Exploring 7/27: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Nf6 12.d3 Be7 13.Bg5 O-O (decision)
 21:27:25   depth 1: Bxf6 +0.31
+21:27:29   depth 2: Bxf6 +0.33
+21:27:33   depth 3: Bxf6 +0.33
+21:27:39   depth 4: Bxf6 +0.35
+21:27:47   depth 5: Bxf6 +0.39
+21:28:27   depth 6: Bxf6 +0.31
+21:29:00   stable after 1m37s, 71 requests, 9 queued. ChessDB now: best Bxf6 +0.30; mine Nd2 +0.29 vs Bxf6 +0.30 (was best Nd2 +0.29; mine Nd2 +0.29 vs Bxf6 +0.27), stored line 8 -> 4
+21:29:00 Exploring 8/27: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Bd6 12.d3 Nge7 13.Nd2 O-O (decision)
+21:29:00   depth 1: Ba3 +0.54
+21:29:03   depth 2: Ba3 +0.54
+21:29:07   depth 3: Ba3 +0.56
+21:29:12   depth 4: Ne4 +0.49
+21:29:15   depth 5: Ne4 +0.49
+21:29:19   depth 6: Ba3 +0.59
