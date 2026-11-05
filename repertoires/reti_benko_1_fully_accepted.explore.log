@@ -49,3 +49,12 @@
 07:50:46   depth 1: Nc2 +1.29
 07:50:50   depth 2: Nc2 +1.29
 07:50:55   depth 3: Nc2 +1.48
+07:51:01   depth 4: Nc2 +1.48
+07:52:12   depth 5: Nc2 +1.27
+07:53:05   depth 6: Nc2 +1.31
+07:58:30   depth 7: Nc2 +1.28
+07:59:06   stable after 8m22s, 152 requests, 60 queued. ChessDB now: best Nc2 +1.35; mine Nc2 +1.35 vs Nb3 +1.19 (was best Nc2 +1.30; mine Nc2 +1.30 vs Nb3 +1.21), stored line 8 -> 5
+07:59:06 Exploring 3/29: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 bxa3 6.Bg2 a2 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Rxa2 e5 11.O-O Nf6 (decision)
+07:59:08   depth 1: d3 +0.20
+07:59:13   depth 2: d3 +0.20
+07:59:21   depth 3: d3 +0.20
