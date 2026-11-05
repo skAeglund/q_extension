@@ -49,3 +49,12 @@
 01:46:29   depth 2: Bb5 +0.19
 01:46:40   depth 3: Bb5 +0.19
 01:46:50   depth 4: Bb5 +0.20
+01:47:21   depth 5: O-O +0.20
+01:48:10   depth 6: Qb5 +0.27
+01:48:38   depth 7: Qb5 +0.30
+01:50:37   depth 8: Qb5 +0.33
+01:51:13   stable after 4m52s, 167 requests, 39 queued. ChessDB now: best Qb5 +0.20; mine Qb5 +0.20 vs Bb5 +0.19 (was best Bb5 +0.25; mine Qb5 +0.24 vs Bb5 +0.25), stored line 7 -> 10
+01:51:13 Exploring 4/16: [11.44%] 1.Nf3 d5 2.c4 dxc4 3.e4 Nc6 4.Bxc4 e5 5.Qb3 Qd7 6.O-O Na5 (decision)
+01:51:13   depth 1: Qc3 +0.47
+01:51:16   depth 2: Qc3 +0.47
+01:51:20   depth 3: Qc3 +0.47
