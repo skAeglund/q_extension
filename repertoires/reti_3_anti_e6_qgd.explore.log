@@ -83,3 +83,14 @@
 05:02:43   depth 1: Nh4 +0.10
 05:02:50   depth 2: Nh4 +0.12
 05:02:56   depth 3: Nh4 +0.11
+05:03:13   depth 4: Nh4 +0.12
+05:03:30   depth 5: Nh4 +0.12
+05:04:11   depth 6: Ne1 +0.13
+05:04:48   depth 7: Ne1 +0.13
+05:06:37   depth 8: Nh4 +0.14
+05:09:44   depth 9: Nh4 +0.14
+05:16:55   depth 10: Ne1 +0.15
+05:23:53   time after 21m13s, 1213 requests, 58 queued. ChessDB now: best d3 +0.11; mine d3 +0.11 vs Ne1 +0.10 (was best Nh4 +0.11; mine d3 +0.09 vs Nh4 +0.11), stored line 9 -> 7
+05:23:53 Exploring 6/35: 1.Nf3 d5 2.c4 e6 3.g3 dxc4 4.Bg2 c6 5.O-O b5 6.a4 Bb7 7.Ne1 a6 8.d3 cxd3 9.Nxd3 Nf6 10.Nd2 Be7 (decision)
+05:23:55   depth 1: b4 +0.28
+05:23:58   depth 2: b4 +0.29
