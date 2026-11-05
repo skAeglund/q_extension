@@ -8,19 +8,23 @@
 1. Nf3 Nc6 2. d4 d5 3. c4 dxc4 {26% of 3,029,168 games} (3... e6 {24% of
 3,029,168 games} 4. Nc3 {Prac 58.5 d7, prep 60.9, engine 51.3, blend 59.4; Nbd2
 59.4 (Prac 57.9), e3 57.0 (Prac 55.6 d5), Bg5 57.0 (Prac 55.3 d5)} 4... Nf6
-{53% of 765,760 games · not searched yet} (4... Bb4 {28% of 765,760 games · not
-searched yet})) (3... Bg4 {21% of 3,029,168 games} 4. Nc3 {Prac 66.1 d7, prep
-64.7 (37% Prac), engine 51.0, blend 63.6; Bg5 60.9 (Prac 61.2), Nbd2 59.3 (Prac
-60.9 d5), e3 58.8 (Prac 60.4 d5)} 4... e6 {38% of 160,652 games · not searched
-yet} (4... Bxf3 {29% of 160,652 games · not searched yet}) (4... Nf6 {17% of
-160,652 games · not searched yet})) (3... Nf6 {17% of 3,029,168 games} 4. cxd5
-{Prac 72.2 d5, prep 67.8, engine 68.1, blend 68.7; Nc3 61.0 (Prac 62.3), Bd2
-55.7 (Prac 54.3)} 4... Nxd5 {72% of 211,633 games · not searched yet}
-(4... Qxd5 {27% of 211,633 games · not searched yet})) (3... Bf5 {6% of
-3,029,168 games · not searched yet}) 4. d5 {Prac 71.7 d5, prep 72.7, engine
-56.6, blend 70.9; Nc3 66.1 (Prac 71.0), e3 63.5 (Prac 63.7), e4 60.0 (Prac
-62.6)} 4... Nb8 {51% of 145,963 games} (4... Nb4 {32% of 145,963 games · not
-searched yet}) 5. e4 {Prac 71.2 d5, prep 72.1, engine 56.6, blend 70.4; Nc3
+{53% of 765,760 games} (4... Bb4 {28% of 765,760 games · not searched yet})
+5. a3 {Prac 60.0 d7, prep 61.5, engine 50.8, blend 60.1; e3 59.0 (Prac 57.6),
+Bf4 58.9 (Prac 57.7), Bg5 58.8 (Prac 57.6)} 5... Be7 {36% of 106,250 games ·
+not searched yet} (5... Bd6 {15% of 106,250 games · not searched yet})
+(5... dxc4 {12% of 106,250 games · not searched yet}) (5... a6 {10% of 106,250
+games · not searched yet})) (3... Bg4 {21% of 3,029,168 games} 4. Nc3 {Prac
+66.1 d7, prep 64.7 (37% Prac), engine 51.0, blend 63.6; Bg5 60.9 (Prac 61.2),
+Nbd2 59.3 (Prac 60.9 d5), e3 58.8 (Prac 60.4 d5)} 4... e6 {38% of 160,652 games
+· not searched yet} (4... Bxf3 {29% of 160,652 games · not searched yet})
+(4... Nf6 {17% of 160,652 games · not searched yet})) (3... Nf6 {17% of
+3,029,168 games} 4. cxd5 {Prac 72.2 d5, prep 67.8, engine 68.1, blend 68.7; Nc3
+61.0 (Prac 62.3), Bd2 55.7 (Prac 54.3)} 4... Nxd5 {72% of 211,633 games · not
+searched yet} (4... Qxd5 {27% of 211,633 games · not searched yet})) (3... Bf5
+{6% of 3,029,168 games · not searched yet}) 4. d5 {Prac 71.7 d5, prep 72.7,
+engine 56.6, blend 70.9; Nc3 66.1 (Prac 71.0), e3 63.5 (Prac 63.7), e4 60.0
+(Prac 62.6)} 4... Nb8 {51% of 145,963 games} (4... Nb4 {32% of 145,963 games ·
+not searched yet}) 5. e4 {Prac 71.2 d5, prep 72.1, engine 56.6, blend 70.4; Nc3
 66.2 (Prac 65.4), Bf4 63.0 (Prac 62.1), e3 57.2 (Prac 55.2)} 5... e6 {38% of
 46,270 games · not searched yet} (5... b5 {16% of 46,270 games · not searched
 yet}) (5... Bg4 {15% of 46,270 games · not searched yet}) (5... Nf6 {13% of
