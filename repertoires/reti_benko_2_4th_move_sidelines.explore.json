@@ -1655,6 +1655,74 @@
    "queued": 120,
    "ms": 996432,
    "at": "2026-11-05T19:06:59.023Z"
+  },
+  "2kr1b1r/1b3ppp/1p2p3/1Pp2n2/2P1n3/4PNP1/1B1NKPBP/R6R w - -": {
+   "fen": "2kr1b1r/1b3ppp/1p2p3/1Pp2n2/2P1n3/4PNP1/1B1NKPBP/R6R w - - 2 16",
+   "line": "1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 e6 5.Bb2 Nc6 6.b5 Nce7 7.e3 dxe3 8.dxe3 Qxd1+ 9.Kxd1 b6 10.Bg2 Bb7 11.a4 O-O-O+ 12.Ke2 Nf5 13.a5 Nf6 14.axb6 axb6 15.Nbd2 Ne4",
+   "reason": "decision",
+   "reach": null,
+   "before": {
+    "best": {
+     "san": "Nxe4",
+     "score": 207
+    },
+    "mine": {
+     "san": "Ra7",
+     "score": 180
+    },
+    "rival": {
+     "san": "Nxe4",
+     "score": 207
+    },
+    "line": 4
+   },
+   "after": {
+    "best": {
+     "san": "Ra7",
+     "score": 244
+    },
+    "mine": {
+     "san": "Ra7",
+     "score": 244
+    },
+    "rival": {
+     "san": "Nxe4",
+     "score": 193
+    },
+    "line": 20
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Ra7",
+     "score": 252
+    },
+    {
+     "depth": 2,
+     "best": "Ra7",
+     "score": 252
+    },
+    {
+     "depth": 3,
+     "best": "Ra7",
+     "score": 252
+    },
+    {
+     "depth": 4,
+     "best": "Ra7",
+     "score": 252
+    },
+    {
+     "depth": 5,
+     "best": "Ra7",
+     "score": 261
+    }
+   ],
+   "stopped": "time",
+   "requests": 251,
+   "queued": 131,
+   "ms": 1233783,
+   "at": "2026-11-05T19:27:32.807Z"
   }
  }
 }

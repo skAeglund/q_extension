@@ -221,3 +221,9 @@
 19:06:59   stable after 16m36s, 337 requests, 120 queued. ChessDB now: best Nxe4 +0.20 (was best Nxe4 +0.27), stored line 5 -> 7
 19:06:59 Exploring 24/27: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 e6 5.Bb2 Nc6 6.b5 Nce7 7.e3 dxe3 8.dxe3 Qxd1+ 9.Kxd1 b6 10.Bg2 Bb7 11.a4 O-O-O+ 12.Ke2 Nf5 13.a5 Nf6 14.axb6 axb6 15.Nbd2 Ne4 (decision)
 19:06:59   depth 1: Ra7 +2.52
+19:07:02   depth 2: Ra7 +2.52
+19:07:06   depth 3: Ra7 +2.52
+19:07:11   depth 4: Ra7 +2.52
+19:17:30   depth 5: Ra7 +2.61
+19:27:32   time after 20m34s, 251 requests, 131 queued. ChessDB now: best Ra7 +2.44; mine Ra7 +2.44 vs Nxe4 +1.93 (was best Nxe4 +2.07; mine Ra7 +1.80 vs Nxe4 +2.07), stored line 4 -> 20
+19:27:32 Exploring 25/27: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 e6 5.Bb2 Nc6 6.b5 Nce7 7.e3 dxe3 8.dxe3 Qxd1+ 9.Kxd1 b6 10.Bg2 Bb7 11.a4 O-O-O+ 12.Ke2 Nf5 13.a5 Nf6 14.axb6 axb6 15.Nbd2 Ne4 16.Ra7 Nxd2 17.Rxb7 Kxb7 18.Nxd2+ Kc7 19.Ra1 (line end)
