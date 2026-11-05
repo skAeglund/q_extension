@@ -99,3 +99,13 @@
 21:29:12   depth 4: Ne4 +0.49
 21:29:15   depth 5: Ne4 +0.49
 21:29:19   depth 6: Ba3 +0.59
+21:29:28   depth 7: Ne4 +0.49
+21:40:22   depth 8: Ne4 +0.42
+21:45:55   depth 9: Ba3 +0.52
+21:49:31   time after 20m31s, 354 requests, 207 queued. ChessDB now: best Ba3 +0.44; mine Ne4 +0.40 vs Ba3 +0.44 (was best Ba3 +0.54; mine Ne4 +0.46 vs Ba3 +0.54), stored line 3 -> 5
+21:49:31 Exploring 9/27: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Qc7 9.Bg2 Bd7 10.Nxd7 Qxd7 11.O-O e5 12.d3 Nf6 13.Bg5 Be7 (decision)
+21:49:33   depth 1: Nd2 +0.96
+21:49:36   depth 2: Nd2 +0.96
+21:49:40   depth 3: Nd2 +0.96
+21:49:45   depth 4: Nd2 +0.96
+21:49:56   depth 5: Nd2 +0.97
