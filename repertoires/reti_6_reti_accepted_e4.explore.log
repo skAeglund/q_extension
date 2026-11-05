@@ -73,3 +73,11 @@
 02:12:39   depth 1: bxa6 +1.31
 02:12:44   depth 2: bxa6 +1.31
 02:12:55   depth 3: bxa6 +0.83
+02:13:16   depth 4: bxa6 +0.99
+02:28:00   depth 5: bxa6 +1.45
+02:33:14   time after 20m37s, 251 requests, 159 queued. ChessDB now: best bxa6 +1.10 (was best bxa6 +0.96), stored line 2 -> 20
+02:33:14 Exploring 7/16: [11.44%] 1.Nf3 d5 2.c4 dxc4 3.e4 Nc6 4.Bxc4 e5 5.Qb3 Qf6 6.Nc3 Bc5 7.Qb5 Bb6 8.d4 exd4 9.Nd5 Qg6 10.O-O Bd7 11.Nf4 Qd6 12.e5 Qc5 13.Qb3 (line end)
+02:33:14   depth 1: O-O-O +2.06
+02:33:17   depth 2: O-O-O +2.06
+02:33:21   depth 3: O-O-O +2.06
+02:33:26   depth 4: O-O-O +2.06
