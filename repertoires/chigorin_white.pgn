@@ -18,27 +18,30 @@ of 86,844 games · not searched yet})) 5. a3 {Prac 58.8 d5, prep 60.3, engine
 searched yet}) (5... a6 {10% of 106,250 games · not searched yet})) (3... Bg4
 {21% of 3,029,168 games} 4. Nc3 {Prac 64.6 d5, prep 62.0, engine 51.0, blend
 59.1; Nbd2 57.2 (Prac 60.9), Bg5 57.0 (Prac 60.9), e3 56.3 (Prac 60.4)} 4... e6
-{38% of 160,652 games} (4... Bxf3 {29% of 160,652 games · not searched yet})
-(4... Nf6 {17% of 160,652 games · not searched yet}) 5. Qa4 {Prac 58.9 d5, prep
-60.2 (59% Prac), engine 51.1, blend 55.8; e3 54.8 (Prac 57.2), cxd5 54.1 (Prac
-56.2), Bf4 54.0 (Prac 56.6)} 5... Bxf3 {63% of 979 games · not searched yet}
-(5... Bb4 {12% of 979 games · not searched yet})) (3... Nf6 {17% of 3,029,168
-games} 4. cxd5 {Prac 72.2 d5, prep 67.8, engine 68.1, blend 70.6; Nc3 57.8
-(Prac 62.3), Bd2 52.9 (Prac 54.3)} 4... Nxd5 {72% of 211,633 games} (4... Qxd5
-{27% of 211,633 games · not searched yet}) 5. e4 {Prac 74.7 d5, prep 71.7,
-engine 68.5, blend 72.2; Nbd2 62.8 (Prac 68.3), h3 62.0 (Prac 68.1)} 5... Nf6
-{55% of 181,765 games} (5... Nb6 {39% of 181,765 games · not searched yet})
-6. Nc3 {Prac 80.8 d7, prep 82.4, engine 67.6, blend 75.5; d5 74.0 (Prac 77.4),
-Be2 70.7 (Prac 74.4 d5)} 6... Bg4 {58% of 172,225 games · not searched yet}
-(6... e6 {32% of 172,225 games · not searched yet})) (3... Bf5 {6% of 3,029,168
-games · not searched yet}) 4. d5 {Prac 71.7 d5, prep 72.7, engine 56.6, blend
-65.6; Nc3 63.0 (Prac 71.0), e3 58.6 (Prac 63.7), e4 57.9 (Prac 62.6)} 4... Nb8
-{51% of 145,963 games} (4... Nb4 {32% of 145,963 games} 5. Qa4+ {Prac 84.6 d5,
-prep 81.1, engine 78.2, blend 82.0; e4 61.3 (Prac 67.1), Nc3 58.0 (Prac 68.7)}
-5... c6 {37% of 36,529 games · not searched yet} (5... Bd7 {24% of 36,529 games
-· not searched yet}) (5... Qd7 {19% of 36,529 games · not searched yet})) 5. e4
-{Prac 71.2 d5, prep 72.1, engine 56.6, blend 65.4; Nc3 60.0 (Prac 65.4), Bf4
-57.9 (Prac 62.1), e3 53.3 (Prac 55.2)} 5... e6 {38% of 46,270 games · not
-searched yet} (5... b5 {16% of 46,270 games · not searched yet}) (5... Bg4 {15%
-of 46,270 games · not searched yet}) (5... Nf6 {13% of 46,270 games · not
-searched yet}) *
+{38% of 160,652 games} (4... Bxf3 {29% of 160,652 games} 5. gxf3 {Prac 69.8 d5,
+prep 68.5 (44% Prac), engine 62.1, blend 66.7; exf3 64.3 (Prac 68.8), cxd5 29.2
+(Prac 31.0)} 5... dxc4 {42% of 17,073 games · not searched yet} (5... e6 {36%
+of 17,073 games · not searched yet})) (4... Nf6 {17% of 160,652 games · not
+searched yet}) 5. Qa4 {Prac 58.9 d5, prep 60.2 (59% Prac), engine 51.1, blend
+55.8; e3 54.8 (Prac 57.2), cxd5 54.1 (Prac 56.2), Bf4 54.0 (Prac 56.6)}
+5... Bxf3 {63% of 979 games · not searched yet} (5... Bb4 {12% of 979 games ·
+not searched yet})) (3... Nf6 {17% of 3,029,168 games} 4. cxd5 {Prac 72.2 d5,
+prep 67.8, engine 68.1, blend 70.6; Nc3 57.8 (Prac 62.3), Bd2 52.9 (Prac 54.3)}
+4... Nxd5 {72% of 211,633 games} (4... Qxd5 {27% of 211,633 games · not
+searched yet}) 5. e4 {Prac 74.7 d5, prep 71.7, engine 68.5, blend 72.2; Nbd2
+62.8 (Prac 68.3), h3 62.0 (Prac 68.1)} 5... Nf6 {55% of 181,765 games}
+(5... Nb6 {39% of 181,765 games · not searched yet}) 6. Nc3 {Prac 80.8 d7, prep
+82.4, engine 67.6, blend 75.5; d5 74.0 (Prac 77.4), Be2 70.7 (Prac 74.4 d5)}
+6... Bg4 {58% of 172,225 games · not searched yet} (6... e6 {32% of 172,225
+games · not searched yet})) (3... Bf5 {6% of 3,029,168 games · not searched
+yet}) 4. d5 {Prac 71.7 d5, prep 72.7, engine 56.6, blend 65.6; Nc3 63.0 (Prac
+71.0), e3 58.6 (Prac 63.7), e4 57.9 (Prac 62.6)} 4... Nb8 {51% of 145,963
+games} (4... Nb4 {32% of 145,963 games} 5. Qa4+ {Prac 84.6 d5, prep 81.1,
+engine 78.2, blend 82.0; e4 61.3 (Prac 67.1), Nc3 58.0 (Prac 68.7)} 5... c6
+{37% of 36,529 games · not searched yet} (5... Bd7 {24% of 36,529 games · not
+searched yet}) (5... Qd7 {19% of 36,529 games · not searched yet})) 5. e4 {Prac
+71.2 d5, prep 72.1, engine 56.6, blend 65.4; Nc3 60.0 (Prac 65.4), Bf4 57.9
+(Prac 62.1), e3 53.3 (Prac 55.2)} 5... e6 {38% of 46,270 games · not searched
+yet} (5... b5 {16% of 46,270 games · not searched yet}) (5... Bg4 {15% of
+46,270 games · not searched yet}) (5... Nf6 {13% of 46,270 games · not searched
+yet}) *
