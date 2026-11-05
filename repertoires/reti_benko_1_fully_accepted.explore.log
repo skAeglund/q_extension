@@ -154,3 +154,14 @@
 10:17:41   depth 1: Nh5 +0.63
 10:17:44   depth 2: Nh5 +0.63
 10:17:48   depth 3: Nh5 +0.65
+10:17:53   depth 4: Nh5 +0.65
+10:17:59   depth 5: Nh5 +0.56
+10:28:00   depth 6: Nh5 +0.44
+10:30:28   depth 7: Ne8 +0.44
+10:34:33   depth 8: Ne8 +0.55
+10:35:38   depth 9: Ne8 +0.40
+10:38:33   time after 20m52s, 336 requests, 161 queued. ChessDB now: best Bxg2 +0.54 (was best Bxg2 +0.48), stored line 5 -> 10
+10:38:33 Exploring 15/29: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 bxa3 6.Bg2 Nc6 7.O-O e5 8.d3 Nf6 9.Qa4 Bd7 10.Bxa3 Bxa3 11.Qxa3 Qe7 12.Nfd2 Qxa3 13.Nxa3 O-O 14.Rfb1 Rab8 (decision)
+10:38:33   depth 1: Nb3 +0.97
+10:38:37   depth 2: Nb3 +0.74
+10:38:49   depth 3: Nb3 +0.75
