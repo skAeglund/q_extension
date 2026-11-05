@@ -75,3 +75,11 @@
 14:30:00   depth 1: Ke2 +1.01
 14:30:03   depth 2: Ke2 +1.01
 14:30:07   depth 3: Ke2 +1.01
+14:30:12   depth 4: Ke2 +1.01
+14:30:19   depth 5: Ke2 +1.01
+14:35:15   depth 6: Ke2 +0.97
+14:36:15   stable after 6m16s, 119 requests, 30 queued. ChessDB now: best Ke2 +0.88; mine a4 +0.85 vs Ke2 +0.88 (was best Ke2 +0.91; mine a4 +0.85 vs Ke2 +0.91), stored line 6 -> 3
+14:36:15 Exploring 7/27: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 e6 5.Bb2 Nc6 6.b5 Nce7 7.e3 Nf5 8.Bg2 Nf6 9.O-O Be7 10.exd4 cxd4 (decision)
+14:36:17   depth 1: d3 +1.75
+14:36:21   depth 2: d3 +1.78
+14:36:26   depth 3: d3 +1.78
