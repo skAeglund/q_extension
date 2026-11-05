@@ -61,8 +61,10 @@ games · not searched yet} (5... Qa5 {33% of 54,884 games · not searched yet}))
 e3 58.6 (Prac 63.7), e4 57.9 (Prac 62.6)} 4... Nb8 {51% of 145,963 games}
 (4... Nb4 {32% of 145,963 games} 5. Qa4+ {Prac 84.6 d5, prep 81.1, engine 78.2,
 blend 82.0; e4 61.3 (Prac 67.1), Nc3 58.0 (Prac 68.7)} 5... c6 {37% of 36,529
-games · not searched yet} (5... Bd7 {24% of 36,529 games · not searched yet})
-(5... Qd7 {19% of 36,529 games · not searched yet})) 5. e4 {Prac 71.2 d5, prep
+games} (5... Bd7 {24% of 36,529 games · not searched yet}) (5... Qd7 {19% of
+36,529 games · not searched yet}) 6. Qxb4 {Prac 83.7 d5, prep 81.2 (38% Prac),
+engine 78.2, blend 81.5} 6... Qxd5 {52% of 13,399 games · not searched yet}
+(6... cxd5 {32% of 13,399 games · not searched yet})) 5. e4 {Prac 71.2 d5, prep
 72.1, engine 56.6, blend 65.4; Nc3 60.0 (Prac 65.4), Bf4 57.9 (Prac 62.1), e3
 53.3 (Prac 55.2)} 5... e6 {38% of 46,270 games} (5... b5 {16% of 46,270 games ·
 not searched yet}) (5... Bg4 {15% of 46,270 games · not searched yet})
