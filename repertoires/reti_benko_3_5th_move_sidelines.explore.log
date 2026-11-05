@@ -174,3 +174,9 @@
 23:15:35   depth 1: Qe2 +1.18
 23:15:39   depth 2: Qe2 +1.18
 23:15:44   depth 3: Qe2 +1.10
+23:15:50   depth 4: Qe2 +1.10
+23:33:08   depth 5: Qe2 +1.30
+23:36:08   time after 20m35s, 245 requests, 127 queued. ChessDB now: best Qe2 +1.15; mine Qe2 +1.15 vs Qe1 +0.74 (was best Qe2 +0.89; mine Qe2 +0.89 vs Qe1 +0.74), stored line 3 -> 12
+23:36:08 Exploring 18/27: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Nf6 12.d3 Be7 13.Bg5 O-O 14.Nd2 h6 15.Bxf6 Bxf6 (decision)
+23:36:10   depth 1: Rfb1 +0.55
+23:36:14   depth 2: Rfb1 +0.56
