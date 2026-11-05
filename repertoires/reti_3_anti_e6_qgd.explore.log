@@ -269,3 +269,10 @@
 09:31:14 Exploring 26/35: 1.Nf3 d5 2.c4 e6 3.g3 c6 4.Bg2 Nf6 5.O-O Bd6 6.d4 O-O 7.Nbd2 Nbd7 8.Re1 e5 9.cxd5 cxd5 10.dxe5 Nxe5 11.Nxe5 Bxe5 12.Nf3 Bc7 13.Be3 Bf5 14.Qb3 (line end)
 09:31:16   depth 1: Re8 +0.55
 09:31:21   depth 2: Re8 +0.60
+09:31:41   depth 3: Re8 +0.76
+09:31:55   depth 4: Re8 +0.60
+09:51:44   time after 20m30s, 208 requests, 104 queued. ChessDB now: best Re8 +0.61 (was best Re8 +0.72), stored line 2 -> 9
+09:51:44 Exploring 27/35: 1.Nf3 d5 2.c4 e6 3.g3 Nf6 4.Bg2 Be7 5.O-O O-O 6.b3 c5 7.Bb2 d4 8.b4 Re8 9.bxc5 Bxc5 10.e3 e5 11.exd4 exd4 12.d3 Nc6 13.Nbd2 Bg4 14.h3 Bh5 (decision)
+09:51:44   depth 1: Nb3 +0.24
+09:51:47   depth 2: Nb3 +0.24
+09:51:51   depth 3: Nb3 +0.24
