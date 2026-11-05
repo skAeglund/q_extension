@@ -167,3 +167,10 @@
 23:10:18   depth 2: Rfb1 +0.92
 23:10:22   depth 3: Rfb1 +0.92
 23:10:27   depth 4: Rfb1 +0.92
+23:14:29   depth 5: Rfb1 +0.84
+23:14:53   depth 6: Rfb1 +0.84
+23:15:33   stable after 5m18s, 117 requests, 27 queued. ChessDB now: best Rfb1 +1.00; mine Rfb1 +1.00 vs Bxf6 +0.67 (was best Rfb1 +0.87; mine Rfb1 +0.87 vs Bxf6 +0.67), stored line 7 -> 10
+23:15:33 Exploring 17/27: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 e6 6.Bg2 Nc6 7.O-O Nf6 8.Bb2 e5 9.e3 bxa3 10.Nxa3 Bc5 11.Nxe5 Nxe5 12.exd4 Bxd4 13.Bxd4 Qxd4 14.Nb5 Qd8 (decision)
+23:15:35   depth 1: Qe2 +1.18
+23:15:39   depth 2: Qe2 +1.18
+23:15:44   depth 3: Qe2 +1.10
