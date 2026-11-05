@@ -472,3 +472,11 @@
 00:37:58   depth 1: b5 +2.39
 00:38:02   depth 2: b5 +2.39
 00:38:07   depth 3: b5 +2.32
+00:38:13   depth 4: b5 +2.32
+00:38:32   depth 5: b5 +2.32
+00:58:17   time after 20m21s, 220 requests, 113 queued. ChessDB now: best b5 +2.32 (was best Bd7 +2.36), stored line 3 -> 24
+00:58:17 Exploring 6/6: 9...Be6 10.b3 Nd7 11.Bd2 Nc5 12.Rb1 Bxc3 13.Bxc3 Nxe4 14.Ba1 f6 15.Bf3 Nc5 16.b4 Nd7 17.Ne3 Nde5 18.Bd5 Bxd5 19.cxd5 Nb8 20.f4 Nf7 21.h4 Nd7 22.h5 (line end)
+00:58:19   depth 1: Nh6 +1.94
+00:58:22   depth 2: Nh6 +1.94
+00:58:26   depth 3: Nh6 +1.94
+00:58:31   depth 4: Nh6 +2.03
