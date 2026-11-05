@@ -277,3 +277,10 @@
 13:32:41   depth 1: Qd7 +0.10
 13:32:44   depth 2: Qd7 +0.10
 13:32:48   depth 3: Qd7 +0.10
+13:32:53   depth 4: Qd7 +0.10
+13:33:00   depth 5: Qd7 +0.10
+13:33:30   depth 6: Qd7 +0.12
+13:34:14   stable after 1m33s, 78 requests, 10 queued. ChessDB now: best Qd7 +0.17 (was best Qd7 +0.17), stored line 8 -> 9
+13:34:14 Exploring 29/29: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 bxa3 6.Bg2 Nc6 7.O-O e5 8.d3 Nf6 9.Qa4 Bd7 10.Bxa3 Bxa3 11.Qxa3 Qe7 12.Nfd2 Qxa3 13.Nxa3 O-O 14.Rfb1 Rab8 15.Nb5 a5 16.c5 b6 17.Bxc6 Bxc6 18.Na7 (line end)
+13:34:16   depth 1: Ba8 +1.77
+13:34:21   depth 2: Ba8 +1.53
