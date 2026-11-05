@@ -116,3 +116,5 @@
 10:59:03 Opp  [1.61%] 3...dxc4 4.d5 Nb4 5.Qa4+ Qd7 6.Qxb4: Qxd5 88% of 7090 games
 11:00:19 Me   [1.58%] 3...dxc4 4.d5 Nb4 5.Qa4+ c6 6.Qxb4 Qxd5: Nc3 (Prac 86.6 d3, prep 83.1, blend 85.0; Nbd2 78.3 (Prac 78.3), e3 80.6 (Prac 82.4), Qd2 78.1 (Prac 79.6); 1m12s, 18 requests)
 11:00:19 Opp  [1.58%] 3...dxc4 4.d5 Nb4 5.Qa4+ c6 6.Qxb4 Qxd5 7.Nc3: Qe6 30% of 6259 games
+12:38:44 repgen: White from r1bqkbnr/ppp1pppp/2n5/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R b KQkq - 0 3 (Nf3 Nc6 d4 d5 c4); Lichess blitz,rapid,classical / 1600,1800,2000,2200,2500.
+12:38:44 Options: {"weights":[0.4,0.6,0],"maxLoss":5,"riskAversion":0.05}
