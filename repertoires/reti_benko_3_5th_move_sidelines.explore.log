@@ -1,1 +1,46 @@
 20:30:15 cdbexplore: reti_benko_3_5th_move_sidelines.pgn, 174 positions, White's repertoire. Asking ChessDB about each.
+20:31:04   50 of 174
+20:31:54   100 of 174
+20:32:44   150 of 174
+20:33:58   50 of 64
+20:34:12 Survey: 27 positions to explore (8 line ends, 19 decisions); 238 requests in 3m57s. Scores from White's side.
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Bd6 (decision): best d3 +0.54; mine d3 +0.54 vs Ba3 +0.38, stored line 4
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Bc5 (decision): best Ba3 +0.53; mine d3 +0.42 vs Ba3 +0.53, stored line 6
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Bd6 12.d3 Nge7 (decision): best Nd2 +0.55; mine Nd2 +0.55 vs Ba3 +0.54, stored line 5
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Bc5 12.d3 Nge7 (decision): best Nd2 +0.56; mine Nd2 +0.56 vs Ba3 +0.54, stored line 6
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 e6 6.Bg2 Nc6 7.O-O Nf6 8.Bb2 a5 9.e3 dxe3 10.dxe3 Qxd1 11.Rxd1 Be7 12.axb4 Bxb4 (decision): best Nc3 +0.01; mine Nc3 +0.01 vs Na3 -0.05, stored line 8
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 b3 6.Bg2 Nc6 7.O-O e5 8.d3 Nf6 9.Qxb3 Be7 10.a4 O-O 11.Ba3 Nd7 12.Bxe7 Qxe7 (decision): best a5 +0.44; mine a5 +0.44 vs Qa3 +0.31, stored line 3
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Nf6 12.d3 Be7 13.Bg5 O-O (decision): best Nd2 +0.29; mine Nd2 +0.29 vs Bxf6 +0.27, stored line 8
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Bd6 12.d3 Nge7 13.Nd2 O-O (decision): best Ba3 +0.54; mine Ne4 +0.46 vs Ba3 +0.54, stored line 3
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Qc7 9.Bg2 Bd7 10.Nxd7 Qxd7 11.O-O e5 12.d3 Nf6 13.Bg5 Be7 (decision): best Nd2 +0.88; mine Nd2 +0.88 vs Bxf6 +0.78, stored line 9
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 e6 6.Bg2 Nc6 7.O-O Nf6 8.Bb2 a5 9.e3 dxe3 10.dxe3 Qxd1 11.Rxd1 Be7 12.axb4 Bxb4 13.Nc3 Ke7 (decision): best Ne1 +0.03; mine Na4 +0.00 vs Ne1 +0.03, stored line 4
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 e6 6.Bg2 Nc6 7.O-O Nf6 8.Bb2 bxa3 9.Nxa3 Be7 10.Nb5 e5 11.e3 Bg4 12.exd4 e4 13.d5 Nb4 (decision): best Bxf6 +0.76; mine Bxf6 +0.76 vs Qa4 +0.62, stored line 7
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Bd6 12.d3 Nge7 13.Nd2 O-O 14.Ne4 (line end): best Bb4 +0.46, stored line 3
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Bc5 12.d3 Nge7 13.Nd2 f5 14.Qb5 (line end): best Bb4 +1.42, stored line 3
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 e6 6.Bg2 Nc6 7.O-O Nf6 8.Bb2 a5 9.e3 dxe3 10.dxe3 Bd7 11.Ne5 Nxe5 12.Bxe5 Bc6 13.Bxc6+ bxc6 14.Qf3 (line end): best Nd7 +0.19, stored line 3
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 b3 6.Bg2 Nc6 7.O-O e5 8.d3 Nf6 9.Qxb3 Be7 10.a4 O-O 11.Ba3 Nd7 12.Bxe7 Qxe7 13.a5 Nc5 14.Qa3 (line end): best Bd7 +0.67, stored line 9
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Qc7 9.Bg2 Bd7 10.Nxd7 Qxd7 11.O-O e5 12.d3 Nf6 13.Bg5 Be7 14.Nd2 O-O (decision): best Rfb1 +0.87; mine Rfb1 +0.87 vs Bxf6 +0.67, stored line 7
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 e6 6.Bg2 Nc6 7.O-O Nf6 8.Bb2 e5 9.e3 bxa3 10.Nxa3 Bc5 11.Nxe5 Nxe5 12.exd4 Bxd4 13.Bxd4 Qxd4 14.Nb5 Qd8 (decision): best Qe2 +0.89; mine Qe2 +0.89 vs Qe1 +0.74, stored line 3
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Nf6 12.d3 Be7 13.Bg5 O-O 14.Nd2 h6 15.Bxf6 Bxf6 (decision): best Nb3 +0.59; mine Nb3 +0.59 vs Rfb1 +0.52, stored line 6
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Qc7 9.Bg2 Bd7 10.Nxd7 Qxd7 11.O-O e5 12.d3 Nf6 13.Bg5 Be7 14.Nd2 O-O 15.Rfb1 Rfc8 (decision): best Nb3 +0.86; mine Nb3 +0.86 vs Qb5 +0.80, stored line 5
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 e6 6.Bg2 Nc6 7.O-O Nf6 8.Bb2 bxa3 9.Nxa3 Be7 10.Nb5 e5 11.e3 Bg4 12.exd4 e4 13.d5 exf3 14.Bxf3 Bxf3 15.Qxf3 Nb4 (decision): best Be5 +2.85; mine d6 +2.82 vs Be5 +2.85, stored line 2
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 e6 6.Bg2 Nc6 7.O-O Nf6 8.Bb2 e5 9.e3 bxa3 10.Nxa3 Bc5 11.Nxe5 Nxe5 12.exd4 Bxd4 13.Bxd4 Qxd4 14.Nb5 Qd8 15.Qe2 Qe7 (decision): best Rfe1 +2.41; mine d4 +2.23 vs Rfe1 +2.41, stored line 2
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Nf6 12.d3 Be7 13.Bg5 O-O 14.Nd2 h6 15.Bxf6 Bxf6 16.Nb3 (line end): best Rfc8 +0.59, stored line 5
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 e6 6.Bg2 Nc6 7.O-O Nf6 8.Bb2 bxa3 9.Nxa3 Bc5 10.e3 O-O 11.exd4 Nxd4 12.Nxd4 Bxd4 13.Bxd4 Qxd4 14.Qe2 a6 15.Rfb1 Rb8 16.Nc2 Qd6 (decision): best d4 -0.01; mine d4 -0.01 vs Qe3 -0.30, stored line 9
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 e6 6.Bg2 Nc6 7.O-O Nf6 8.Bb2 bxa3 9.Nxa3 Be7 10.Nb5 e5 11.e3 Bg4 12.exd4 e4 13.d5 exf3 14.Bxf3 Bxf3 15.Qxf3 Nb4 16.d6 Bxd6 (decision): best Nxd6+ +2.82; mine Nxd6+ +2.82 vs Rfe1+ +2.58, stored line 7
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Qc7 9.Bg2 Bd7 10.Nxd7 Qxd7 11.O-O e5 12.d3 Nf6 13.Bg5 Be7 14.Nd2 O-O 15.Rfb1 Rfc8 16.Nb3 b6 17.Nd2 (line end): best Kh8 +0.96, stored line 2
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 e6 6.Bg2 Nc6 7.O-O Nf6 8.Bb2 bxa3 9.Nxa3 Bc5 10.e3 O-O 11.exd4 Nxd4 12.Nxd4 Bxd4 13.Bxd4 Qxd4 14.Qe2 a6 15.Rfb1 Rb8 16.Nc2 Qd6 17.d4 (line end): best b6 -0.01, stored line 8
+20:34:12   1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 e6 6.Bg2 Nc6 7.O-O Nf6 8.Bb2 bxa3 9.Nxa3 Be7 10.Nb5 e5 11.e3 Bg4 12.exd4 e4 13.d5 exf3 14.Bxf3 Bxf3 15.Qxf3 Nb4 16.d6 Bxd6 17.Nxd6+ Qxd6 18.Rfe1+ Kf8 19.Qxb7 (line end): best Qb8 +2.74, stored line 2
+20:34:12 Exploring 1/27: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Bd6 (decision)
+20:34:14   depth 1: d3 +0.51
+20:34:18   depth 2: d3 +0.51
+20:34:23   depth 3: d3 +0.54
+20:34:51   depth 4: d3 +0.51
+20:35:17   depth 5: d3 +0.46
+20:36:17   depth 6: d3 +0.50
+20:36:56   stable after 2m44s, 80 requests, 22 queued. ChessDB now: best d3 +0.44; mine d3 +0.44 vs Ba3 +0.38 (was best d3 +0.54; mine d3 +0.54 vs Ba3 +0.38), stored line 4 -> 8
+20:36:56 Exploring 2/27: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Bc5 (decision)
+20:36:58   depth 1: d3 +0.53
+20:37:04   depth 2: Ba3 +0.59
+20:37:08   depth 3: Ba3 +0.59
+20:37:13   depth 4: Ba3 +0.59
