@@ -58,3 +58,14 @@
 07:59:08   depth 1: d3 +0.20
 07:59:13   depth 2: d3 +0.20
 07:59:21   depth 3: d3 +0.20
+07:59:32   depth 4: Ba3 +0.21
+07:59:41   depth 5: Ba3 +0.23
+08:01:43   depth 6: Ba3 +0.33
+08:10:06   depth 7: Ba3 +0.46
+08:12:52   depth 8: Ba3 +0.45
+08:19:34   time after 20m28s, 457 requests, 218 queued. ChessDB now: best Ba3 +0.21; mine d3 +0.18 vs Ba3 +0.21 (was best d3 +0.19; mine d3 +0.19 vs Ba3 +0.19), stored line 6 -> 15
+08:19:34 Exploring 4/29: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 bxa3 6.Bg2 Nc6 7.O-O e5 8.d3 Nf6 9.Qa4 Nd7 10.Bxa3 Bxa3 11.Qxa3 Qe7 12.Nfd2 Qxa3 (decision)
+08:19:36   depth 1: Nxa3 +0.41
+08:19:39   depth 2: Nxa3 +0.42
+08:19:43   depth 3: Nxa3 +0.42
+08:19:49   depth 4: Nxa3 +0.35
