@@ -292,3 +292,12 @@
 01:48:05   depth 1: Bh6 +0.02
 01:48:08   depth 2: Bh6 +0.01
 01:48:13   depth 3: Bh6 +0.01
+01:48:21   depth 4: Bh6 +0.01
+01:48:43   depth 5: Bh6 +0.07
+01:49:18   depth 6: Bh6 +0.07
+01:49:54   stable after 1m50s, 88 requests, 17 queued. ChessDB now: best Qb6 +0.08 (was best Bh6 +0.07), stored line 9 -> 4
+01:49:54 Exploring 11/22: 1.Nf3 c5 2.c4 Nc6 3.d4 cxd4 4.Nxd4 Nxd4 5.Qxd4 Nf6 6.g4 h6 7.Bg2 d6 8.h3 g6 9.Be3 Bg7 10.O-O O-O 11.Qd2 Kh7 12.Nc3 (line end)
+01:49:54   depth 1: h5 +0.63
+01:49:57   depth 2: h5 +0.63
+01:50:01   depth 3: h5 +0.63
+01:50:06   depth 4: h5 +0.63
