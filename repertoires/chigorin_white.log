@@ -42,3 +42,5 @@
 09:04:37 Opp  [8.11%] 3...Bg4 4.Nc3 e6 5.Qa4: Bxf3 63%, Bb4 12% of 979 games
 09:13:03 Me   [6.86%] 3...e6 4.Nc3 Bb4: e3 (Prac 59.5 d7, prep 62.3, blend 56.4, close call: d5→d7 e3/Bd2/Bf4/Bg5; Bd2 55.6 (Prac 58.1), Bf4 55.9 (Prac 58.7), a4 51.6 (Prac 53.1) d5, Bg5 55.7 (Prac 58.7), Qb3 53.6 (Prac 55.9) d5; 8m26s, 127 requests)
 09:13:03 Opp  [6.86%] 3...e6 4.Nc3 Bb4 5.e3: Nf6 58%, Bxc3+ 20% of 86844 games
+09:17:43 Me   [6.79%] 3...Nf6 4.cxd5 Nxd5 5.e4 Nf6: Nc3 (Prac 80.8 d7, prep 82.4, blend 75.5, close call: d5→d7 d5/Nc3; d5 74.0 (Prac 77.4), Be2 70.7 (Prac 74.4) d5, Qa4 50.0 (Prac 50.0); 4m36s, 69 requests)
+09:17:43 Opp  [6.79%] 3...Nf6 4.cxd5 Nxd5 5.e4 Nf6 6.Nc3: Bg4 58%, e6 32% of 172225 games
