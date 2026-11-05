@@ -116,3 +116,11 @@
 15:44:32   depth 1: e3 +0.10
 15:44:36   depth 2: e3 +0.10
 15:44:41   depth 3: e3 +0.10
+15:45:02   depth 4: e3 +0.15
+15:45:40   depth 5: e3 +0.14
+15:52:15   depth 6: e3 +0.00
+16:00:11   depth 7: Ng5 +0.00
+16:03:12   depth 8: e3 +0.07
+16:04:55   time after 20m25s, 399 requests, 224 queued. ChessDB now: best e3 +0.06; mine e3 +0.06 vs Ng5 +0.00 (was best e3 +0.08; mine e3 +0.08 vs Ng5 +0.00), stored line 5 -> 6
+16:04:55 Exploring 12/27: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 e6 5.Bb2 Nf6 6.Bg2 Be7 7.O-O O-O 8.d3 Nc6 9.b5 Nb8 10.a4 Nbd7 11.e3 e5 12.a5 (line end)
+16:04:55   depth 1: Re8 +0.67
