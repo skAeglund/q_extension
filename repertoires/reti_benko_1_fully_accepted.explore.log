@@ -69,3 +69,12 @@
 08:19:39   depth 2: Nxa3 +0.42
 08:19:43   depth 3: Nxa3 +0.42
 08:19:49   depth 4: Nxa3 +0.35
+08:20:48   depth 5: Nxa3 +0.49
+08:21:58   depth 6: Nxa3 +0.38
+08:33:33   depth 7: Nxa3 +0.39
+08:40:08   time after 20m34s, 495 requests, 346 queued. ChessDB now: best Nxa3 +0.35; mine Nxa3 +0.35 vs Rxa3 +0.19 (was best Nxa3 +0.46; mine Nxa3 +0.46 vs Rxa3 +0.19), stored line 6 -> 10
+08:40:08 Exploring 5/29: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 bxa3 6.Bg2 Nc6 7.O-O e5 8.d3 Bd6 9.Qa4 Bd7 10.Bxa3 Bxa3 11.Nxa3 Nge7 12.Rfb1 b6 (decision)
+08:40:10   depth 1: c5 +0.07
+08:40:14   depth 2: c5 +0.18
+08:40:19   depth 3: c5 +0.18
+08:40:25   depth 4: c5 +0.20
