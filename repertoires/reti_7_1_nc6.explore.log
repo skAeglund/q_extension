@@ -50,3 +50,11 @@
 04:52:27   depth 1: dxc4 +0.55
 04:52:30   depth 2: dxc4 +0.55
 04:52:34   depth 3: dxc4 +0.55
+04:52:39   depth 4: dxc4 +0.55
+04:52:45   depth 5: dxc4 +0.58
+04:53:03   depth 6: dxc4 +0.54
+04:53:37   stable after 1m10s, 67 requests, 1 queued. ChessDB now: best dxc4 +0.47 (was best dxc4 +0.48), stored line 8 -> 8
+04:53:37 Done: 6 explored, 3 changed; 515 ChessDB requests in 9m09s.
+04:53:37   1.Nf3 Nc6 2.d4 d5 3.c4 e6 4.Nc3 Bb4 5.Bg5 f6 6.Bd2 Nge7 7.e3 O-O 8.Qc2 e5: best cxd5 +1.10; mine cxd5 +1.10 vs dxe5 +1.09 -> best cxd5 +1.29; mine cxd5 +1.29 vs dxe5 +1.09
+04:53:37   1.Nf3 Nc6 2.d4 d5 3.c4 e6 4.Nc3 Bb4 5.Bg5 f6 6.Bd2 Nge7 7.e3 O-O 8.Qc2 e5 9.cxd5 Bxc3: best bxc3 +1.14; mine bxc3 +1.14 vs Bxc3 +1.08 -> best bxc3 +1.31; mine bxc3 +1.31 vs Bxc3 +1.08
+04:53:37   1.Nf3 Nc6 2.d4 d5 3.c4 e6 4.Nc3 Bb4 5.Bg5 f6 6.Bd2 Nge7 7.e3 O-O 8.Qc2 e5 9.cxd5 Bxc3 10.bxc3 Nxd5 11.Bd3: best Kh8 +1.38 -> best Kh8 +1.27
