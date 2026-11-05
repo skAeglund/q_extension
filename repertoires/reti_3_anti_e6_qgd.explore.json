@@ -1184,6 +1184,79 @@
    "queued": 186,
    "ms": 1232262,
    "at": "2026-11-05T07:22:28.966Z"
+  },
+  "r1bq1rk1/pp3ppp/2n2n2/4p3/2P5/b5P1/2NPPPBP/RN1Q1RK1 w - -": {
+   "fen": "r1bq1rk1/pp3ppp/2n2n2/4p3/2P5/b5P1/2NPPPBP/RN1Q1RK1 w - - 0 13",
+   "line": "1.Nf3 d5 2.c4 e6 3.g3 Nf6 4.Bg2 Be7 5.O-O O-O 6.b3 c5 7.Bb2 d4 8.b4 cxb4 9.Nxd4 e5 10.Nc2 Nc6 11.a3 bxa3 12.Bxa3 Bxa3",
+   "reason": "decision",
+   "reach": null,
+   "before": {
+    "best": {
+     "san": "Rxa3",
+     "score": 45
+    },
+    "mine": {
+     "san": "Rxa3",
+     "score": 45
+    },
+    "rival": {
+     "san": "Nbxa3",
+     "score": 22
+    },
+    "line": 3
+   },
+   "after": {
+    "best": {
+     "san": "Rxa3",
+     "score": 49
+    },
+    "mine": {
+     "san": "Rxa3",
+     "score": 49
+    },
+    "rival": {
+     "san": "Nbxa3",
+     "score": 23
+    },
+    "line": 7
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "Rxa3",
+     "score": 39
+    },
+    {
+     "depth": 2,
+     "best": "Rxa3",
+     "score": 39
+    },
+    {
+     "depth": 3,
+     "best": "Rxa3",
+     "score": 39
+    },
+    {
+     "depth": 4,
+     "best": "Rxa3",
+     "score": 39
+    },
+    {
+     "depth": 5,
+     "best": "Rxa3",
+     "score": 29
+    },
+    {
+     "depth": 6,
+     "best": "Rxa3",
+     "score": 29
+    }
+   ],
+   "stopped": "stable",
+   "requests": 139,
+   "queued": 29,
+   "ms": 262047,
+   "at": "2026-11-05T07:26:51.015Z"
   }
  }
 }
