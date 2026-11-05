@@ -295,3 +295,12 @@
 10:32:52   time after 20m31s, 312 requests, 125 queued. ChessDB now: best Bf4 +1.75; mine Bf4 +1.75 vs c5 +1.25 (was best Bf4 +1.55; mine Bf4 +1.55 vs c5 +1.25), stored line 5 -> 11
 10:32:52 Exploring 29/35: 1.Nf3 d5 2.c4 e6 3.g3 Nf6 4.Bg2 Be7 5.O-O O-O 6.b3 c5 7.Bb2 d4 8.b4 Nc6 9.b5 Na5 10.d3 Rb8 11.Nbd2 b6 12.Nb3 Nb7 13.Ne5 Bd7 14.f4 Nd6 15.g4 (line end)
 10:32:54   depth 1: h5 +2.75
+10:33:06   depth 2: h5 +2.73
+10:34:24   depth 3: Qc7 +2.84
+10:35:38   depth 4: Qc7 +2.86
+10:36:01   depth 5: Qc7 +2.75
+10:53:23   time after 20m31s, 241 requests, 128 queued. ChessDB now: best Qc7 +2.77 (was best a6 +2.72), stored line 2 -> 15
+10:53:23 Exploring 30/35: 1.Nf3 d5 2.c4 e6 3.g3 Nf6 4.Bg2 Be7 5.O-O O-O 6.b3 c5 7.Bb2 d4 8.b4 Re8 9.bxc5 Bxc5 10.e3 e5 11.exd4 exd4 12.d3 Nc6 13.Nbd2 Bg4 14.h3 Bh5 15.Nb3 (line end)
+10:53:23   depth 1: Nd7 +0.11
+10:53:26   depth 2: Nd7 +0.11
+10:53:30   depth 3: Nd7 +0.11
