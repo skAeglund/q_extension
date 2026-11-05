@@ -446,3 +446,13 @@
 00:15:18   depth 1: Be3 +0.35
 00:15:21   depth 2: Be3 +0.37
 00:15:27   depth 3: Be3 +0.34
+00:15:39   depth 4: Be1 +0.33
+00:15:55   depth 5: f3 +0.36
+00:16:12   depth 6: f3 +0.52
+00:33:41   depth 7: f3 +0.53
+00:35:00   depth 8: f3 +0.54
+00:35:20   stable after 20m04s, 306 requests, 144 queued. ChessDB now: best f3 +0.37; mine f3 +0.37 vs Be1 +0.32 (was best a4 +0.38; mine f3 +0.31 vs a4 +0.38), stored line 5 -> 11
+00:35:20 Exploring 3/6: 9...Be6 10.b3 Rc8 11.Be3 Ng4 12.Bd2 h5 13.h3 Nf6 (decision)
+00:35:22   depth 1: f4 +1.29
+00:35:27   depth 2: f4 +1.38
+00:35:32   depth 3: f4 +1.33
