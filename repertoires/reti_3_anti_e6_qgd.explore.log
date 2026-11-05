@@ -58,3 +58,13 @@
 04:37:09   depth 1: Be7 +1.14
 04:37:14   depth 2: Be7 +1.12
 04:37:20   depth 3: Be7 +1.12
+04:37:27   depth 4: Be7 +1.12
+04:38:23   depth 5: Be7 +1.29
+04:39:12   depth 6: Be7 +1.38
+04:56:28   depth 7: f5 +1.10
+04:57:29   time after 20m22s, 352 requests, 199 queued. ChessDB now: best Be7 +1.26 (was best Be7 +1.14), stored line 5 -> 7
+04:57:29 Exploring 3/35: 1.Nf3 d5 2.c4 e6 3.g3 dxc4 4.Bg2 Nf6 5.O-O Be7 6.Na3 O-O 7.Nxc4 c6 8.d4 Nbd7 9.Qc2 Nb6 (decision)
+04:57:31   depth 1: Nce5 +1.46
+04:57:36   depth 2: Nce5 +1.46
+04:57:42   depth 3: Nce5 +1.46
+04:57:53   depth 4: Nce5 +1.46
