@@ -66,3 +66,10 @@
 01:52:14   depth 1: e5 +1.79
 01:52:17   depth 2: e5 +1.79
 01:52:21   depth 3: e5 +1.79
+01:52:26   depth 4: e5 +1.78
+01:54:45   depth 5: e5 +1.85
+02:12:37   time after 20m25s, 247 requests, 120 queued. ChessDB now: best e5 +1.78; mine e5 +1.78 vs Qg5 +1.48 (was best e5 +1.69; mine e5 +1.69 vs Qg5 +1.48), stored line 6 -> 7
+02:12:37 Exploring 6/16: [11.44%] 1.Nf3 d5 2.c4 dxc4 3.e4 Nc6 4.Bxc4 e5 5.Qb3 Qf6 6.Nc3 Bd6 7.O-O Nge7 8.d4 Nxd4 9.Nxd4 exd4 10.Nb5 O-O 11.f4 Bc5 12.Nxc7 Rb8 13.Na6 (line end)
+02:12:39   depth 1: bxa6 +1.31
+02:12:44   depth 2: bxa6 +1.31
+02:12:55   depth 3: bxa6 +0.83
