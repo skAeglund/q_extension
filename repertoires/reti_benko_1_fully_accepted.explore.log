@@ -217,3 +217,13 @@
 12:23:02 Exploring 21/29: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 bxa3 6.Bg2 Nc6 7.O-O e5 8.d3 Nf6 9.Qa4 Nd7 10.Bxa3 Bxa3 11.Qxa3 Qe7 12.Nfd2 Qxa3 13.Nxa3 O-O 14.Rfb1 Nc5 15.Nb5 (line end)
 12:23:02   depth 1: Bd7 +0.88
 12:23:05   depth 2: Bd7 +0.88
+12:23:09   depth 3: Bd7 +0.88
+12:23:14   depth 4: Bd7 +0.88
+12:23:20   depth 5: Bd7 +0.88
+12:23:27   depth 6: a6 +0.88
+12:31:23   depth 7: Bd7 +1.11
+12:34:44   depth 8: Bd7 +0.87
+12:43:34   time after 20m32s, 407 requests, 213 queued. ChessDB now: best a6 +1.02 (was best a6 +0.85), stored line 4 -> 18
+12:43:34 Exploring 22/29: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 bxa3 6.Bg2 e6 7.O-O Nc6 8.d3 Nf6 9.Qa4 Bd7 10.Bxa3 Bxa3 11.Qxa3 Qe7 12.Nfd2 Qxa3 13.Nxa3 O-O 14.Rfb1 Rab8 15.Nb5 (line end)
+12:43:34   depth 1: a5 +1.27
+12:43:37   depth 2: a5 +1.27
