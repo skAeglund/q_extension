@@ -299,3 +299,12 @@
 17:03:45 Exploring 26/59: [1.12%] 1.Nf3 Nf6 2.c4 d5 3.cxd5 c6 4.d4 cxd5 5.Nc3 Nc6 6.Bf4 Nh5 7.Bg5 h6 8.Bh4 g5 9.Bg3 Nxg3 10.hxg3 g4 11.Ne5 Bg7 12.Nxc6 bxc6 13.e3 h5 14.Bd3 e5 15.dxe5 Bxe5 16.Qc2 Kf8 (line end)
 17:03:45   depth 1: Ne2 -0.32
 17:03:48   depth 2: Ne2 -0.32
+17:03:52   depth 3: Ne2 -0.32
+17:03:57   depth 4: Ne2 -0.32
+17:11:51   depth 5: Ne2 -0.15
+17:12:55   depth 6: Ne2 -0.15
+17:15:01   depth 7: Ne2 -0.12
+17:15:44   stable after 11m59s, 265 requests, 74 queued. ChessDB now: best Ne2 -0.44 (was best Rc1 -0.67), stored line 2 -> 5
+17:15:44 Exploring 27/59: [0.84%] 1.Nf3 Nf6 2.d4 c5 3.c4 cxd4 4.Nxd4 e6 5.Nc3 d5 6.cxd5 Nxd5 7.Nxd5 Qxd5 8.e3 Be7 9.Bb5+ (decision)
+17:15:46   depth 1: Bd7 -0.08
+17:15:49   depth 2: Bd7 -0.10
