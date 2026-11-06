@@ -1,0 +1,77 @@
+{
+ "targets": {
+  "r1b1k2r/pp3pbp/6p1/4n3/5B2/2N1P3/PP3PPP/R3KB1R b kq -": {
+   "fen": "r1b1k2r/pp3pbp/6p1/4n3/5B2/2N1P3/PP3PPP/R3KB1R b kq - 0 12",
+   "line": "[100.00%] 1.Nf3 Nf6 2.c4 d5 3.cxd5 c6 4.dxc6 Nxc6 5.d4 e5 6.dxe5 Qxd1+ 7.Kxd1 Ng4 8.Ke1 g6 9.Nc3 Bg7 10.Bf4 Ngxe5 11.Nxe5 Nxe5 12.e3",
+   "reason": "decision",
+   "reach": 1,
+   "before": {
+    "best": {
+     "san": "O-O",
+     "score": -7
+    },
+    "mine": {
+     "san": "O-O",
+     "score": -7
+    },
+    "rival": {
+     "san": "Be6",
+     "score": -31
+    },
+    "line": 9
+   },
+   "after": {
+    "best": {
+     "san": "O-O",
+     "score": -7
+    },
+    "mine": {
+     "san": "O-O",
+     "score": -7
+    },
+    "rival": {
+     "san": "Be6",
+     "score": -31
+    },
+    "line": 11
+   },
+   "depths": [
+    {
+     "depth": 1,
+     "best": "O-O",
+     "score": -9
+    },
+    {
+     "depth": 2,
+     "best": "O-O",
+     "score": -9
+    },
+    {
+     "depth": 3,
+     "best": "O-O",
+     "score": -9
+    },
+    {
+     "depth": 4,
+     "best": "O-O",
+     "score": -9
+    },
+    {
+     "depth": 5,
+     "best": "O-O",
+     "score": -11
+    },
+    {
+     "depth": 6,
+     "best": "O-O",
+     "score": -12
+    }
+   ],
+   "stopped": "stable",
+   "requests": 85,
+   "queued": 5,
+   "ms": 91911,
+   "at": "2026-11-06T12:28:44.905Z"
+  }
+ }
+}
