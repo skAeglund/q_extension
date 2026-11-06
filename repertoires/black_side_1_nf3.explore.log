@@ -375,3 +375,7 @@
 18:12:16   depth 1: Nf3 -1.99
 18:12:19   depth 2: Nf3 -1.99
 18:12:24   depth 3: Nf3 -1.99
+18:12:53   depth 4: Nf3 -1.68
+18:32:36   time after 20m20s, 200 requests, 100 queued. ChessDB now: best Nf3 -1.78 (was best Nf3 -1.47), stored line 2 -> 4
+18:32:36 Exploring 36/59: [0.65%] 1.Nf3 Nf6 2.c4 d5 3.cxd5 c6 4.d4 cxd5 5.Nc3 Nc6 6.Bf4 Nh5 7.Be5 f6 8.Bg3 Be6 9.e3 Bf7 10.Bd3 e6 11.Rc1 Be7 12.O-O Nxg3 13.hxg3 (decision)
+18:32:39   depth 1: Rc8 +0.19
