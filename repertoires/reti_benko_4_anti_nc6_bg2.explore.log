@@ -434,3 +434,8 @@
 08:09:12   depth 3: c5 +0.03
 08:09:17   depth 4: c5 +0.03
 08:09:23   depth 5: c5 +0.03
+08:09:34   depth 6: c5 +0.07
+08:10:24   stable after 1m19s, 72 requests, 5 queued. ChessDB now: best c5 +0.07; mine c5 +0.07 vs Red1 +0.00 (was best c5 +0.13; mine c5 +0.13 vs Red1 +0.02), stored line 4 -> 4
+08:10:24 Exploring 28/28: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Nf6 6.O-O Bd6 7.a3 a5 8.e3 O-O 9.exd4 exd4 10.Re1 Bg4 11.h3 Bh5 12.Bg5 h6 13.Bxf6 Qxf6 14.Nbd2 Ne5 15.g4 Nxf3+ 16.Qxf3 Qxf3 17.Nxf3 Bg6 18.c5 Bxc5 19.Ne5 Bh7 20.Nd7 (line end)
+08:10:26   depth 1: Bd6 +2.33
+08:10:31   depth 2: Bd6 +2.33
