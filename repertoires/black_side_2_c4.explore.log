@@ -126,3 +126,12 @@
 23:30:17 Exploring 8/47: [3.20%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.e3 e5 5.a3 Nf6 6.Nc3 Be7 7.b4 O-O 8.Bb2 Bf5 9.Bc4 Rc8 (line end)
 23:30:17   depth 1: Bb5 +0.00
 23:30:20   depth 2: Bb5 +0.00
+23:30:24   depth 3: Bb5 +0.00
+23:30:30   depth 4: Bb5 +0.00
+23:30:54   depth 5: Bb5 +0.00
+23:32:54   depth 6: Bb5 -0.01
+23:33:31   stable after 3m14s, 88 requests, 23 queued. ChessDB now: best Bb5 +0.00 (was best Bb5 +0.00), stored line 5 -> 4
+23:33:31 Exploring 9/47: [3.15%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nc3 e5 5.g3 Nf6 6.Bg2 Bc5 7.d3 O-O 8.Nf3 h6 9.O-O Qe7 10.Bd2 (decision)
+23:33:33   depth 1: Rd8 +0.19
+23:33:37   depth 2: Rd8 +0.19
+23:33:49   depth 3: Rd8 +0.26
