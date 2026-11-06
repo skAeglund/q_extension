@@ -349,3 +349,8 @@
 06:32:48   depth 3: Rae1 +0.61
 06:32:53   depth 4: Rae1 +0.61
 06:32:59   depth 5: Rae1 +0.61
+06:44:19   depth 6: e4 +0.41
+06:48:58   depth 7: e3 +0.52
+06:53:12   time after 20m31s, 276 requests, 142 queued. ChessDB now: best Rae1 +0.51; mine e3 +0.51 vs Rae1 +0.51 (was best e3 +0.65; mine e3 +0.65 vs Rae1 +0.55), stored line 4 -> 5
+06:53:12 Exploring 18/28: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Nf6 6.O-O Be7 7.b4 Nxb4 8.Nxe5 O-O 9.a3 Na6 10.Bb2 Nc5 11.Nd2 Re8 12.Nef3 Ne6 13.Qc2 c5 14.e3 (line end)
+06:53:12   depth 1: dxe3 +0.70
