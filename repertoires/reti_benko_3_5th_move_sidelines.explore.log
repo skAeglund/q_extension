@@ -277,3 +277,8 @@
 01:24:48   depth 1: b6 +0.00
 01:24:54   depth 2: Rd8 +0.00
 01:24:59   depth 3: Rd8 +0.00
+01:25:08   depth 4: b6 +0.00
+01:25:21   depth 5: b6 +0.00
+01:25:51   depth 6: b6 +0.00
+01:26:34   stable after 1m48s, 95 requests, 8 queued. ChessDB now: best b6 -0.01 (was best b6 -0.01), stored line 8 -> 5
+01:26:34 Done: 4 explored, 0 changed; 1293 ChessDB requests in 32m33s.
