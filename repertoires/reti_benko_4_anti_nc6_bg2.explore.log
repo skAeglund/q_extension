@@ -274,3 +274,12 @@
 04:07:44   stable after 5m15s, 121 requests, 50 queued. ChessDB now: best Nef3 +0.54; mine Nef3 +0.54 vs Re1 +0.41 (was best Nef3 +0.52; mine Nef3 +0.52 vs Re1 +0.41), stored line 5 -> 10
 04:07:44 Exploring 8/28: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Bb4+ 6.Bd2 Bxd2+ 7.Nbxd2 Nf6 8.b4 Nxb4 9.Qa4+ Nc6 10.Nxe5 Bd7 11.Nxd7 Qxd7 (decision)
 04:07:46   depth 1: O-O +3.14
+04:07:50   depth 2: O-O +3.14
+04:08:12   depth 3: O-O +3.15
+04:08:42   depth 4: O-O +3.18
+04:25:26   depth 5: O-O +3.28
+04:28:12   time after 20m28s, 248 requests, 144 queued. ChessDB now: best O-O +2.93; mine O-O +2.93 vs Rb1 +2.71 (was best O-O +2.73; mine O-O +2.73 vs Rb1 +2.71), stored line 3 -> 5
+04:28:12 Exploring 9/28: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Bb4+ 6.Bd2 Bxd2+ 7.Nbxd2 Nf6 8.b4 Qe7 9.b5 Nd8 10.a4 O-O 11.O-O c6 (decision)
+04:28:12   depth 1: Qc1 +1.06
+04:28:15   depth 2: Qc1 +1.06
+04:28:19   depth 3: Qc1 +1.06
