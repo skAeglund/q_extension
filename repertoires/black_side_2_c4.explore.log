@@ -103,3 +103,11 @@
 23:24:39   depth 1: e4 +0.00
 23:24:42   depth 2: e4 +0.00
 23:24:46   depth 3: e4 +0.00
+23:24:51   depth 4: e4 +0.00
+23:24:57   depth 5: e4 +0.00
+23:25:11   depth 6: e4 +0.00
+23:26:03   stable after 1m24s, 82 requests, 0 queued. ChessDB now: best e4 -0.17 (was best e4 -0.25), stored line 2 -> 4
+23:26:03 Exploring 6/47: [6.00%] 1.c4 d5 2.e3 e6 3.cxd5 exd5 4.d4 c6 5.Nc3 Bf5 6.Nf3 Bd6 7.Bd3 Bxd3 8.Qxd3 Nf6 9.O-O O-O 10.e4 Nxe4 11.Nxe4 dxe4 12.Qxe4 Re8 13.Qg4 (decision)
+23:26:06   depth 1: Na6 -0.31
+23:26:10   depth 2: Na6 -0.32
+23:26:16   depth 3: Be7 -0.28
