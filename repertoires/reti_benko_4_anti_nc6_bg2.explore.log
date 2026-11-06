@@ -416,3 +416,10 @@
 08:05:12   depth 1: Re8 +0.13
 08:05:17   depth 2: Re8 +0.13
 08:05:22   depth 3: Re8 +0.13
+08:05:50   depth 4: Re8 +0.20
+08:06:24   depth 5: Re8 +0.24
+08:06:56   depth 6: Re8 +0.19
+08:07:56   stable after 2m46s, 89 requests, 24 queued. ChessDB now: best Re8 +0.16 (was best Re8 +0.22), stored line 2 -> 7
+08:07:56 Exploring 26/28: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Nf6 6.O-O Bd6 7.a3 a5 8.e3 O-O 9.exd4 exd4 10.Re1 Bg4 11.h3 Bh5 12.Bg5 h6 13.Bxf6 Qxf6 14.Nbd2 Ne5 15.g4 Nxf3+ 16.Qxf3 Qxf3 (decision)
+08:07:56   depth 1: Bxf3 +0.08
+08:07:59   depth 2: Bxf3 +0.08
