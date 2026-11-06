@@ -144,3 +144,6 @@
 02:51:51   depth 4: Nge7 +1.80
 02:51:58   depth 5: Nge7 +1.73
 02:52:03   depth 6: Nge7 +1.73
+02:52:33   stable after 0m54s, 50 requests, 2 queued. ChessDB now: best Nge7 +1.81 (was best Nge7 +1.74), stored line 4 -> 5
+02:52:33 Exploring 13/37: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Nf6 6.O-O Bd6 7.a3 O-O 8.b4 a6 9.Nbd2 Bg4 10.h3 Bh5 (decision)
+02:52:35   depth 1: c5 +0.82
