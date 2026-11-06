@@ -152,3 +152,12 @@
 23:38:17   depth 2: e4 +0.00
 23:38:21   depth 3: e4 +0.00
 23:38:26   depth 4: e4 +0.00
+23:39:22   depth 5: e4 +0.00
+23:39:46   depth 6: e4 +0.00
+23:40:33   stable after 2m21s, 96 requests, 18 queued. ChessDB now: best e4 +0.00; mine e4 +0.00 vs Nxf3+ +0.14 (was best e4 +0.00; mine e4 +0.00 vs Nxf3+ +0.14), stored line 7 -> 9
+23:40:33 Exploring 12/47: [3.00%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.Nc3 Nf6 6.g3 Bc5 7.Bg2 O-O 8.O-O h6 9.d3 Qe7 10.a3 Rd8 11.b4 Bb6 12.Qc2 Bf5 13.Bb2 Rac8 14.Rac1 Nd4 15.Qd1 e4 16.Nxd4 Bxd4 (line end)
+23:40:33   depth 1: Na4 +0.00
+23:40:36   depth 2: Na4 +0.00
+23:40:40   depth 3: Na4 +0.00
+23:40:45   depth 4: Na4 +0.00
+23:40:51   depth 5: Na4 -0.03
