@@ -225,3 +225,10 @@
 03:24:52   depth 1: Na3 +0.14
 03:24:56   depth 2: Na3 +0.14
 03:25:02   depth 3: Na3 +0.14
+03:25:10   depth 4: Na3 +0.16
+03:25:29   depth 5: Na3 +0.16
+03:25:38   depth 6: Na3 +0.17
+03:26:03   stable after 1m13s, 71 requests, 0 queued. ChessDB now: best Na3 +0.14; mine Na3 +0.14 vs Re1 +0.12 (was best Na3 +0.14; mine Na3 +0.14 vs Re1 +0.12), stored line 9 -> 18
+03:26:03 Exploring 3/28: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Bb4+ 6.Bd2 Bxd2+ 7.Nbxd2 Nf6 8.b4 Qe7 (decision)
+03:26:05   depth 1: b5 +0.82
+03:26:08   depth 2: b5 +0.82
