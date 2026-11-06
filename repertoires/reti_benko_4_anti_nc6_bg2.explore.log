@@ -393,3 +393,11 @@
 07:42:07   depth 1: Nxe5 +1.56
 07:42:12   depth 2: Nxe5 +1.59
 07:42:18   depth 3: Nxe5 +1.59
+07:42:26   depth 4: Nxe5 +1.59
+07:42:37   depth 5: Nxe5 +1.59
+07:48:03   depth 6: Nxe5 +1.44
+07:49:29   depth 7: Nxe5 +0.00
+07:49:58   depth 8: Nxe5 +0.00
+07:50:26   depth 9: Nxe5 +0.00
+07:51:25   stable after 9m19s, 231 requests, 53 queued. ChessDB now: best Nxe5 +1.43 (was best Nxe5 +1.56), stored line 4 -> 8
+07:51:25 Exploring 24/28: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Nf6 6.O-O Bd6 7.a3 a5 8.e3 O-O 9.exd4 exd4 10.Re1 Bg4 11.h3 Bh5 12.Bg5 h6 13.Bxf6 Qxf6 14.Nbd2 Ne5 15.g4 Nxf3+ (decision)
