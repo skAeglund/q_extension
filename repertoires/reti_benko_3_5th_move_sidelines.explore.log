@@ -203,3 +203,12 @@
 00:10:12 Exploring 21/27: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 e6 6.Bg2 Nc6 7.O-O Nf6 8.Bb2 e5 9.e3 bxa3 10.Nxa3 Bc5 11.Nxe5 Nxe5 12.exd4 Bxd4 13.Bxd4 Qxd4 14.Nb5 Qd8 15.Qe2 Qe7 (decision)
 00:10:14   depth 1: Rfe1 +2.24
 00:10:20   depth 2: Rfe1 +2.24
+00:10:41   depth 3: d4 +2.23
+00:11:39   depth 4: d4 +2.32
+00:19:38   depth 5: d4 +2.62
+00:29:06   depth 6: d4 +2.90
+00:30:49   time after 20m37s, 260 requests, 112 queued. ChessDB now: best d4 +2.32; mine d4 +2.32 vs Rfe1 +2.12 (was best Rfe1 +2.41; mine d4 +2.23 vs Rfe1 +2.41), stored line 2 -> 6
+00:30:49 Exploring 22/27: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 Nc6 6.axb4 Nxb4 7.Qa4+ Nc6 8.Ne5 Bd7 9.Nxd7 Qxd7 10.Bg2 e5 11.O-O Nf6 12.d3 Be7 13.Bg5 O-O 14.Nd2 h6 15.Bxf6 Bxf6 16.Nb3 (line end)
+00:30:49   depth 1: Rfc8 +0.56
+00:30:52   depth 2: Rfc8 +0.56
+00:30:56   depth 3: Rfc8 +0.56
