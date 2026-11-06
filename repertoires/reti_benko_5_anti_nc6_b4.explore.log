@@ -79,3 +79,12 @@
 09:46:43   depth 1: Nh6 +1.70
 09:46:46   depth 2: Nh6 +1.70
 09:46:50   depth 3: Ne6 +2.05
+09:47:27   depth 4: Ne6 +2.04
+09:47:35   depth 5: Nh6 +2.10
+09:48:09   depth 6: Nh6 +1.94
+09:51:47   depth 7: Nh6 +1.76
+10:07:19   time after 20m35s, 286 requests, 159 queued. ChessDB now: best Nh6 +2.06 (was best Nh6 +1.94), stored line 2 -> 3
+10:07:19 Done: 9 explored, 3 changed; 2409 ChessDB requests in 95m38s.
+10:07:19   1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 Nf6 9.Bg2 e5 10.O-O Be7: best Rb1 -0.03; mine Rb1 -0.03 vs d3 -0.06 -> best d3 -0.08; mine Rb1 -0.14 vs d3 -0.08
+10:07:19   1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e6 9.Rb1 Nd8 10.Qxd7+ Kxd7 11.Bg2 c6 12.Nc2 e5 13.f4 exf4 14.gxf4 Bc5: best Bb2 +1.94; mine Bb2 +1.94 vs Bh3+ +1.72 -> best Bb2 +1.72; mine Bb2 +1.72 vs Bh3+ +1.68
+10:07:19   1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e6 9.Rb1 Nd8 10.Qxd7+ Kxd7 11.Bg2 c6 12.Nc2 e5 13.f4 exf4 14.gxf4 Bc5 15.Bb2: best Nh6 +1.94 -> best Nh6 +2.06
