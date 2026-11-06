@@ -128,3 +128,9 @@
 13:14:13   depth 2: Ng5 -0.61
 13:14:18   depth 3: Ng5 -0.66
 13:14:24   depth 4: Ng5 -0.66
+13:14:47   depth 5: Ng5 -0.54
+13:20:08   depth 6: Ng5 -0.69
+13:34:01   depth 7: Ng5 -0.64
+13:34:26   time after 20m19s, 259 requests, 144 queued. ChessDB now: best Ng5 -0.57 (was best Ng5 -0.64), stored line 3 -> 10
+13:34:26 Exploring 7/59: [5.80%] 1.Nf3 Nf6 2.c4 d5 3.g3 dxc4 4.Bg2 Be6 5.O-O a5 6.Nc3 c6 7.Re1 Na6 8.Ng5 (decision)
+13:34:28   depth 1: Bc8 -0.08
