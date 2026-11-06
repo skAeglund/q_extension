@@ -364,3 +364,8 @@
 06:56:21   depth 1: Qd6 +1.93
 06:56:25   depth 2: Qd6 +1.93
 06:56:30   depth 3: Qd6 +1.93
+06:56:51   depth 4: Rh5 +2.13
+06:58:34   depth 5: f6 +1.90
+07:16:50   time after 20m31s, 228 requests, 107 queued. ChessDB now: best f6 +2.05 (was best Qd6 +1.86), stored line 3 -> 13
+07:16:50 Exploring 20/28: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 f5 6.O-O Nf6 7.b4 e4 8.dxe4 fxe4 9.Ng5 Bxb4 10.a3 Bc5 11.Nd2 e3 12.Nde4 Nxe4 13.Nxe4 exf2+ 14.Rxf2 (line end)
+07:16:52   depth 1: Be7 +2.01
