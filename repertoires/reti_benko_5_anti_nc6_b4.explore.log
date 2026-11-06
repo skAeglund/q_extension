@@ -60,3 +60,12 @@
 09:05:45 Exploring 7/9: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 Nf6 9.Bg2 e5 10.O-O Be7 11.Rb1 Nd8 12.Qb5 c5 (line end)
 09:05:47   depth 1: Qxd7+ +0.17
 09:05:51   depth 2: Qxd7+ +0.17
+09:06:02   depth 3: Qxd7+ +0.26
+09:06:39   depth 4: Qxd7+ +0.22
+09:07:42   depth 5: Qxd7+ +0.32
+09:17:14   depth 6: Qxd7+ +0.15
+09:24:37   depth 7: Qxd7+ +0.06
+09:26:14   time after 20m29s, 318 requests, 193 queued. ChessDB now: best Qxd7+ +0.16 (was best Qxd7+ +0.17), stored line 3 -> 7
+09:26:14 Exploring 8/9: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e6 9.Rb1 Nd8 10.Qxd7+ Kxd7 11.Bg2 c6 12.Nc2 e5 13.f4 exf4 14.gxf4 Bc5 (decision)
+09:26:16   depth 1: Bb2 +1.94
+09:26:20   depth 2: Bb2 +1.94
