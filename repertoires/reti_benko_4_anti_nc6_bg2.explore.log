@@ -131,3 +131,16 @@
 02:31:07 Exploring 11/37: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Bg4 6.h3 Bh5 7.Qb3 Rb8 8.Nxe5 Nxe5 9.Qb5+ Nc6 10.Qxh5 (line end)
 02:31:09   depth 1: Nf6 +1.90
 02:31:29   depth 2: Nf6 +1.83
+02:31:41   depth 3: Nf6 +1.90
+02:32:21   depth 4: Nf6 +1.89
+02:32:29   depth 5: Nf6 +1.92
+02:32:57   depth 6: Bb4+ +1.63
+02:42:49   depth 7: Bb4+ +2.00
+02:51:39   time after 20m32s, 396 requests, 226 queued. ChessDB now: best Nf6 +1.95 (was best Nf6 +2.02), stored line 2 -> 4
+02:51:39 Exploring 12/37: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 Bg4 5.b4 Nxb4 6.Ne5 Bd7 7.Qb3 e6 8.a3 Nc6 9.Nxd7 Kxd7 10.Qxb7 (line end)
+02:51:39   depth 1: Nge7 +1.80
+02:51:42   depth 2: Nge7 +1.80
+02:51:46   depth 3: Nge7 +1.80
+02:51:51   depth 4: Nge7 +1.80
+02:51:58   depth 5: Nge7 +1.73
+02:52:03   depth 6: Nge7 +1.73
