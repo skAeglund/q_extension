@@ -518,3 +518,12 @@
 21:14:35 Exploring 52/59: [0.18%] 1.Nf3 Nf6 2.d4 c5 3.c4 cxd4 4.Nxd4 e6 5.Nc3 d5 6.Bg5 e5 7.Nf3 d4 8.Nd5 Be7 9.Nxe7 Qxe7 10.e3 Bg4 11.Be2 d3 12.Qxd3 e4 13.Bxf6 gxf6 14.Qd4 (decision)
 21:14:37   depth 1: exf3 -2.92
 21:14:41   depth 2: exf3 -3.37
+21:15:14   depth 3: exf3 -3.56
+21:15:52   depth 4: exf3 -4.40
+21:18:45   depth 5: exf3 -4.22
+21:20:48   depth 6: exf3 -4.29
+21:28:11   depth 7: exf3 -4.44
+21:34:17   depth 8: exf3 -4.51
+21:35:15   time after 20m40s, 309 requests, 144 queued. ChessDB now: best exf3 -4.19; mine Nc6 -2.86 vs exf3 -4.19 (was best exf3 -2.92; mine Nc6 -2.86 vs exf3 -2.92), stored line 4 -> 9
+21:35:15 Exploring 53/59: [0.18%] 1.Nf3 Nf6 2.d4 c5 3.c4 cxd4 4.Nxd4 e6 5.Nc3 d5 6.Bg5 e5 7.Nf3 d4 8.Nd5 Be7 9.Nxe7 Qxe7 10.e3 Bg4 11.Be2 d3 12.Qxd3 e4 13.Bxf6 gxf6 14.Qd4 Nc6 15.Qc3 exf3 (line end)
+21:35:17   depth 1: Bxf3 -4.01
