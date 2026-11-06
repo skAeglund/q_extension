@@ -266,3 +266,14 @@
 01:19:26   depth 1: Qf3 +0.01
 01:19:29   depth 2: Qf3 +0.01
 01:19:33   depth 3: Qf3 +0.00
+01:19:40   depth 4: Qf3 +0.00
+01:20:22   depth 5: Qf3 +0.08
+01:20:34   depth 6: Qf3 +0.11
+01:21:02   depth 7: Qf3 +0.00
+01:22:34   depth 8: Qf3 +0.02
+01:24:00   depth 9: Qf3 +0.00
+01:24:46   stable after 5m22s, 198 requests, 78 queued. ChessDB now: best Qf3 +0.08; mine Qf3 +0.08 vs Qa4 -0.20 (was best Qf3 +0.01; mine Qf3 +0.01 vs Qa4 -0.20), stored line 6 -> 12
+01:24:46 Exploring 4/4: 1.Nf3 d5 2.c4 d4 3.g3 c5 4.b4 cxb4 5.a3 e6 6.Bg2 Nc6 7.O-O Nf6 8.Bb2 bxa3 9.Nxa3 Bc5 10.e3 O-O 11.exd4 Nxd4 12.Nxd4 Bxd4 13.Bxd4 Qxd4 14.Qe2 a6 15.Rfb1 Rb8 16.Nc2 Qd6 17.d4 (line end)
+01:24:48   depth 1: b6 +0.00
+01:24:54   depth 2: Rd8 +0.00
+01:24:59   depth 3: Rd8 +0.00
