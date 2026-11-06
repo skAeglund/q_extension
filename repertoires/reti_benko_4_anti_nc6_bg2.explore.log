@@ -283,3 +283,12 @@
 04:28:12   depth 1: Qc1 +1.06
 04:28:15   depth 2: Qc1 +1.06
 04:28:19   depth 3: Qc1 +1.06
+04:28:24   depth 4: Qc1 +1.06
+04:30:36   depth 5: Qc1 +0.87
+04:38:12   depth 6: Qc1 +0.77
+04:48:38   time after 20m26s, 266 requests, 140 queued. ChessDB now: best Qc1 +0.78; mine Re1 +0.76 vs Qc1 +0.78 (was best Qc1 +0.82; mine Re1 +0.76 vs Qc1 +0.82), stored line 2 -> 5
+04:48:38 Exploring 10/28: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 f5 6.O-O e4 7.dxe4 fxe4 8.Ng5 Nf6 9.Nd2 e3 10.Nde4 exf2+ 11.Rxf2 Be7 12.Qc2 (line end)
+04:48:40   depth 1: Ne5 +1.88
+04:48:43   depth 2: Ne5 +1.88
+04:48:47   depth 3: Ne5 +1.88
+04:48:53   depth 4: Ne5 +1.88
