@@ -135,3 +135,9 @@
 23:33:33   depth 1: Rd8 +0.19
 23:33:37   depth 2: Rd8 +0.19
 23:33:49   depth 3: Rd8 +0.26
+23:34:03   depth 4: Rd8 +0.28
+23:34:21   depth 5: Rd8 +0.20
+23:35:21   depth 6: Rd8 +0.21
+23:35:51   stable after 2m20s, 112 requests, 13 queued. ChessDB now: best Rd8 +0.18; mine Rd8 +0.18 vs Be6 +0.33 (was best Rd8 +0.22; mine Rd8 +0.22 vs Be6 +0.33), stored line 3 -> 15
+23:35:51 Exploring 10/47: [3.15%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nc3 e5 5.g3 Nf6 6.Bg2 Bc5 7.d3 O-O 8.Nf3 h6 9.O-O Qe7 10.Bd2 Rd8 11.Rc1 Bf5 12.Qa4 Rac8 13.a3 Bb6 14.b4 (decision)
+23:35:53   depth 1: Qe6 +0.00
