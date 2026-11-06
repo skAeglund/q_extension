@@ -289,3 +289,13 @@
 16:43:11 Exploring 25/59: [1.12%] 1.Nf3 Nf6 2.c4 d5 3.cxd5 c6 4.d4 cxd5 5.Nc3 Nc6 6.Bf4 Nh5 7.Bg5 h6 8.Bh4 g5 9.Bg3 Nxg3 10.hxg3 g4 11.Ne5 Bg7 12.Nxc6 bxc6 13.e3 h5 14.Bd3 e5 15.dxe5 Bxe5 16.Qc2 (decision)
 16:43:11   depth 1: Qf6 -0.57
 16:43:14   depth 2: Qf6 -0.57
+16:43:18   depth 3: Kf8 -0.46
+16:43:20   depth 4: Qf6 -0.41
+16:44:57   depth 5: Qf6 -0.52
+16:52:54   depth 6: Qf6 -0.40
+16:55:18   depth 7: Qf6 -0.37
+16:55:50   depth 8: Rb8 -0.41
+17:03:45   time after 20m34s, 300 requests, 142 queued. ChessDB now: best Qf6 -0.46; mine Kf8 -0.41 vs Qf6 -0.46 (was best Kf8 -0.62; mine Kf8 -0.62 vs Qf6 -0.57), stored line 3 -> 9
+17:03:45 Exploring 26/59: [1.12%] 1.Nf3 Nf6 2.c4 d5 3.cxd5 c6 4.d4 cxd5 5.Nc3 Nc6 6.Bf4 Nh5 7.Bg5 h6 8.Bh4 g5 9.Bg3 Nxg3 10.hxg3 g4 11.Ne5 Bg7 12.Nxc6 bxc6 13.e3 h5 14.Bd3 e5 15.dxe5 Bxe5 16.Qc2 Kf8 (line end)
+17:03:45   depth 1: Ne2 -0.32
+17:03:48   depth 2: Ne2 -0.32
