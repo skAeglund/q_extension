@@ -350,3 +350,14 @@
 17:42:25 Exploring 32/59: [0.84%] 1.Nf3 Nf6 2.d4 c5 3.c4 cxd4 4.Nxd4 e6 5.Nc3 d5 6.cxd5 Nxd5 7.Nxd5 Qxd5 8.e3 Be7 9.Bb5+ Bd7 10.Bxd7+ Nxd7 11.O-O O-O 12.b3 Rac8 13.Bb2 Rfd8 (line end)
 17:42:25   depth 1: h3 -0.09
 17:42:28   depth 2: h3 -0.09
+17:42:32   depth 3: Nf3 -0.14
+17:42:35   depth 4: Nf3 -0.14
+17:42:53   depth 5: h3 -0.09
+17:43:21   depth 6: h3 -0.10
+17:43:35   depth 7: h3 -0.06
+17:44:14   stable after 1m49s, 78 requests, 21 queued. ChessDB now: best h3 -0.09 (was best h3 -0.06), stored line 3 -> 8
+17:44:14 Exploring 33/59: [0.83%] 1.Nf3 Nf6 2.c4 d5 3.g3 dxc4 4.Qa4+ Nc6 5.Bg2 Nd7 6.Qxc4 e5 7.O-O Be7 8.d3 Nb6 9.Qc2 O-O 10.Nc3 Be6 11.a3 Nd4 12.Nxd4 exd4 13.Ne4 Bd5 14.Bf4 (decision)
+17:44:16   depth 1: c5 -0.12
+17:44:19   depth 2: c5 -0.14
+17:44:24   depth 3: c5 -0.14
+17:44:29   depth 4: c5 -0.20
