@@ -481,3 +481,9 @@
 20:11:16   depth 1: Nc6 -0.54
 20:11:19   depth 2: Nc6 -0.53
 20:11:24   depth 3: Nc6 -0.58
+20:11:55   depth 4: Nc6 -0.46
+20:12:58   depth 5: Nc6 -0.52
+20:31:39   time after 20m25s, 235 requests, 138 queued. ChessDB now: best Nc6 -0.46; mine Nc6 -0.46 vs Qe6 -0.25 (was best Nc6 -0.54; mine Nc6 -0.54 vs Qe6 -0.25), stored line 4 -> 6
+20:31:39 Exploring 49/59: [0.30%] 1.Nf3 Nf6 2.c4 d5 3.g3 dxc4 4.Qa4+ Nc6 5.Qxc4 e5 6.Bg2 Be6 7.Qa4 Nd7 8.Nc3 Nc5 9.Qc2 Nb4 10.Qb1 Ncd3+ 11.exd3 Nxd3+ 12.Kf1 (decision)
+20:31:41   depth 1: Bc4 -0.44
+20:31:44   depth 2: Bc4 -0.46
