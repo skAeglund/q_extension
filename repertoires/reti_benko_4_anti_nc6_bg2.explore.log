@@ -354,3 +354,13 @@
 06:53:12   time after 20m31s, 276 requests, 142 queued. ChessDB now: best Rae1 +0.51; mine e3 +0.51 vs Rae1 +0.51 (was best e3 +0.65; mine e3 +0.65 vs Rae1 +0.55), stored line 4 -> 5
 06:53:12 Exploring 18/28: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Nf6 6.O-O Be7 7.b4 Nxb4 8.Nxe5 O-O 9.a3 Na6 10.Bb2 Nc5 11.Nd2 Re8 12.Nef3 Ne6 13.Qc2 c5 14.e3 (line end)
 06:53:12   depth 1: dxe3 +0.70
+06:53:15   depth 2: dxe3 +0.70
+06:53:19   depth 3: dxe3 +0.70
+06:53:25   depth 4: dxe3 +0.70
+06:53:40   depth 5: dxe3 +0.70
+06:55:00   depth 6: dxe3 +0.67
+06:56:19   stable after 3m07s, 100 requests, 16 queued. ChessDB now: best dxe3 +0.51 (was best dxe3 +0.42), stored line 3 -> 4
+06:56:19 Exploring 19/28: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Nf6 6.O-O h5 7.b4 Bxb4 8.Nxe5 Nxe5 9.Qa4+ Nc6 10.Bxc6+ bxc6 11.Qxb4 h4 12.Nd2 hxg3 13.fxg3 Ng4 14.Rf4 (line end)
+06:56:21   depth 1: Qd6 +1.93
+06:56:25   depth 2: Qd6 +1.93
+06:56:30   depth 3: Qd6 +1.93
