@@ -269,3 +269,8 @@
 04:02:34   depth 2: Nef3 +0.59
 04:02:38   depth 3: Nef3 +0.54
 04:02:43   depth 4: Nef3 +0.55
+04:03:17   depth 5: Nef3 +0.58
+04:07:12   depth 6: Nef3 +0.59
+04:07:44   stable after 5m15s, 121 requests, 50 queued. ChessDB now: best Nef3 +0.54; mine Nef3 +0.54 vs Re1 +0.41 (was best Nef3 +0.52; mine Nef3 +0.52 vs Re1 +0.41), stored line 5 -> 10
+04:07:44 Exploring 8/28: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Bb4+ 6.Bd2 Bxd2+ 7.Nbxd2 Nf6 8.b4 Nxb4 9.Qa4+ Nc6 10.Nxe5 Bd7 11.Nxd7 Qxd7 (decision)
+04:07:46   depth 1: O-O +3.14
