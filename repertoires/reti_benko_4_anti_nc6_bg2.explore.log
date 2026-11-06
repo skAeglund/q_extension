@@ -57,3 +57,10 @@
 01:34:58   depth 1: fxe3 +0.06
 01:35:01   depth 2: fxe3 +0.07
 01:35:08   depth 3: fxe3 +0.07
+01:35:14   depth 4: fxe3 +0.08
+01:35:22   depth 5: fxe3 +0.08
+01:35:35   depth 6: fxe3 +0.08
+01:36:02   stable after 1m06s, 62 requests, 2 queued. ChessDB now: best fxe3 +0.06; mine fxe3 +0.06 vs Bxe3 -0.13 (was best fxe3 +0.06; mine fxe3 +0.06 vs Bxe3 -0.13), stored line 9 -> 7
+01:36:02 Exploring 3/37: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Bb4+ 6.Bd2 Bxd2+ 7.Nbxd2 Nf6 8.b4 a6 (decision)
+01:36:04   depth 1: b5 +1.09
+01:36:08   depth 2: b5 +1.09
