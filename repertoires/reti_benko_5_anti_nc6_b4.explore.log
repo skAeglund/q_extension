@@ -69,3 +69,13 @@
 09:26:14 Exploring 8/9: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e6 9.Rb1 Nd8 10.Qxd7+ Kxd7 11.Bg2 c6 12.Nc2 e5 13.f4 exf4 14.gxf4 Bc5 (decision)
 09:26:16   depth 1: Bb2 +1.94
 09:26:20   depth 2: Bb2 +1.94
+09:26:40   depth 3: Bb2 +2.01
+09:27:02   depth 4: Bh3+ +1.72
+09:28:26   depth 5: Bh3+ +1.77
+09:38:04   depth 6: Bh3+ +2.06
+09:43:47   depth 7: Bh3+ +2.18
+09:46:43   time after 20m29s, 294 requests, 160 queued. ChessDB now: best Bb2 +1.72; mine Bb2 +1.72 vs Bh3+ +1.68 (was best Bb2 +1.94; mine Bb2 +1.94 vs Bh3+ +1.72), stored line 3 -> 4
+09:46:43 Exploring 9/9: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e6 9.Rb1 Nd8 10.Qxd7+ Kxd7 11.Bg2 c6 12.Nc2 e5 13.f4 exf4 14.gxf4 Bc5 15.Bb2 (line end)
+09:46:43   depth 1: Nh6 +1.70
+09:46:46   depth 2: Nh6 +1.70
+09:46:50   depth 3: Ne6 +2.05
