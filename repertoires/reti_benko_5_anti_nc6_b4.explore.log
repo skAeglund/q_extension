@@ -1,1 +1,22 @@
 08:31:41 cdbexplore: reti_benko_5_anti_nc6_b4.pgn, 45 positions, White's repertoire. Asking ChessDB about each.
+08:32:43 Survey: 9 positions to explore (3 line ends, 6 decisions); 63 requests in 1m02s. Scores from White's side.
+08:32:43   1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e5 9.Rb1 Rb8 10.Bg2 Nge7 (decision): best Nc2 +0.10; mine d3 +0.05 vs Nc2 +0.10, stored line 7
+08:32:43   1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 Nf6 9.Bg2 e5 10.O-O Be7 (decision): best Rb1 -0.03; mine Rb1 -0.03 vs d3 -0.06, stored line 5
+08:32:43   1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e5 9.Rb1 Rb8 10.Bg2 Nge7 11.d3 (line end): best h5 +0.05, stored line 6
+08:32:43   1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e6 9.Rb1 Nd8 10.Qxd7+ Kxd7 11.Bg2 c6 (decision): best O-O +0.04; mine Nc2 -0.11 vs O-O +0.04, stored line 3
+08:32:43   1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 Nf6 9.Bg2 e5 10.O-O Be7 11.Rb1 Nd8 (decision): best Qb5 -0.16; mine Qb5 -0.16 vs Qa5 -0.25, stored line 3
+08:32:43   1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e6 9.Rb1 Nd8 10.Qxd7+ Kxd7 11.Bg2 c6 12.Nc2 e5 (decision): best f4 +0.48; mine f4 +0.48 vs O-O +0.29, stored line 4
+08:32:43   1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 Nf6 9.Bg2 e5 10.O-O Be7 11.Rb1 Nd8 12.Qb5 c5 (line end): best Qxd7+ +0.17, stored line 3
+08:32:43   1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e6 9.Rb1 Nd8 10.Qxd7+ Kxd7 11.Bg2 c6 12.Nc2 e5 13.f4 exf4 14.gxf4 Bc5 (decision): best Bb2 +1.94; mine Bb2 +1.94 vs Bh3+ +1.72, stored line 3
+08:32:43   1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e6 9.Rb1 Nd8 10.Qxd7+ Kxd7 11.Bg2 c6 12.Nc2 e5 13.f4 exf4 14.gxf4 Bc5 15.Bb2 (line end): best Nh6 +1.94, stored line 2
+08:32:43 Exploring 1/9: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 e5 9.Rb1 Rb8 10.Bg2 Nge7 (decision)
+08:32:45   depth 1: d3 +0.01
+08:32:50   depth 2: d3 +0.01
+08:32:57   depth 3: Nc2 +0.12
+08:33:05   depth 4: Nc2 +0.01
+08:33:14   depth 5: Nc2 +0.01
+08:33:40   depth 6: Nc2 +0.00
+08:34:57   stable after 2m14s, 77 requests, 11 queued. ChessDB now: best Nc2 +0.07; mine d3 +0.01 vs Nc2 +0.07 (was best Nc2 +0.10; mine d3 +0.05 vs Nc2 +0.10), stored line 7 -> 4
+08:34:57 Exploring 2/9: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.b4 Nxb4 5.Qa4+ Nc6 6.Ne5 Bd7 7.Nxd7 Qxd7 8.Na3 Nf6 9.Bg2 e5 10.O-O Be7 (decision)
+08:34:59   depth 1: d3 -0.08
+08:35:04   depth 2: d3 -0.08
