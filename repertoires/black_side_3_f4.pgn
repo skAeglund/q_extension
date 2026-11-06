@@ -1,0 +1,14 @@
+[Event "Bird - Nf6 c4 g6 setup: Chapter 1"]
+[Site "?"]
+[Date "2026.06.25"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[ECO "A02"]
+[Annotator "https://lichess.org/@/blindsmurf"]
+[ChapterName "f4"]
+[Orientation "black"]
+[StudyName "Black sidelines (Nf3, c4, f4...)"]
+
+1. f4 Nf6 2. d4 { 7% } (2. Nf3 { 72% } 2... c5 3. e3 { 56% } (3. g3 { 14% } 3... g6 4. Bg2 Bg7 5. O-O O-O 6. d3 Nc6 7. e4 d6 8. c3 { 35% } (8. Nc3 { 32% } 8... Rb8 9. h3 b5 10. g4 b4 11. Ne2 a5 12. Ng3 Ba6) (8. c4 { 3% } 8... Rb8 9. Nc3 a6 10. a4 Ne8 11. h3 Nc7 12. g4 b5 { Possible continuation: } 13. axb5 axb5 14. f5 bxc4 15. dxc4 Ba6 16. Qe2 Rb4) 8... b5 9. h3 b4 10. Be3 a5) (3. d3 { 10% } 3... g6 { d5 is the best move - but bird players are probably more used to d5, so we try avoid it. We allow white to play e4. } 4. e4 Bg7 { We're not scared of e5, as we have Nd5. } 5. Be2 O-O 6. O-O Nc6 7. c3 b5 8. h3 b4 9. Be3 d6 10. Nbd2 Nh5 { Going for Ng3 but also opening up the bishop. } 11. Rc1 Ng3 12. Re1 Nxe2+ 13. Qxe2 Rb8 { We likely take on c6 next. Candidate moves after that are Ba6, }) 3... g6 4. b3 { 34% } (4. Be2 { 22% } 4... Bg7 5. O-O O-O 6. c3 b6 7. d4 Bb7 8. Nbd2 d6 9. Bd3 Nbd7 10. e4 cxd4 11. cxd4 e5 12. fxe5 dxe5 13. d5 Nc5 14. Nxe5 Ncxe4 15. Nxe4 Nxe4 16. Bxe4 Bxe5) 4... Bg7 5. Bb2 O-O 6. Be2 Nc6 7. O-O b6 8. Qe1 Bb7 9. d3 d6 10. Nbd2 e5 11. fxe5 Nd5 12. e4 (12. Nc4 dxe5 13. e4 Nf4 14. Nfxe5 Nxe2+ 15. Qxe2 Nd4 16. Qf2 f5 { With ideas of chasing the knight away with b5. }) 12... Ne3 13. Rf2 Nxc2) 2... g6 3. Nf3 Bg7 4. e3 O-O 5. Bd3 c5 { Let's try to transpose into a 1.d4 c5 2.e3 variation. } 6. c3 d6 7. O-O Nc6 8. Nbd2 e5 { We have transposed into familiar territory. } *

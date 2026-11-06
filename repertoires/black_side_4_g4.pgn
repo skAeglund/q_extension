@@ -1,0 +1,7 @@
+[Event "Black sidelines (Nf3, c4, f4...): g4"]
+[Result "*"]
+[ChapterName "g4"]
+[Orientation "black"]
+[StudyName "Black sidelines (Nf3, c4, f4...)"]
+
+1. g4 d5 2. Bg2 c6 3. g5 (3. c4 dxc4 4. Qa4 Bxg4 5. Qxc4 Nf6 6. Nc3 Nbd7 7. d3 e5 8. Bg5 Be6 9. Qa4 { Test }) (3. h3 e5 4. d4 e4 5. c4 Bd6 6. Nc3 Ne7 7. Bg5 f6 8. Bd2 O-O 9. e3 f5 10. gxf5 Bxf5 11. cxd5 cxd5 12. Qb3 Kh8 13. Nxd5 Nxd5 14. Qxd5 Nc6 15. Ne2 Nb4 16. Bxe4) 3... h6 4. h4 hxg5 5. hxg5 Rxh1 6. Bxh1 e5 *

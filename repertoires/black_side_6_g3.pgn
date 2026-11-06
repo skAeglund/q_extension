@@ -1,0 +1,14 @@
+[Event "Bird - Nf6 c4 g6 setup: 1.g3"]
+[Site "?"]
+[Date "2026.06.27"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+[ECO "A07"]
+[Annotator "https://lichess.org/@/blindsmurf"]
+[ChapterName "g3"]
+[Orientation "black"]
+[StudyName "Black sidelines (Nf3, c4, f4...)"]
+
+1. g3 d5 { When white starts with g3, we have time to grab the center before going for our fianchetto. Our g-knight will probably end up on e7 instead of f6. } 2. Bg2 e5 3. b3 { 17% } (3. d3 { 27% } 3... g6 4. Nf3 Bg7 5. O-O Ne7 6. Nbd2 { 32% } (6. c4 { 24% } 6... c6 7. cxd5 cxd5 8. Nc3 h6 9. e4 d4 10. Ne2 Nbc6 11. a3 Be6 12. b4 a6) (6. e4 { 23% } 6... O-O 7. exd5 Nxd5 8. Re1 Nc6 9. Nbd2 Re8 10. Nc4 Nb6 11. Nxb6 axb6 12. Bg5 Qd6 { Possible continuation: } 13. Nd2 f5 14. Nc4 Qd7 15. Qd2 b5 16. Na3 f4 17. Nxb5 Rf8) 6... O-O 7. e4 Nbc6 8. Re1 h6 { A useful move to stop Bg4 if white gets to move their knight, for example Nc4 after the pawn on d5 has been traded. } 9. c3 d4 10. cxd4 Nxd4 11. Nxd4 Qxd4 12. Nf3 Qd6 13. Be3 Rd8 { White has a backward pawn, but we probably wont be able to target it quickly. }) 3... h5 { White is wasting too much time. } 4. h4 { 7% } (4. Bb2 { 86% } 4... Nc6 5. e3 h4 6. Ne2 h3 7. Bf1 Bg4 8. d3 d4 9. e4 Bb4+ 10. Nd2 Bf3 11. Rg1 Nf6 12. a3 Bxd2+ 13. Qxd2 Ng4) 4... Nc6 5. Bb2 Nf6 6. d3 Bc5 7. e3 Bg4 8. Ne2 d4 9. e4 a5 10. Nd2 Be6 11. O-O Ng4 { If white doesn't play Nf3 next, we can go for g5. Otherwise we can simply castle. } *

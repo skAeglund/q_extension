@@ -1,0 +1,7 @@
+[Event "Black sidelines (Nf3, c4, f4...): b4"]
+[Result "*"]
+[ChapterName "b4"]
+[Orientation "black"]
+[StudyName "Black sidelines (Nf3, c4, f4...)"]
+
+1. b4 e5 2. b5 (2. Bb2 Bxb4 3. Bxe5 Nf6 4. Nf3 (4. c3 Be7 5. e3 d5 6. Nf3 c5 7. Be2 (7. d4 Nc6 8. Bg3 c4 9. Be2 O-O 10. O-O Ne4 { We'll likely grab the bishop on g3 soon. Although it's pretty common or white to blunder c3: } 11. Nbd2 Nxc3 { hitting the other bishop }) 7... O-O 8. O-O Nc6 9. Bg3 Ne4) 4... d5 5. e3 O-O 6. c4 c5 7. cxd5 Nxd5 8. Be2 Nc6 9. Bb2 Bf5 10. O-O Qe7 11. a3 Ba5 12. d4 Rfd8) 2... d5 3. Bb2 Nd7 4. e3 c5 5. c4 d4 6. exd4 cxd4 7. Nf3 Ngf6 8. d3 { Bb4 is good even without a check } (8. Be2 Bb4 9. O-O O-O) 8... Bb4+ 9. Nbd2 O-O *
