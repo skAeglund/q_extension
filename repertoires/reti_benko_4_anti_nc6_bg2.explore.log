@@ -337,3 +337,15 @@
 06:13:32 Exploring 16/28: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Bb4+ 6.Bd2 Bxd2+ 7.Nbxd2 Nf6 8.b4 Qe7 9.b5 Nd8 10.a4 O-O 11.O-O c6 12.Re1 Bg4 13.e3 (line end)
 06:13:32   depth 1: Ne6 +1.14
 06:13:35   depth 2: Ne6 +1.14
+06:13:39   depth 3: Ne6 +1.14
+06:13:45   depth 4: Ne6 +1.14
+06:22:04   depth 5: Bxf3 +1.35
+06:29:44   depth 6: Bxf3 +1.35
+06:31:38   depth 7: Bxf3 +1.36
+06:32:41   stable after 19m09s, 269 requests, 137 queued. ChessDB now: best dxe3 +1.27 (was best Ne6 +1.18), stored line 3 -> 3
+06:32:41 Exploring 17/28: 1.Nf3 d5 2.c4 d4 3.g3 Nc6 4.Bg2 e5 5.d3 Nf6 6.O-O Be7 7.b4 Nxb4 8.Nxe5 O-O 9.a3 Na6 10.Bb2 Nc5 11.Nd2 Re8 12.Nef3 Ne6 13.Qc2 c5 (decision)
+06:32:41   depth 1: Rae1 +0.61
+06:32:44   depth 2: Rae1 +0.61
+06:32:48   depth 3: Rae1 +0.61
+06:32:53   depth 4: Rae1 +0.61
+06:32:59   depth 5: Rae1 +0.61
