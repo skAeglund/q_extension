@@ -111,3 +111,12 @@
 23:26:06   depth 1: Na6 -0.31
 23:26:10   depth 2: Na6 -0.32
 23:26:16   depth 3: Be7 -0.28
+23:26:39   depth 4: Be7 -0.31
+23:27:04   depth 5: Be7 -0.30
+23:27:51   depth 6: Be7 -0.31
+23:28:29   stable after 2m26s, 118 requests, 22 queued. ChessDB now: best Bf8 -0.32; mine Qd7 -0.27 vs Bf8 -0.32 (was best Bf8 -0.32; mine Qd7 -0.27 vs Bf8 -0.32), stored line 4 -> 6
+23:28:29 Exploring 7/47: [3.20%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.e3 e5 5.a3 Nf6 6.Nc3 Be7 7.b4 O-O 8.Bb2 Bf5 9.Bc4 (decision)
+23:28:31   depth 1: Rc8 +0.00
+23:28:34   depth 2: Rc8 -0.01
+23:28:38   depth 3: Rc8 -0.01
+23:28:44   depth 4: Rc8 +0.00
