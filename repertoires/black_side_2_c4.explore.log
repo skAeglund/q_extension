@@ -423,3 +423,12 @@
 02:58:01   stable after 2m59s, 131 requests, 20 queued. ChessDB now: best Bd2 -0.44 (was best Bd2 -0.58), stored line 2 -> 4
 02:58:01 Exploring 20/53: [1.64%] 1.c4 d5 2.cxd5 c6 3.Nc3 cxd5 4.d4 e5 5.dxe5 d4 6.Ne4 Qa5+ 7.Nd2 Nc6 8.Nf3 Nh6 9.g3 Nf5 10.Bg2 Ne3 11.fxe3 dxe3 12.O-O exd2 13.Bxd2 Qb6+ 14.Kh1 Be7 15.Bc3 O-O 16.Qc2 Be6 17.a3 (line end)
 02:58:03   depth 1: Rfd8 +0.19
+02:58:08   depth 2: Rfd8 +0.18
+02:58:13   depth 3: Rfd8 +0.19
+02:58:20   depth 4: Rfd8 +0.19
+02:58:30   depth 5: Rfd8 +0.21
+02:58:46   depth 6: Rfd8 +0.27
+02:59:34   stable after 1m33s, 77 requests, 14 queued. ChessDB now: best Rad8 +0.24 (was best Rfd8 +0.18), stored line 9 -> 3
+02:59:34 Exploring 21/53: [1.56%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nc3 e5 5.e4 Nf6 6.Nf3 Bc5 7.Bb5 O-O 8.O-O Nd4 9.Be2 Nxf3+ 10.Bxf3 Qd6 11.d3 (decision)
+02:59:36   depth 1: Rd8 +0.30
+02:59:39   depth 2: Rd8 +0.30
