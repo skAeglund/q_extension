@@ -43,3 +43,13 @@
 12:19:04   depth 2: Ng3 -0.45
 12:19:08   depth 3: Ng3 -0.45
 12:19:14   depth 4: Ng3 -0.48
+12:19:53   depth 5: Ng3 -0.35
+12:20:57   depth 6: Ng3 -0.36
+12:21:52   depth 7: Ng3 -0.40
+12:22:27   stable after 3m29s, 123 requests, 46 queued. ChessDB now: best Ng3 -0.43; mine Ng3 -0.43 vs bxc3 -0.28 (was best Ng3 -0.43; mine Ng3 -0.43 vs bxc3 -0.28), stored line 5 -> 6
+12:22:27 Exploring 5/13: [7.20%] 1.f4 Nf6 2.Nf3 c5 3.d3 g6 4.e4 Bg7 5.Be2 O-O 6.O-O Nc6 7.c3 b5 8.h3 b4 9.Be3 d6 10.Nbd2 Nh5 11.Rc1 Ng3 12.Re1 (decision)
+12:22:27   depth 1: bxc3 -0.40
+12:22:30   depth 2: bxc3 -0.40
+12:22:34   depth 3: bxc3 -0.40
+12:22:39   depth 4: bxc3 -0.40
+12:22:45   depth 5: bxc3 -0.40
