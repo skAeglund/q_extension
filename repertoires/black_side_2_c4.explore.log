@@ -306,3 +306,11 @@
 00:31:19   depth 1: Bxe4 -0.17
 00:31:30   depth 2: Bxe4 -0.13
 00:31:41   depth 3: Bxe4 -0.23
+00:31:54   depth 4: Bxe4 -0.12
+00:37:39   depth 5: Bxe4 +0.00
+00:39:39   depth 6: Nxe4 +0.00
+00:41:47   depth 7: Nxe4 +0.00
+00:44:04   depth 8: Nxe4 +0.00
+00:45:10   stable after 13m54s, 295 requests, 115 queued. ChessDB now: best Nxe4 -0.09; mine Nxe4 -0.09 vs Bxe4 -0.05 (was best Nxe4 -0.23; mine Nxe4 -0.23 vs Bxe4 -0.17), stored line 3 -> 6
+00:45:10 Exploring 8/53: [2.50%] 1.c4 d5 2.cxd5 c6 3.Nc3 cxd5 4.d4 e5 5.e3 e4 6.Bb5+ Nc6 7.Nge2 Nf6 8.O-O (decision)
+00:45:12   depth 1: a6 -0.30
