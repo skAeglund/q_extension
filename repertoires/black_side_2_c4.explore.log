@@ -854,3 +854,13 @@
 11:05:50   time after 20m34s, 230 requests, 120 queued. ChessDB now: best Rb1 -1.57 (was best Re1 -1.62), stored line 2 -> 20
 11:05:50 Exploring 20/26: [0.21%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nc3 e5 5.g3 Nf6 6.Bg2 Bc5 7.Nf3 O-O 8.O-O h6 9.d3 Qe7 10.Nd2 Bg4 11.Nde4 Nxe4 12.Nxe4 (decision)
 11:05:52   depth 1: Nd4 +0.11
+11:05:55   depth 2: Nd4 +0.11
+11:05:59   depth 3: Nd4 +0.10
+11:06:05   depth 4: Nd4 +0.09
+11:15:54   depth 5: Nd4 +0.04
+11:16:41   depth 6: Nd4 +0.04
+11:17:16   stable after 11m26s, 170 requests, 73 queued. ChessDB now: best Nd4 +0.02; mine Nd4 +0.02 vs Bd4 +0.27 (was best Nd4 +0.20; mine Nd4 +0.20 vs Bd4 +0.27), stored line 6 -> 13
+11:17:16 Exploring 21/26: [0.21%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nc3 e5 5.g3 Nf6 6.Bg2 Bc5 7.Nf3 O-O 8.O-O h6 9.d3 Qe7 10.Nd2 Bg4 11.Nde4 Nxe4 12.Nxe4 Nd4 13.Re1 (decision)
+11:17:16   depth 1: Bb4 +0.04
+11:17:19   depth 2: Bb4 +0.04
+11:17:23   depth 3: Bb4 +0.04
