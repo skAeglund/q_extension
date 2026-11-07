@@ -50,3 +50,14 @@
 15:15:59 Exploring 6/9: 1.b4 e5 2.b5 d5 3.Bb2 Nd7 4.e3 c5 5.c4 d4 6.exd4 cxd4 7.Nf3 Ngf6 8.Be2 Bb4 9.O-O O-O (line end)
 15:16:01   depth 1: d3 -1.71
 15:16:06   depth 2: d3 -1.71
+15:16:33   depth 3: d3 -1.65
+15:16:38   depth 4: d3 -1.81
+15:30:11   depth 5: d3 -1.94
+15:30:43   depth 6: d3 -1.83
+15:36:29   time after 20m30s, 234 requests, 122 queued. ChessDB now: best d3 -1.70 (was best d3 -1.28), stored line 2 -> 24
+15:36:29 Exploring 7/9: 1.b4 e5 2.Bb2 Bxb4 3.Bxe5 Nf6 4.c3 Be7 5.e3 d5 6.Nf3 c5 7.Be2 O-O 8.O-O Nc6 9.Bg3 Ne4 (line end)
+15:36:29   depth 1: d3 -0.93
+15:36:32   depth 2: d3 -0.93
+15:36:36   depth 3: d3 -0.93
+15:36:41   depth 4: d3 -0.93
+15:36:49   depth 5: d3 -0.93
