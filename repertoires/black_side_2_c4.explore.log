@@ -822,3 +822,10 @@
 09:43:44 Exploring 16/26: [0.33%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nc3 e5 5.g3 Nf6 6.Bg2 Bc5 7.Nf3 O-O 8.O-O h6 9.e3 e4 10.Ne1 Re8 11.d4 Bb4 12.a3 Bxc3 13.bxc3 Be6 14.Nc2 Na5 15.Rb1 (decision)
 09:43:44   depth 1: Rc8 -2.18
 09:43:47   depth 2: Rc8 -2.18
+09:43:51   depth 3: Rc8 -2.18
+09:43:56   depth 4: Rc8 -2.32
+09:45:12   depth 5: Rc8 -2.26
+09:46:29   depth 6: Rc8 -2.48
+10:04:14   time after 20m30s, 350 requests, 181 queued. ChessDB now: best Rc8 -2.32; mine Rc8 -2.32 vs Qd7 -2.05 (was best Qd7 -2.16; mine Rc8 -2.12 vs Qd7 -2.16), stored line 2 -> 7
+10:04:14 Exploring 17/26: [0.30%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nc3 e5 5.Nf3 Nf6 6.d3 Bc5 7.e3 O-O 8.Be2 Qe7 9.O-O Rd8 10.Qc2 Bb6 11.a3 Bf5 12.b4 Rac8 13.Bb2 Nd4 14.exd4 exd4 (line end)
+10:04:16   depth 1: Nd5 -1.31
