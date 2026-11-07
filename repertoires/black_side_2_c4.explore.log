@@ -566,3 +566,8 @@
 04:50:28   depth 1: Bd4 -0.99
 04:50:34   depth 2: Rd2 -1.41
 04:50:39   depth 3: Rd2 -1.41
+04:51:01   depth 4: Bd4 -0.98
+05:06:25   depth 5: Be3 -0.81
+05:11:10   time after 20m44s, 227 requests, 112 queued. ChessDB now: best Be3 -0.85; mine Rd2 -0.68 vs Be3 -0.85 (was best Bd4 -0.92; mine Rd2 -0.88 vs Bd4 -0.92), stored line 2 -> 4
+05:11:10 Exploring 38/53: [0.35%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.Nc3 Nf6 6.g3 Bc5 7.Bg2 O-O 8.O-O h6 9.d3 Qe7 10.b3 Rd8 11.Qc2 Bf5 12.Bb2 Rac8 13.Rac1 Nb4 14.Qb1 Nxd3 15.exd3 Bxd3 16.Qa1 e4 17.Ne5 Bxf1 18.Kxf1 Rd2 (line end)
+05:11:10   depth 1: Nd1 -0.76
