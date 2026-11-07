@@ -274,3 +274,11 @@
 00:23:21   depth 1: dxe3 -0.20
 00:23:25   depth 2: dxe3 -0.20
 00:23:30   depth 3: dxe3 -0.20
+00:23:38   depth 4: dxe3 -0.21
+00:23:46   depth 5: dxe3 -0.19
+00:24:13   depth 6: dxe3 -0.20
+00:24:54   stable after 1m35s, 83 requests, 10 queued. ChessDB now: best Re8 -0.19; mine dxe3 -0.16 vs Re8 -0.19 (was best Re8 -0.23; mine dxe3 -0.20 vs Re8 -0.23), stored line 6 -> 9
+00:24:54 Exploring 4/53: [6.14%] 1.c4 d5 2.cxd5 c6 3.Nc3 cxd5 4.d4 e5 5.dxe5 d4 6.Ne4 Qa5+ 7.Bd2 Qxe5 8.Ng3 Bc5 9.Nf3 Qe7 10.Rc1 Nc6 11.Qc2 Bb6 12.Qe4 Nf6 13.Qxe7+ Kxe7 14.e3 dxe3 15.Bxe3 Bxe3 16.fxe3 (decision)
+00:24:54   depth 1: Re8 -0.20
+00:24:57   depth 2: Re8 -0.20
+00:25:01   depth 3: Re8 -0.20
