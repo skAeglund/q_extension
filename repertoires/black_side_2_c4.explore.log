@@ -408,3 +408,11 @@
 02:34:22   depth 2: Bb8 -0.46
 02:34:26   depth 3: Kf7 -0.43
 02:34:30   depth 4: Kf7 -0.43
+02:34:52   depth 5: h6 -0.52
+02:34:57   depth 6: h6 -0.43
+02:40:48   depth 7: g6 -0.50
+02:49:22   depth 8: g5 -0.47
+02:55:02   time after 20m43s, 521 requests, 399 queued. ChessDB now: best Kf7 -0.47; mine Kf7 -0.47 vs g5 -0.46 (was best g5 -0.55; mine Kf7 -0.53 vs g5 -0.55), stored line 1 -> 3
+02:55:02 Exploring 19/53: [1.92%] 1.c4 d5 2.e3 e6 3.cxd5 exd5 4.d4 c6 5.Nc3 Bf5 6.Nf3 Bd6 7.Bd3 Bxd3 8.Qxd3 Nf6 9.O-O O-O 10.e4 Nxe4 11.Nxe4 dxe4 12.Qxe4 Re8 13.Qg4 Qd7 14.Qxd7 Nxd7 15.Be3 Nb6 16.b3 Nd5 17.Rfe1 f6 18.Kf1 Kf7 (line end)
+02:55:02   depth 1: Bd2 -0.29
+02:55:05   depth 2: Bd2 -0.19
