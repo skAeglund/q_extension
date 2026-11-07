@@ -571,3 +571,13 @@
 05:11:10   time after 20m44s, 227 requests, 112 queued. ChessDB now: best Be3 -0.85; mine Rd2 -0.68 vs Be3 -0.85 (was best Bd4 -0.92; mine Rd2 -0.88 vs Bd4 -0.92), stored line 2 -> 4
 05:11:10 Exploring 38/53: [0.35%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.Nc3 Nf6 6.g3 Bc5 7.Bg2 O-O 8.O-O h6 9.d3 Qe7 10.b3 Rd8 11.Qc2 Bf5 12.Bb2 Rac8 13.Rac1 Nb4 14.Qb1 Nxd3 15.exd3 Bxd3 16.Qa1 e4 17.Ne5 Bxf1 18.Kxf1 Rd2 (line end)
 05:11:10   depth 1: Nd1 -0.76
+05:11:13   depth 2: Nd1 -0.76
+05:11:17   depth 3: Nd1 -0.99
+05:11:39   depth 4: Nd1 -1.07
+05:25:32   depth 5: Nd1 -0.38
+05:27:28   depth 6: Nd1 -0.38
+05:28:35   depth 7: Nd1 -0.51
+05:31:49   time after 20m38s, 398 requests, 154 queued. ChessDB now: best Nd1 -0.82 (was best Nd1 -0.91), stored line 2 -> 21
+05:31:49 Exploring 39/53: [0.35%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.Nc3 Nf6 6.g3 Bc5 7.Bg2 O-O 8.O-O h6 9.d3 Qe7 10.b3 Rd8 11.Qc2 Bf5 12.Bb2 Rac8 13.Rac1 Nb4 14.Qb1 Nxd3 15.Nh4 Bh7 16.exd3 Bxd3 17.Qa1 Bxf1 18.Rxf1 Rd2 19.Nf5 Bxf2+ 20.Rxf2 Qc5 21.Ne7+ Kf8 22.Qe1 Rxb2 23.Nxc8 Ng4 24.Ne4 Qd4 (line end)
+05:31:51   depth 1: a3 -0.59
+05:31:56   depth 2: a3 -0.64
