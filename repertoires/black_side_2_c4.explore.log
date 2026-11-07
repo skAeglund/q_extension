@@ -528,3 +528,11 @@
 04:03:14   depth 2: d4 +0.00
 04:03:18   depth 3: d4 +0.00
 04:03:24   depth 4: d4 +0.00
+04:03:37   depth 5: d4 +0.00
+04:10:07   depth 6: d4 +0.00
+04:11:16   stable after 8m05s, 159 requests, 58 queued. ChessDB now: best Qg3 -0.17 (was best Qg3 -0.13), stored line 2 -> 3
+04:11:16 Exploring 33/53: [0.67%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nc3 e5 5.e4 Nf6 6.Nf3 Bc5 7.Bb5 O-O 8.O-O Nd4 9.Nxe5 (decision)
+04:11:18   depth 1: Qc7 -0.16
+04:11:21   depth 2: Qc7 -0.17
+04:11:25   depth 3: Qc7 -0.17
+04:11:30   depth 4: Qc7 -0.19
