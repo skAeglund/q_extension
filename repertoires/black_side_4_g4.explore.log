@@ -1,1 +1,18 @@
 13:50:41 cdbexplore: black_side_4_g4.pgn, 53 positions, Black's repertoire. Asking ChessDB about each.
+13:51:30   50 of 53
+13:51:41 Survey: 2 positions to explore (1 line ends, 1 decisions); ChessDB has no eval for 5 positions; 61 requests in 1m00s. Scores from White's side.
+13:51:41   1.g4 d5 2.Bg2 c6 3.c4 dxc4 4.Qa4 Bxg4 5.Qxc4 Nf6 6.Nc3 Nbd7 7.d3 e5 8.Bg5 Be6 9.Qa4 (line end): best h6 -2.46, stored line 5
+13:51:41   1.g4 d5 2.Bg2 c6 3.h3 e5 4.d4 e4 5.c4 Bd6 6.Nc3 Ne7 7.Bg5 f6 8.Bd2 O-O 9.e3 f5 10.gxf5 (decision): best Kh8 -1.82; mine Bxf5 -1.69 vs Kh8 -1.82, stored line 9
+13:51:41 Exploring 1/2: 1.g4 d5 2.Bg2 c6 3.c4 dxc4 4.Qa4 Bxg4 5.Qxc4 Nf6 6.Nc3 Nbd7 7.d3 e5 8.Bg5 Be6 9.Qa4 (line end)
+13:51:43   depth 1: h6 -2.58
+13:51:46   depth 2: h6 -2.58
+13:51:52   depth 3: h6 -2.58
+13:52:08   depth 4: h6 -2.58
+13:52:40   depth 5: h6 -2.58
+13:54:20   depth 6: h6 -2.67
+13:54:50   stable after 3m09s, 95 requests, 26 queued. ChessDB now: best h6 -2.60 (was best h6 -2.46), stored line 5 -> 8
+13:54:50 Exploring 2/2: 1.g4 d5 2.Bg2 c6 3.h3 e5 4.d4 e4 5.c4 Bd6 6.Nc3 Ne7 7.Bg5 f6 8.Bd2 O-O 9.e3 f5 10.gxf5 (decision)
+13:54:52   depth 1: Kh8 -1.89
+13:54:56   depth 2: Kh8 -1.89
+13:55:01   depth 3: Kh8 -1.89
+13:55:08   depth 4: Kh8 -1.89
