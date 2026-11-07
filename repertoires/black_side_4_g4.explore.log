@@ -16,3 +16,8 @@
 13:54:56   depth 2: Kh8 -1.89
 13:55:01   depth 3: Kh8 -1.89
 13:55:08   depth 4: Kh8 -1.89
+13:55:21   depth 5: Kh8 -1.89
+13:55:41   depth 6: Kh8 -1.89
+13:56:13   stable after 1m23s, 77 requests, 4 queued. ChessDB now: best Kh8 -1.89; mine Bxf5 -1.69 vs Kh8 -1.89 (was best Kh8 -1.82; mine Bxf5 -1.69 vs Kh8 -1.82), stored line 9 -> 15
+13:56:13 Done: 2 explored, 1 changed; 267 ChessDB requests in 5m32s.
+13:56:13   1.g4 d5 2.Bg2 c6 3.c4 dxc4 4.Qa4 Bxg4 5.Qxc4 Nf6 6.Nc3 Nbd7 7.d3 e5 8.Bg5 Be6 9.Qa4: best h6 -2.46 -> best h6 -2.60
