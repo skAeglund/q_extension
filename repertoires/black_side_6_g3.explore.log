@@ -87,3 +87,11 @@
 17:28:25   depth 1: a5 -0.33
 17:28:28   depth 2: a5 -0.35
 17:28:32   depth 3: a5 -0.35
+17:28:38   depth 4: a5 -0.48
+17:28:49   depth 5: a5 -0.44
+17:29:35   depth 6: a5 -0.47
+17:30:06   stable after 1m42s, 70 requests, 12 queued. ChessDB now: best a5 -0.30; mine Be6 -0.18 vs a5 -0.30 (was best a5 -0.35; mine Be6 -0.30 vs a5 -0.35), stored line 9 -> 5
+17:30:06 Exploring 7/15: [6.21%] 1.g3 d5 2.Bg2 e5 3.d3 g6 4.Nf3 Bg7 5.O-O Ne7 6.e4 O-O 7.exd5 Nxd5 8.Re1 Nc6 9.Nbd2 Re8 10.Nc4 Nb6 11.Nxb6 axb6 12.Bg5 Qd6 13.Nd2 (decision)
+17:30:09   depth 1: Qf8 -0.40
+17:30:13   depth 2: f6 -0.37
+17:30:18   depth 3: f6 -0.40
