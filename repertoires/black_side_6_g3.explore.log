@@ -105,3 +105,13 @@
 17:50:47   depth 1: Qd7 -0.41
 17:50:51   depth 2: Qd7 -0.46
 17:51:02   depth 3: Qd7 -0.37
+17:51:23   depth 4: Qd7 -0.47
+17:52:03   depth 5: Qd7 -0.56
+18:06:51   depth 6: Qd7 -0.31
+18:11:14   time after 20m29s, 251 requests, 105 queued. ChessDB now: best Qd7 -0.29; mine Qd7 -0.29 vs Qc5 -0.08 (was best Qd7 -0.23; mine Qd7 -0.23 vs Qc5 -0.08), stored line 9 -> 7
+18:11:14 Exploring 9/15: [6.21%] 1.g3 d5 2.Bg2 e5 3.d3 g6 4.Nf3 Bg7 5.O-O Ne7 6.e4 O-O 7.exd5 Nxd5 8.Re1 Nc6 9.Nbd2 Re8 10.Nc4 Nb6 11.Nxb6 axb6 12.Bg5 Qd6 13.Nd2 f5 14.Nc4 Qd7 15.Qd2 b5 16.Na3 f4 17.Nxb5 Rf8 (line end)
+18:11:14   depth 1: gxf4 -0.21
+18:11:17   depth 2: gxf4 -0.21
+18:11:21   depth 3: gxf4 -0.21
+18:11:26   depth 4: gxf4 -0.21
+18:11:32   depth 5: gxf4 -0.21
