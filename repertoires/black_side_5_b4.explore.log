@@ -30,3 +30,8 @@
 14:20:27   depth 2: Ne4 -0.86
 14:20:31   depth 3: Ne4 -0.91
 14:20:41   depth 4: Ne4 -0.91
+14:21:15   depth 5: Ne4 -0.79
+14:40:03   depth 6: Ne4 -0.85
+14:40:48   time after 20m25s, 247 requests, 132 queued. ChessDB now: best Ne4 -0.82; mine Ne4 -0.82 vs Re8 -0.62 (was best Ne4 -0.86; mine Ne4 -0.86 vs Re8 -0.62), stored line 5 -> 7
+14:40:48 Exploring 4/9: 1.b4 e5 2.Bb2 Bxb4 3.Bxe5 Nf6 4.c3 Be7 5.e3 d5 6.Nf3 c5 7.d4 Nc6 8.Bg3 c4 9.Be2 (decision)
+14:40:50   depth 1: O-O -1.02
