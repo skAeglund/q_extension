@@ -1,1 +1,24 @@
 13:56:47 cdbexplore: black_side_5_b4.pgn, 67 positions, Black's repertoire. Asking ChessDB about each.
+13:57:36   50 of 67
+13:58:23 Survey: 9 positions to explore (4 line ends, 5 decisions); 97 requests in 1m36s. Scores from White's side.
+13:58:23   1.b4 e5 2.b5 d5 3.Bb2 Nd7 4.e3 c5 5.c4 d4 6.exd4 cxd4 7.Nf3 Ngf6 8.d3 (decision): best Bb4+ -1.73; mine Bb4+ -1.73 vs a6 -1.49, stored line 4
+13:58:23   1.b4 e5 2.b5 d5 3.Bb2 Nd7 4.e3 c5 5.c4 d4 6.exd4 cxd4 7.Nf3 Ngf6 8.Be2 (decision): best Bd6 -1.38; mine Bb4 -1.28 vs Bd6 -1.38, stored line 6
+13:58:23   1.b4 e5 2.Bb2 Bxb4 3.Bxe5 Nf6 4.c3 Be7 5.e3 d5 6.Nf3 c5 7.Be2 O-O 8.O-O Nc6 9.Bg3 (decision): best Ne4 -0.86; mine Ne4 -0.86 vs Re8 -0.62, stored line 5
+13:58:23   1.b4 e5 2.Bb2 Bxb4 3.Bxe5 Nf6 4.c3 Be7 5.e3 d5 6.Nf3 c5 7.d4 Nc6 8.Bg3 c4 9.Be2 (decision): best O-O -1.02; mine O-O -1.02 vs Bf5 -0.96, stored line 6
+13:58:23   1.b4 e5 2.b5 d5 3.Bb2 Nd7 4.e3 c5 5.c4 d4 6.exd4 cxd4 7.Nf3 Ngf6 8.d3 Bb4+ 9.Nbd2 O-O (line end): best Be2 -2.04, stored line 3
+13:58:23   1.b4 e5 2.b5 d5 3.Bb2 Nd7 4.e3 c5 5.c4 d4 6.exd4 cxd4 7.Nf3 Ngf6 8.Be2 Bb4 9.O-O O-O (line end): best d3 -1.28, stored line 2
+13:58:23   1.b4 e5 2.Bb2 Bxb4 3.Bxe5 Nf6 4.c3 Be7 5.e3 d5 6.Nf3 c5 7.Be2 O-O 8.O-O Nc6 9.Bg3 Ne4 (line end): best d4 -0.86, stored line 4
+13:58:23   1.b4 e5 2.Bb2 Bxb4 3.Bxe5 Nf6 4.c3 Be7 5.e3 d5 6.Nf3 c5 7.d4 Nc6 8.Bg3 c4 9.Be2 O-O 10.O-O (decision): best b5 -1.02; mine Ne4 -0.86 vs b5 -1.02, stored line 4
+13:58:23   1.b4 e5 2.Bb2 Bxb4 3.Bxe5 Nf6 4.Nf3 d5 5.e3 O-O 6.c4 c5 7.cxd5 Nxd5 8.Be2 Nc6 9.Bb2 Bf5 10.O-O Qe7 11.a3 Ba5 12.d4 Rfd8 (line end): best Bc4 -1.83, stored line 5
+13:58:23 Exploring 1/9: 1.b4 e5 2.b5 d5 3.Bb2 Nd7 4.e3 c5 5.c4 d4 6.exd4 cxd4 7.Nf3 Ngf6 8.d3 (decision)
+13:58:25   depth 1: Bb4+ -1.73
+13:58:29   depth 2: Bb4+ -1.73
+13:58:34   depth 3: Bb4+ -1.73
+13:58:46   depth 4: Bb4+ -2.04
+14:08:35   depth 5: Bb4+ -2.32
+14:18:48   time after 20m25s, 198 requests, 90 queued. ChessDB now: best Bb4+ -2.04; mine Bb4+ -2.04 vs a6 -1.49 (was best Bb4+ -1.73; mine Bb4+ -1.73 vs a6 -1.49), stored line 4 -> 14
+14:18:48 Exploring 2/9: 1.b4 e5 2.b5 d5 3.Bb2 Nd7 4.e3 c5 5.c4 d4 6.exd4 cxd4 7.Nf3 Ngf6 8.Be2 (decision)
+14:18:50   depth 1: Bd6 -1.38
+14:18:54   depth 2: Bd6 -1.38
+14:19:00   depth 3: Bd6 -1.38
+14:19:08   depth 4: Bd6 -1.40
