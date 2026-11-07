@@ -121,3 +121,13 @@
 18:13:48   depth 1: Bc5 -0.32
 18:13:58   depth 2: Bc5 -0.34
 18:14:02   depth 3: Bc5 -0.34
+18:14:15   depth 4: Bc5 -0.34
+18:14:36   depth 5: Nf6 -0.36
+18:15:06   depth 6: Nf6 -0.34
+18:16:56   depth 7: c5 -0.34
+18:18:54   depth 8: Nf6 -0.40
+18:19:52   depth 9: Nf6 -0.42
+18:20:46   depth 10: Nf6 -0.42
+18:21:11   stable after 7m26s, 388 requests, 50 queued. ChessDB now: best Nf6 -0.34; mine Nc6 -0.29 vs Nf6 -0.34 (was best Bc5 -0.33; mine Nc6 -0.29 vs Bc5 -0.33), stored line 8 -> 19
+18:21:11 Exploring 11/15: [1.19%] 1.g3 d5 2.Bg2 e5 3.b3 h5 4.h4 Nc6 5.Bb2 Nf6 6.d3 Bc5 7.e3 (decision)
+18:21:13   depth 1: Bg4 -1.19
