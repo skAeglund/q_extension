@@ -813,3 +813,12 @@
 09:39:06   stable after 6m33s, 138 requests, 46 queued. ChessDB now: best Kf8 -0.15; mine Kf8 -0.15 vs Kh8 -0.14 (was best Kh8 -0.30; mine Kf8 -0.22 vs Kh8 -0.30), stored line 2 -> 18
 09:39:06 Exploring 15/26: [0.33%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nc3 e5 5.g3 Nf6 6.Bg2 Bc5 7.Nf3 O-O 8.O-O h6 9.e3 e4 10.Ne1 Re8 11.d4 Bb4 12.a3 Bxc3 13.bxc3 Be6 14.Nc2 (decision)
 09:39:08   depth 1: Na5 -2.06
+09:39:12   depth 2: Na5 -2.06
+09:39:24   depth 3: Na5 -2.10
+09:39:46   depth 4: Na5 -2.16
+09:40:21   depth 5: Na5 -2.08
+09:42:44   depth 6: Na5 -2.13
+09:43:44   stable after 4m37s, 113 requests, 39 queued. ChessDB now: best Na5 -2.09; mine Na5 -2.09 vs Rc8 -1.83 (was best Na5 -1.96; mine Na5 -1.96 vs Rc8 -1.83), stored line 3 -> 12
+09:43:44 Exploring 16/26: [0.33%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nc3 e5 5.g3 Nf6 6.Bg2 Bc5 7.Nf3 O-O 8.O-O h6 9.e3 e4 10.Ne1 Re8 11.d4 Bb4 12.a3 Bxc3 13.bxc3 Be6 14.Nc2 Na5 15.Rb1 (decision)
+09:43:44   depth 1: Rc8 -2.18
+09:43:47   depth 2: Rc8 -2.18
