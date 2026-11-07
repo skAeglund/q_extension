@@ -75,3 +75,12 @@
 16:17:18   depth 1: Qa4 -1.85
 16:17:22   depth 2: Qa4 -1.85
 16:17:27   depth 3: Qa4 -1.85
+16:17:41   depth 4: Qb3 -1.91
+16:26:13   depth 5: Qb3 -1.89
+16:37:48   time after 20m32s, 240 requests, 109 queued. ChessDB now: best Kh1 -2.03 (was best Bc4 -1.83), stored line 5 -> 2
+16:37:48 Done: 9 explored, 5 changed; 2935 ChessDB requests in 161m01s.
+16:37:48   1.b4 e5 2.b5 d5 3.Bb2 Nd7 4.e3 c5 5.c4 d4 6.exd4 cxd4 7.Nf3 Ngf6 8.d3: best Bb4+ -1.73; mine Bb4+ -1.73 vs a6 -1.49 -> best Bb4+ -2.04; mine Bb4+ -2.04 vs a6 -1.49
+16:37:48   1.b4 e5 2.b5 d5 3.Bb2 Nd7 4.e3 c5 5.c4 d4 6.exd4 cxd4 7.Nf3 Ngf6 8.d3 Bb4+ 9.Nbd2 O-O: best Be2 -2.04 -> best Be2 -2.77
+16:37:48   1.b4 e5 2.b5 d5 3.Bb2 Nd7 4.e3 c5 5.c4 d4 6.exd4 cxd4 7.Nf3 Ngf6 8.Be2 Bb4 9.O-O O-O: best d3 -1.28 -> best d3 -1.70
+16:37:48   1.b4 e5 2.Bb2 Bxb4 3.Bxe5 Nf6 4.c3 Be7 5.e3 d5 6.Nf3 c5 7.Be2 O-O 8.O-O Nc6 9.Bg3 Ne4: best d4 -0.86 -> best d3 -0.73
+16:37:48   1.b4 e5 2.Bb2 Bxb4 3.Bxe5 Nf6 4.Nf3 d5 5.e3 O-O 6.c4 c5 7.cxd5 Nxd5 8.Be2 Nc6 9.Bb2 Bf5 10.O-O Qe7 11.a3 Ba5 12.d4 Rfd8: best Bc4 -1.83 -> best Kh1 -2.03
