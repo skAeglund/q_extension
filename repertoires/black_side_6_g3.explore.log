@@ -72,3 +72,10 @@
 17:07:39   depth 3: Qc1 +0.00
 17:07:44   depth 4: Qc1 +0.00
 17:07:50   depth 5: Qc1 +0.00
+17:08:00   depth 6: Qc1 +0.00
+17:08:38   stable after 1m06s, 64 requests, 0 queued. ChessDB now: best Qc1 +0.00 (was best Qc1 -0.02), stored line 6 -> 9
+17:08:38 Exploring 5/15: [6.48%] 1.g3 d5 2.Bg2 e5 3.d3 g6 4.Nf3 Bg7 5.O-O Ne7 6.c4 c6 7.cxd5 cxd5 8.Nc3 h6 9.e4 d4 10.Ne2 (decision)
+17:08:40   depth 1: a5 -0.38
+17:08:44   depth 2: a5 -0.54
+17:08:49   depth 3: a5 -0.58
+17:08:56   depth 4: a5 -0.58
