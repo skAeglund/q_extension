@@ -502,3 +502,9 @@
 03:42:12   depth 2: Nc2 -0.20
 03:42:16   depth 3: Nc2 -0.20
 03:42:21   depth 4: Nc2 -0.20
+03:43:27   depth 5: Nc2 -0.08
+03:45:53   depth 6: Nc2 -0.13
+03:50:05   depth 7: Nc2 -0.03
+03:50:53   stable after 8m44s, 169 requests, 72 queued. ChessDB now: best Nc2 -0.04 (was best Nc2 -0.03), stored line 2 -> 11
+03:50:53 Exploring 30/53: [0.81%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nc3 e5 5.e3 Nf6 6.Bb5 Bd6 7.Nf3 O-O 8.O-O e4 9.Ng5 (decision)
+03:50:55   depth 1: Bxh2+ -0.17
