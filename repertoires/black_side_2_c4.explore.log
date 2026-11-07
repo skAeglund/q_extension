@@ -788,3 +788,13 @@
 08:51:14   time after 20m36s, 369 requests, 227 queued. ChessDB now: best Be6 -0.27; mine Be6 -0.27 vs h5 -0.17 (was best Be6 -0.22; mine Be6 -0.22 vs h5 -0.22), stored line 4 -> 19
 08:51:14 Exploring 12/26: [0.35%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.Nc3 Nf6 6.g3 Bc5 7.Bg2 O-O 8.O-O h6 9.d3 Qe7 10.b3 Rd8 11.Qc2 Bf5 12.Bb2 Rac8 13.Rac1 Nb4 14.Qb1 Nxd3 15.exd3 Bxd3 16.Qa1 (decision)
 08:51:16   depth 1: Bxf1 -1.20
+08:51:49   depth 2: e4 -1.07
+08:51:54   depth 3: e4 -1.07
+08:52:07   depth 4: Bxf1 -1.14
+08:52:57   depth 5: e4 -1.07
+08:58:16   depth 6: e4 -1.32
+09:11:54   time after 20m40s, 269 requests, 124 queued. ChessDB now: best e4 -1.37; mine e4 -1.37 vs Ng4 -0.01 (was best e4 -1.24; mine e4 -1.24 vs Bxf1 -1.20), stored line 9 -> 11
+09:11:54 Exploring 13/26: [0.35%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.Nc3 Nf6 6.g3 Bc5 7.Bg2 O-O 8.O-O h6 9.d3 Qe7 10.b3 Rd8 11.Qc2 Bf5 12.Bb2 Rac8 13.Rac1 Nb4 14.Qb1 Nxd3 15.Nh4 Bh7 16.exd3 Bxd3 17.Qa1 Bxf1 18.Rxf1 Rd2 19.Nf5 (decision)
+09:11:56   depth 1: Bxf2+ -0.27
+09:11:59   depth 2: Bxf2+ -0.29
+09:12:03   depth 3: Bxf2+ -0.29
