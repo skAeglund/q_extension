@@ -798,3 +798,11 @@
 09:11:56   depth 1: Bxf2+ -0.27
 09:11:59   depth 2: Bxf2+ -0.29
 09:12:03   depth 3: Bxf2+ -0.29
+09:12:08   depth 4: Bxf2+ -0.23
+09:12:45   depth 5: Qd7 -0.23
+09:22:06   depth 6: Qd7 -0.41
+09:26:00   depth 7: Qd7 -0.29
+09:32:33   time after 20m39s, 376 requests, 173 queued. ChessDB now: best Bxf2+ -0.20; mine Bxf2+ -0.20 vs Qd7 -0.15 (was best Bxf2+ -0.27; mine Bxf2+ -0.27 vs Qd7 -0.25), stored line 6 -> 26
+09:32:33 Exploring 14/26: [0.35%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nf3 e5 5.Nc3 Nf6 6.g3 Bc5 7.Bg2 O-O 8.O-O h6 9.d3 Qe7 10.b3 Rd8 11.Qc2 Bf5 12.Bb2 Rac8 13.Rac1 Nb4 14.Qb1 Nxd3 15.Nh4 Bh7 16.exd3 Bxd3 17.Qa1 Bxf1 18.Rxf1 Rd2 19.Nf5 Bxf2+ 20.Rxf2 Qc5 21.Ne7+ (decision)
+09:32:33   depth 1: Kf8 -0.22
+09:32:36   depth 2: Kh8 -0.23
