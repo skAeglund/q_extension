@@ -756,3 +756,10 @@
 08:07:38   depth 2: Qd6 +0.29
 08:07:43   depth 3: Qd6 +0.30
 08:07:50   depth 4: Qd6 +0.35
+08:08:03   depth 5: Qd6 +0.43
+08:08:17   depth 6: Qd6 +0.48
+08:13:08   depth 7: Qd6 +0.27
+08:20:17   depth 8: Qd6 +0.40
+08:27:53   time after 20m23s, 454 requests, 299 queued. ChessDB now: best Qd6 +0.33; mine Qd6 +0.33 vs b5 +0.53 (was best Qd6 +0.37; mine Qd6 +0.37 vs b5 +0.53), stored line 7 -> 7
+08:27:53 Exploring 9/26: [1.45%] 1.c4 d5 2.cxd5 c6 3.dxc6 Nxc6 4.Nc3 e5 5.Nf3 Nf6 6.d3 Bc5 7.e3 O-O 8.Be2 Qe7 9.O-O Rd8 10.Qc2 (decision)
+08:27:55   depth 1: Bb6 +0.22
