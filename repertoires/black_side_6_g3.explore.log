@@ -115,3 +115,9 @@
 18:11:21   depth 3: gxf4 -0.21
 18:11:26   depth 4: gxf4 -0.21
 18:11:32   depth 5: gxf4 -0.21
+18:12:40   depth 6: gxf4 -0.23
+18:13:46   stable after 2m32s, 114 requests, 11 queued. ChessDB now: best gxf4 -0.35 (was best gxf4 -0.43), stored line 2 -> 9
+18:13:46 Exploring 10/15: [1.19%] 1.g3 d5 2.Bg2 e5 3.b3 h5 4.h4 (decision)
+18:13:48   depth 1: Bc5 -0.32
+18:13:58   depth 2: Bc5 -0.34
+18:14:02   depth 3: Bc5 -0.34
