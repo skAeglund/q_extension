@@ -721,3 +721,12 @@
 07:25:07   depth 1: Bb8 -0.42
 07:25:10   depth 2: Bb8 -0.42
 07:25:15   depth 3: Bb8 -0.47
+07:25:21   depth 4: Bb8 -0.50
+07:27:01   depth 5: Bb8 -0.54
+07:35:18   depth 6: Bb8 -0.65
+07:39:29   depth 7: Bb8 -0.51
+07:45:30   time after 20m25s, 309 requests, 173 queued. ChessDB now: best Bb8 -0.47; mine O-O -0.27 vs Bb8 -0.47 (was best Bb8 -0.42; mine O-O -0.27 vs Bb8 -0.42), stored line 8 -> 9
+07:45:30 Exploring 5/26: [1.94%] 1.c4 d5 2.cxd5 c6 3.Nc3 cxd5 4.d4 e5 5.Nf3 e4 6.Ne5 f6 7.Qa4+ Nd7 8.Nxd7 Bxd7 9.Qb3 Bc6 10.Bf4 a5 11.e3 a4 12.Qc2 (decision)
+07:45:32   depth 1: g5 +0.27
+07:45:40   depth 2: g5 +0.27
+07:45:47   depth 3: h5 +0.28
