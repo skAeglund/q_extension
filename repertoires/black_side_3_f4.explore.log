@@ -53,3 +53,13 @@
 12:22:34   depth 3: bxc3 -0.40
 12:22:39   depth 4: bxc3 -0.40
 12:22:45   depth 5: bxc3 -0.40
+12:23:05   depth 6: Nxe2+ -0.40
+12:23:39   depth 7: Nxe2+ -0.39
+12:24:27   depth 8: Nxe2+ -0.33
+12:25:01   stable after 2m33s, 106 requests, 30 queued. ChessDB now: best a5 -0.42; mine Nxe2+ -0.35 vs a5 -0.42 (was best a5 -0.45; mine Nxe2+ -0.31 vs a5 -0.45), stored line 3 -> 4
+12:25:01 Exploring 6/13: [7.20%] 1.f4 Nf6 2.Nf3 c5 3.d3 g6 4.e4 Bg7 5.Be2 O-O 6.O-O Nc6 7.c3 b5 8.h3 b4 9.Be3 d6 10.Nbd2 Nh5 11.Rc1 Ng3 12.Re1 Nxe2+ 13.Qxe2 (decision)
+12:25:01   depth 1: bxc3 -0.33
+12:25:04   depth 2: bxc3 -0.30
+12:25:08   depth 3: a5 -0.30
+12:25:11   depth 4: bxc3 -0.30
+12:25:17   depth 5: a5 -0.30
