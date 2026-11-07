@@ -61,3 +61,7 @@
 15:36:36   depth 3: d3 -0.93
 15:36:41   depth 4: d3 -0.93
 15:36:49   depth 5: d3 -0.93
+15:56:51   time after 20m22s, 238 requests, 134 queued. ChessDB now: best d3 -0.73 (was best d4 -0.86), stored line 4 -> 9
+15:56:51 Exploring 8/9: 1.b4 e5 2.Bb2 Bxb4 3.Bxe5 Nf6 4.c3 Be7 5.e3 d5 6.Nf3 c5 7.d4 Nc6 8.Bg3 c4 9.Be2 O-O 10.O-O (decision)
+15:56:51   depth 1: Ne4 -1.14
+15:56:54   depth 2: Ne4 -1.14
