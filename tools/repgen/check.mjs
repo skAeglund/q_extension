@@ -27,7 +27,7 @@
  */
 
 import { sideToMove, moveKey, scoreToRootWin } from '../../src/pe/search.js';
-import { pickCandidates, choose, blendScore, practicalOnly, reachable, REPGEN_DEFAULTS,
+import { pickCandidates, dropBanned, isBanned, choose, blendScore, practicalOnly, reachable, REPGEN_DEFAULTS,
   SEARCH_DEFAULTS } from './generator.mjs';
 import { engineLoss, markFor, pawns } from './pgn.mjs';
 
@@ -82,10 +82,18 @@ export function assess(n, ex, cdb, cfg, sopts, all) {
   }
   if (n.status !== 'done' || !n.move || !known) return out;
 
+  // Moves banned here (--ban) are out of every comparison below; a banned pick is searched
+  // again.
+  var banned = isBanned(n.fen, n.move, cfg.banned);
+  var kept = dropBanned(ex, cdb, n.fen, cfg.banned);
+  ex = kept.ex; cdb = kept.cdb;
+  if (!(cdb.moves || []).length) return out;
   var c = pickCandidates(ex, cdb, n.fen, cfg, sopts);
   var best = c.best;
   var w = cfg.weights;
-  var rows = (n.rows || []).map(function (r) {
+  var rows = (n.rows || []).filter(function (r) {
+    return !isBanned(n.fen, r.san, cfg.banned);
+  }).map(function (r) {
     var e = engineOf(cdb, n.fen, r.san);
     var b = r.value != null ? blendScore(w, e, r.value, r.prep) : null;
     return Object.assign({}, r, { engine: e, cp: cpOf(cdb, r.san), blend: b != null ? b : undefined });
@@ -130,10 +138,10 @@ export function assess(n, ex, cdb, cfg, sopts, all) {
     if (noPrep) {
       out.reasons.push('searched before prepared scores were saved, and the choice now weighs them');
     }
-    var again = noPrep ? null : choose((n.rows || []).map(function (r) {
+    var again = noPrep || banned ? null : choose(rows.map(function (r) {
       return { san: r.san, res: { state: r.state, value: r.value, depth: r.depth,
         complete: r.complete } };
-    }), (n.rows || []).reduce(function (m, r) { m[r.san] = r.share || 0; return m; }, {}),
+    }), rows.reduce(function (m, r) { m[r.san] = r.share || 0; return m; }, {}),
     { weights: w, wins: wins, preps: preps, cps: cps, within: cfg.closeWithin, cp: cfg.closeCp,
       best: best.win, maxLoss: cfg.maxLoss });
     if (again && moveKey(again.san) !== moveKey(n.move)) {
@@ -188,6 +196,7 @@ export function assess(n, ex, cdb, cfg, sopts, all) {
     out.reasons.push('ChessDB\'s best is now ' + best.san + ' (' + win(best.win) + '), was ' +
       n.move + ' (' + win(n.engine) + ')');
   }
+  if (banned && n.pickedBy !== 'given') out.reasons.unshift(n.move + ' is banned here (--ban)');
   if (!out.reasons.length && all && n.pickedBy === 'practical') out.reasons.push('--check-all');
   if (out.reasons.length) out.action = 'recheck';
   return out;

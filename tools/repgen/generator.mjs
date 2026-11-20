@@ -212,6 +212,29 @@ export function pickCandidates(ex, cdb, fen, cfg, sopts) {
 }
 
 /*
+ * The explorer's and ChessDB's answers at my position without the moves banned there
+ * (cfg.banned, from --ban: { fenKey: [SAN] }), so nothing downstream can pick one. The
+ * explorer's total is kept: it is the position's games, banned move or not. Copies; the
+ * cached answers are left alone.
+ */
+export function dropBanned(ex, cdb, fen, banned) {
+  var sans = banned && banned[fenKey(fen)];
+  if (!sans || !sans.length) return { ex: ex, cdb: cdb };
+  var keys = new Set(sans.map(moveKey));
+  function keep(m) { return !keys.has(moveKey(m.san)); }
+  return {
+    ex: ex && ex.moves ? Object.assign({}, ex, { moves: ex.moves.filter(keep) }) : ex,
+    cdb: cdb && cdb.moves ? Object.assign({}, cdb, { moves: cdb.moves.filter(keep) }) : cdb
+  };
+}
+
+// Whether `san` is banned at `fen`.
+export function isBanned(fen, san, banned) {
+  var sans = banned && banned[fenKey(fen)];
+  return !!sans && sans.some(function (b) { return moveKey(b) === moveKey(san); });
+}
+
+/*
  * ChessDB's best moves for the side to move (more than one when it scores them the same),
  * each with its win% for that side. Empty when ChessDB has no eval.
  */
@@ -531,6 +554,7 @@ export function createGenerator(o) {
       if (cdb && (cdb.status === 'checkmate' || cdb.status === 'stalemate')) {
         return leaf(n, 'game-over');
       }
+      cdb = dropBanned(null, cdb, n.fen, cfg.banned).cdb;
       var tops = engineTops(cdb, n.fen);
       if (!tops.length) return noEval(n);
       return Promise.resolve(tops.length > 1 ? d.explorer(n.fen) : null).then(function (ex) {
@@ -547,7 +571,8 @@ export function createGenerator(o) {
     if (given[n.key]) return givenMove(n);
     if (cfg.engineOnly) return engineStep(n);
     return Promise.all([d.explorer(n.fen), d.chessdb(n.fen)]).then(function (r) {
-      var ex = r[0], cdb = r[1];
+      var kept = dropBanned(r[0], r[1], n.fen, cfg.banned);
+      var ex = kept.ex, cdb = kept.cdb;
       n.games = ex ? ex.total : 0;
       if (cdb && (cdb.status === 'checkmate' || cdb.status === 'stalemate')) {
         return leaf(n, 'game-over');

@@ -11,3 +11,15 @@
 15:57:15 Opp  [15.49%] 1...d5 2.e4 d4 3.Nce2: e5 64%, c5 22% of 2718092 games
 16:03:25 Me   [12.26%] 1...e5 2.Nf3 Nc6: d4 (Prac 60.0 d5, prep 59.4, blend 58.6; e4 56.0 (Prac 57.5), e3 52.5 (Prac 54.8), g3 52.3 (Prac 51.6); 6m06s, 87 requests)
 16:03:25 Opp  [12.26%] 1...e5 2.Nf3 Nc6 3.d4: exd4 76% of 292274 games
+16:13:25 Me   [9.97%] 1...d5 2.e4 d4 3.Nce2 e5: Ng3 (Prac 52.1 d5, prep 61.3, blend 58.3; Nf3 55.0 (Prac 53.0), c3 53.5 (Prac 53.4), g4 35.7 (Prac 34.6), d3 52.2 (Prac 50.7), f4 54.1 (Prac 52.0); 9m56s, 149 requests)
+16:13:25 Opp  [9.97%] 1...d5 2.e4 d4 3.Nce2 e5 4.Ng3: c5 30%, Nf6 23%, Nc6 20% of 677081 games
+16:15:49 Me   [9.79%] 1...Nf6 2.g4 Nxg4: e4 (Prac 53.9 d5, prep 56.6, blend 55.2; h3 44.2 (Prac 41.2), Bg2 45.2 (Prac 43.9); 2m20s, 35 requests)
+16:15:49 Opp  [9.79%] 1...Nf6 2.g4 Nxg4 3.e4: d6 46%, Nf6 22%, Ne5 16% of 19067 games
+16:19:29 Me   [9.36%] 1...e5 2.Nf3 Nc6 3.d4 exd4: Nxd4 (Prac 63.7 d5, prep 61.4, blend 60.7; Nb5 53.1 (Prac 51.0), Nd5 48.1 (Prac 48.6); 3m36s, 54 requests)
+16:19:29 Opp  [9.36%] 1...e5 2.Nf3 Nc6 3.d4 exd4 4.Nxd4: Nxd4 42%, Nf6 21% of 227095 games
+16:31:02 Note: positions done so far keep their moves. --check searches again where a pick is now banned.
+16:31:02 Banned: d4 at rnbqkbnr/ppp1pppp/8/3p4/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -; e4/d4 at rnbqkb1r/pppppppp/5n2/8/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -
+16:31:02 repgen: White from rnbqkbnr/pppppppp/8/8/8/2N5/PPPPPPPP/R1BQKBNR b KQkq - 1 1 (Nc3); Lichess blitz,rapid,classical / 1600,1800,2000,2200,2500.
+16:31:02 Options: {"weights":[0.1,0.2,0.7],"maxLoss":5,"banned":{"rnbqkbnr/ppp1pppp/8/3p4/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -":["d4"],"rnbqkb1r/pppppppp/5n2/8/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -":["e4","d4"]},"riskAversion":0.05}
+16:31:04 Me   [9.36%] 1...d5 2.e4 dxe4: f3!? (Prac 52.4 d7, prep 55.2, blend 54.0, close call: d5→d7 Nxe4/d3/f3; Nxe4 53.7 (Prac 53.7), d3 53.9 (Prac 51.1), a4 44.4 (Prac 43.0) d5, g4 49.7 (Prac 48.3) d5; 0m02s, 10 requests)
+16:31:04 Opp  [9.36%] 1...d5 2.e4 dxe4 3.f3: exf3 62%, Nf6 15% of 40666 games

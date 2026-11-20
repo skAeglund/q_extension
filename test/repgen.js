@@ -1272,6 +1272,43 @@ module.exports = async function run(check) {
     assert.strictEqual(a.engine.bestMove, 'x');
   });
 
+  console.log('\nrepertoire generator: banned moves (--ban)');
+  await check('bans are read from the run\'s start or the initial position, keyed by the position', () => {
+    const NC3 = 'rnbqkbnr/pppppppp/8/8/8/2N5/PPPPPPPP/R1BQKBNR b KQkq - 1 1';
+    const b = LN.bansOf('1... d5 2. d4; 1. Nc3 Nf6 2. e4; 1... Nf6 2. d4', [NC3, STD], 'w');
+    assert.deepStrictEqual(b, {
+      'rnbqkbnr/ppp1pppp/8/3p4/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -': ['d4'],
+      'rnbqkb1r/pppppppp/5n2/8/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -': ['e4', 'd4'] });
+    assert.throws(() => LN.bansOf('1... d5', [NC3, STD], 'w'), /a ban is for a move of yours/);
+    assert.throws(() => LN.bansOf('1... d5 2. Ke3', [NC3, STD], 'w'), /--ban: can't play "1\.\.\. d5 2\. Ke3"/);
+  });
+  // world() with 1.d4 banned at S: 1.e4 is played, and d4 is never searched there.
+  const banW = world();
+  const banS = G.newState('S w - - 0 1', 'w');
+  banS.config = { banned: { 'S w - -': ['d4'] } };
+  const banD = deps(banW);
+  await drain(pracGen({ state: banS, deps: banD, now: () => 0 }), { t: 0 }, 3);
+  await check('a banned move is neither searched nor played', () => {
+    const r = banD.log.roots.find(x => x.fen === 'S w - - 0 1');
+    assert.ok(r && r.rows.indexOf('d4') < 0, JSON.stringify(r && r.rows));
+    assert.strictEqual(banS.nodes['S w - -'].move, 'e4');
+    assert.ok(!banS.nodes['S w - -'].rows.some(x => x.san === 'd4'));
+  });
+  await check('  ...and the cached answers keep it', () => {
+    assert.ok(banW['S w - - 0 1'].ex.moves.some(m => m.san === 'd4'));
+    assert.ok(banW['S w - - 0 1'].cdb.moves.some(m => m.san === 'd4'));
+  });
+  await check('a check searches again a pick that is now banned, and never picks a banned row', () => {
+    const BD = Object.assign({}, D, { banned: { 'S w - -': ['d4'] } });
+    const r = CK.assess(Object.assign({}, N['S w - -']), w['S w - - 0 1'].ex, w['S w - - 0 1'].cdb, BD, G.SEARCH_DEFAULTS);
+    assert.strictEqual(r.action, 'recheck');
+    assert.strictEqual(r.reasons[0], 'd4 is banned here (--ban)');
+    assert.ok(!r.engine.rows.some(x => x.san === 'd4'));
+    const ok = CK.assess(Object.assign({}, N['S w - -']), w['S w - - 0 1'].ex, w['S w - - 0 1'].cdb,
+      Object.assign({}, D, { banned: { 'S w - -': ['e4'] } }), G.SEARCH_DEFAULTS);
+    assert.strictEqual(ok.action, null, ok.reasons.join());
+  });
+
   console.log('\nrepertoire generator: engine only');
   // White at S: ChessDB ties e4 and d4, and d4 is the more played. ChessDB doesn't know P.
   const ew = {

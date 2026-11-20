@@ -40,7 +40,7 @@ import { runCheck, apply as applyCheck, outcome as checkOutcome } from './repgen
 import { toPgn, engineLoss, markFor } from './repgen/pgn.mjs';
 import { outPath, REPERTOIRES } from './repgen/paths.mjs';
 import { loadMaia, maiaEloFor, clampElo, MAIA_FILE } from './repgen/maia.mjs';
-import { readMoves, givenOf, sameGiven } from './repgen/lines.mjs';
+import { readMoves, givenOf, sameGiven, bansOf } from './repgen/lines.mjs';
 
 var STANDARD = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -85,6 +85,9 @@ function usage() {
     '           repertoires/' + MAIA_FILE + ', downloaded on first use), --maia-elo <n>',
     '           (default: from --ratings, 2150 for the default ratings), --maia-until 100,',
     '           --maia-only-below 10, --maia-weight 20',
+    'Ban:       --ban "1... d5 2. d4; 1... Nf6 2. e4": lines, each ending in a move of yours that is',
+    '           never played in the position before it, by any move order (kept with the run;',
+    '           --ban none clears; --check searches again where a pick is now banned)',
     'Choice:    --engine-only [on|off] (off; kept with the run): no Practical search, ChessDB\'s',
     '           best move is played (the more played one on a tie); the replies are chosen as usual',
     '           --weights <ChessDB>,<Practical>,<prepared> (default ' + REPGEN_DEFAULTS.weights + ';',
@@ -289,6 +292,23 @@ function run(args, local) {
           'where it differs.'
         : 'Note: the positions done so far keep ChessDB\'s best move; only new ones are searched.');
     }
+  }
+  // --ban replaces the run's bans (none or off clears them). Kept with the run, so a resume
+  // or a --check without it still keeps the banned moves out.
+  if (args.ban != null) {
+    var banText = args.ban === true ? '' : String(args.ban).trim();
+    var banned = /^(none|off)$/i.test(banText) ? {} : bansOf(banText,
+      [state.startFen, args.fen && args.fen !== true ? String(args.fen) : STANDARD], state.side);
+    if (Object.keys(banned).length) state.config.banned = banned;
+    else delete state.config.banned;
+    if (Object.keys(state.nodes).length > 1 && !checking) {
+      log('Note: positions done so far keep their moves. --check searches again where a pick is now banned.');
+    }
+  }
+  if (state.config.banned) {
+    log('Banned: ' + Object.keys(state.config.banned).map(function (k) {
+      return state.config.banned[k].join('/') + ' at ' + k;
+    }).join('; '));
   }
   if (args.maia != null) {
     var maiaWas = !!state.search.maia;

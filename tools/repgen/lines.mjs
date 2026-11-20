@@ -71,3 +71,41 @@ export function sameGiven(a, b) {
   }
   return canon(a) === canon(b);
 }
+
+/*
+ * --ban: lines separated by ';', each ending in a move of mine that is never played in
+ * the position before it, however the run reaches that position:
+ *
+ *   1... d5 2. d4; 1... Nf6 2. e4; 1... Nf6 2. d4
+ *
+ * A line is read from the first of `starts` it is legal from (the run's start position,
+ * then the initial position or --fen), so both "1... d5 2. d4" and "1. Nc3 d5 2. d4" work.
+ * Returns { fenKey: [SAN, ...] }.
+ */
+export function bansOf(text, starts, side) {
+  var banned = {};
+  String(text).split(';').map(function (s) { return s.trim(); }).filter(Boolean)
+    .forEach(function (line) {
+      var last = null, err = null;
+      starts.some(function (fen) {
+        try {
+          var games = parsePgn('[FEN "' + fen + '"]\n' + line);
+          var n = games.length ? games[0].root : null;
+          if (!n || !n.children.length) return false;
+          while (n.children.length) n = n.children[0];
+          last = n;
+          return true;
+        } catch (e) { err = e; return false; }
+      });
+      if (!last) throw new Error('--ban: can\'t play "' + line + '"' + (err ? ': ' + (err.message || err) : ''));
+      var before = last.parent;
+      if (sideToMove(before.fen) !== side) {
+        throw new Error('--ban: "' + line + '" ends in the opponent\'s move ' + last.san +
+          '; a ban is for a move of yours.');
+      }
+      var key = fenKey(before.fen);
+      var sans = banned[key] || (banned[key] = []);
+      if (sans.indexOf(last.san) < 0) sans.push(last.san);
+    });
+  return banned;
+}
