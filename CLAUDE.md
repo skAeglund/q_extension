@@ -260,6 +260,10 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
   `deeprep/pgn.mjs` `moveComment`, the search's root comment in `deeprep.mjs`, and the
   share note in `build.mjs` `toTree`. test/deeprep.js cleans real build and search PGNs and
   expects nothing left but shares and transpositions, so a new note fails there.
+- `tools/pgnshare.mjs` puts each branching move's played share in front of its comment, in
+  deeprep's wording (`N% of M games`), from Lichess, a served local explorer (`--explorer`)
+  or an index file (`--index`). The core is `repgen/shares.mjs`, pure; it replaces a share
+  already there (deeprep's, or pgnclean's bare `N%`), so it can run on its own output.
 - `tools/cdbexplore.mjs` deepens ChessDB's tree below a PGN's line ends and close decisions
   of mine (`repgen/explore.mjs`, pure: ChessDB, sleep and clock come through deps). The
   search follows vondele/cdbexplore (GPL-3), rewritten, not copied: keep it that way. It
