@@ -194,3 +194,6 @@
 09:31:24 Opp  [0.70%] 1...e5 2.Nf3 d6 3.d4 exd4 4.Nxd4 Nf6 5.Bf4 Be7 6.e4: O-O 76% of 279436 games
 09:42:08 Me   [0.70%] 1...Nf6 2.g4 h6 3.e4 e5: Bg2 (Prac 52.7 d7, prep 53.9, blend 53.3, close call: d5→d7 Bg2/Nf3; h3 52.2 (Prac 51.5) d5, Nf3 53.2 (Prac 53.2), g5 41.9 (Prac 38.8), Bc4 49.0 (Prac 49.3) d5, d3 49.2 (Prac 49.3) d5; 10m40s, 160 requests)
 09:42:08 Opp  [0.70%] 1...Nf6 2.g4 h6 3.e4 e5 4.Bg2: Bc5 25% of 238 games
+09:47:18 Banned: d4 at rnbqkbnr/ppp1pppp/8/3p4/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -; e4/d4 at rnbqkb1r/pppppppp/5n2/8/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -; d4/e4 at rnbqkbnr/pppp1ppp/4p3/8/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -
+09:47:18 repgen: White from rnbqkbnr/pppppppp/8/8/8/2N5/PPPPPPPP/R1BQKBNR b KQkq - 1 1 (Nc3); Lichess blitz,rapid,classical / 1600,1800,2000,2200,2500.
+09:47:18 Options: {"weights":[0.1,0.2,0.7],"maxLoss":5,"banned":{"rnbqkbnr/ppp1pppp/8/3p4/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -":["d4"],"rnbqkb1r/pppppppp/5n2/8/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -":["e4","d4"],"rnbqkbnr/pppp1ppp/4p3/8/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -":["d4","e4"]},"riskAversion":0.05}
