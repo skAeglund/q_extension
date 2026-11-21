@@ -173,4 +173,44 @@ module.exports = async function run(check) {
     assert.strictEqual(find(e, 'Nf3').comment, '20%');
     assert.deepStrictEqual(find(e, 'Nf3 Nf6').children, []);
   });
+
+  /* --- pgnshare: shares on the branches ------------------------------------ */
+  console.log('\npgnshare: shares on the branches');
+  const S = await load('tools/repgen/shares.mjs');
+  const { fenKey } = await load('src/pe/search.js');
+  const SH = `[White "Lichess"]
+[Black "Repertoire"]
+
+1. d4 {12% of 999 games; mine} (1. e4 {my note} 1... c5) (1. b3) 1... Nf6 2. c4 *`;
+  const counts = { [fenKey(T.parsePgn(SH)[0].root.fen)]: { total: 1000,
+    moves: [{ san: 'e4', games: 450 }, { san: 'd4', games: 400 }, { san: 'Nf3', games: 146 }] } };
+  const asked = [];
+  const lookup = fen => { asked.push(fen); return Promise.resolve(counts[fenKey(fen)] || { total: 0, moves: [] }); };
+
+  const [s1] = T.parsePgn(SH);
+  const r1 = await S.annotateShares([s1], lookup);
+  await check('pgnshare: branching moves get their share in front, an old share is replaced', () => {
+    assert.strictEqual(find(s1, 'e4').comment, '45% of 1,000 games; my note');
+    assert.strictEqual(find(s1, 'd4').comment, '40% of 1,000 games; mine');
+    assert.strictEqual(find(s1, 'b3').comment, '0% of 1,000 games');
+    assert.strictEqual(find(s1, 'd4 Nf6').comment, null);
+    assert.deepStrictEqual([r1.moves, r1.positions, r1.empty], [3, 1, 0]);
+    assert.strictEqual(asked.length, 1);
+  });
+  await check('pgnshare: a second run changes nothing, and pgnclean keeps the share', () => {
+    const before = T.writePgn([s1]);
+    return S.annotateShares([s1], lookup).then(() => {
+      assert.strictEqual(T.writePgn([s1]), before);
+      assert.strictEqual(C.cleanComment(find(s1, 'e4').comment), '45%; my note');
+    });
+  });
+  const [s2] = T.parsePgn(SH);
+  const r2 = await S.annotateShares([s2], lookup, { all: true });
+  await check('pgnshare: --all annotates every move; a position no game reaches is left alone', () => {
+    assert.deepStrictEqual([r2.moves, r2.positions, r2.empty], [3, 4, 3]);
+    assert.strictEqual(find(s2, 'd4 Nf6').comment, null);
+    assert.strictEqual(S.shareText(4, 1000), '0.4% of 1,000 games');
+    assert.strictEqual(S.withShare('40%\n\nNf3 transposes', '45% of 1,000 games'), '45% of 1,000 games\n\nNf3 transposes');
+    assert.strictEqual(S.withShare('40% of the time', '45% of 1,000 games'), '45% of 1,000 games; 40% of the time');
+  });
 };

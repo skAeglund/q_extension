@@ -12,7 +12,9 @@
  * first one of each kind is logged: repgen compares its filter at the start instead
  * (/info has the index's), and the popup's Test button shows it.
  *
- * Listens on 127.0.0.1 unless told otherwise, and answers GET only.
+ * Listens on 127.0.0.1 unless told otherwise, and answers GET only (and OPTIONS, for a
+ * web page's preflight). A page on an allowed origin can read the answers (see ORIGINS);
+ * the extension sends no Origin and is answered as before.
  */
 
 import http from 'node:http';
@@ -33,6 +35,12 @@ export function indexInfo(db) {
     games: m.report && m.report.games ? m.report.games.kept : null
   };
 }
+
+// The one web page that may read the answers from a browser: Repworks. A page's cross-origin
+// fetch is blocked unless the answer names its origin, and `*` would let any site you visit
+// read your index, so the match is an exact string, never a wildcard or a suffix. More
+// origins come in through createServer's `o.origins` (serve --origin).
+export var DEFAULT_ORIGIN = 'https://dubious-moves.github.io';
 
 function sameList(a, b) {
   return String((a || []).slice().sort()) === String((b || []).slice().sort());
@@ -75,8 +83,33 @@ export function createServer(db, o) {
   var log = o.log || function () {};
   var seen = new Set();
   var served = 0;
+  var origins = new Set([DEFAULT_ORIGIN].concat(o.origins || []));
   return http.createServer(function (req, res) {
+    // No Origin (the extension, curl) or one that isn't listed: no CORS headers at all, so
+    // the browser keeps the answer from a page that isn't allowed to read it.
+    var origin = req.headers.origin;
+    var allowed = typeof origin === 'string' && origins.has(origin);
+    var cors = allowed ? { 'Access-Control-Allow-Origin': origin, 'Vary': 'Origin' } : {};
     var r;
+    if (req.method === 'OPTIONS' && allowed) {
+      // A preflight is counted like any other request: it is traffic on the server.
+      served++;
+      if (o.onServed) o.onServed(served);
+      // 204, no body: a preflight only asks whether the real request may follow. The request's
+      // own headers are echoed, since the answer carries nothing secret to restrict them for.
+      // Allow-Private-Network is for Chrome's Private Network Access: a public page (https
+      // github.io) reaching localhost is sent a preflight asking for it, and without it the
+      // fetch fails even with the other headers right.
+      cors['Access-Control-Allow-Methods'] = 'GET, OPTIONS';
+      if (req.headers['access-control-request-headers']) {
+        cors['Access-Control-Allow-Headers'] = req.headers['access-control-request-headers'];
+      }
+      cors['Access-Control-Max-Age'] = '600';
+      cors['Access-Control-Allow-Private-Network'] = 'true';
+      res.writeHead(204, cors);
+      res.end();
+      return;
+    }
     if (req.method !== 'GET') r = { status: 405, body: { error: 'GET only' } };
     else {
       try { r = handle(db, req.url, seen, log); } catch (e) {
@@ -85,7 +118,10 @@ export function createServer(db, o) {
     }
     served++;
     if (o.onServed) o.onServed(served);
-    res.writeHead(r.status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    var headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' };
+    // Errors too: the page has to be able to read the 400 to show it.
+    for (var k in cors) headers[k] = cors[k];
+    res.writeHead(r.status, headers);
     res.end(JSON.stringify(r.body));
   });
 }

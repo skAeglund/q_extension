@@ -41,7 +41,9 @@ export function pickOf(n) {
  *   limit     a move that blends higher was over the loss limit
  *   engine    the move gives up 2+ win% against ChessDB's best (inside the limit)
  *   no-eval   ChessDB knows the position but has no eval for the move, so no limit held it
- *   thin      the move has fewer than 4 x minGames games
+ *   thin      the move has fewer than 4 x minGames games (alone, not worth a review)
+ *   thin-lead a thin move won over one with 4x its games and 4 x minGames or more, left in
+ *             or put out as unsound: its lead may be its few games' luck
  *   holdout   on the holdout index another move's games did 3+ points better
  *   pinned, all-out, pin-missing
  * }
@@ -62,7 +64,13 @@ export function flagsOf(n, cfg) {
   // ChessDB knows the position but not the move, nor the position after it: the loss limit
   // and the sound value couldn't judge it, and it passed them (as in repgen).
   if (n.engineBest && c.engine == null) f.push('no-eval');
-  if (c.games < 4 * cfg.minGames) f.push('thin');
+  if (c.games < 4 * cfg.minGames) {
+    f.push('thin');
+    var known = n.cands.some(function (x) {
+      return x !== c && (!x.out || x.out === 'unsound') && x.games >= 4 * c.games && x.games >= 4 * cfg.minGames;
+    });
+    if (known) f.push('thin-lead');
+  }
   if (c.holdout && c.holdout.games >= cfg.minGames) {
     var beat = n.cands.some(function (x) {
       return x !== c && x.holdout && x.holdout.games >= cfg.minGames && x.holdout.raw - c.holdout.raw >= 3;
@@ -164,6 +172,7 @@ var FLAG_TEXT = {
   engine: 'under ChessDB\'s best',
   'no-eval': 'ChessDB has no eval for the move, so no limit checked it',
   thin: 'few games',
+  'thin-lead': 'won on few games over a much better-known move',
   holdout: 'the holdout prefers another move',
   pinned: 'pinned by you',
   'all-out': 'every move over a limit',
@@ -193,7 +202,7 @@ export function reviewMarkdown(ctx) {
   L.push('Repertoire for ' + side + ' from ' + (ctx.prefix && ctx.prefix.length ? lineText(STANDARD, ctx.prefix) : ctx.root) +
     ' · index ' + ctx.index + ' (' + ctx.filter.speeds.join(', ') + '; ' + ctx.filter.ratings.join(', ') + ') · ' + ctx.date);
   L.push('');
-  L.push('Settings: ' + ['plies', 'minGames', 'prior', 'risk', 'weights', 'maxLoss', 'blunder', 'soundMargin', 'learnCost',
+  L.push('Settings: ' + ['plies', 'minGames', 'prior', 'risk', 'weights', 'maxLoss', 'blunder', 'soundMargin', 'soundZ', 'enginePrior', 'pracLean', 'learnCost',
     'theme', 'coverage', 'coverageStep', 'singleBelow'].map(function (k) { return k + ' ' + cfg[k]; }).join(', ') +
     (ctx.chessdb ? '' : '. **No ChessDB**: no loss limit, sound value or Prac d1.'));
   L.push('');
@@ -216,7 +225,8 @@ export function reviewMarkdown(ctx) {
     return whys[k] + ' ' + ({ best: 'best by score', learn: 'chosen for learning', pinned: 'pinned', 'all-out': 'all over a limit' }[k] || k);
   }).join(', ') + '. ' + flagged.length + ' to review below.');
   L.push('');
-  L.push('Columns: deep is the deep score (shrunk, ±SE); ChessDB the engine\'s win% for my move; Prac the risk-averse mean ' +
+  L.push('Columns: deep is the deep score (shrunk, ±SE' + (cfg.enginePrior > 0 ? ', towards the position\'s score plus ChessDB\'s ' +
+    (cfg.pracLean > 0 && cfg.weights[1] > 0 ? 'and Prac\'s ' : '') + 'view of the move' : '') + '); ChessDB the engine\'s win% for my move; Prac the risk-averse mean ' +
     'of ChessDB\'s evals after their replies, by how often they\'re played; sound the deep score over their replies that ' +
     'aren\'t blunders (more than ' + cfg.blunder + ' win% over their best), shrunk like deep; new the share of the move\'s line the ' +
     'repertoire doesn\'t have yet; score = blend (' + cfg.weights.join('/') + ' of ChessDB/Prac/deep) minus learning. ' +

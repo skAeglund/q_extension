@@ -746,6 +746,8 @@ node tools/explorerdb.mjs serve aug26                # http://localhost:9337, Ct
   limit, no per-position budget, so rows deepen as fast as ChessDB answers. Its answers
   aren't cached, since one month's counts and Lichess's shouldn't share a cache. Clear the
   field to go back to Lichess.
+- **Repworks:** type `localhost:9337` there too. The server answers a web page's cross-origin
+  requests only for `https://dubious-moves.github.io`; another page needs `--origin <url>` (repeatable).
   - Since asking costs nothing, the explorer is asked below rare moves too, which
     Lichess's path skips to save requests. A position reached by other move orders then
     counts its games.
@@ -915,10 +917,19 @@ replies by coverage (`--coverage 90 --coverage-step 10 --single-below 50`, `--mi
     you more than `--blunder` 8 win% over their best reply). A move whose sound value is more
     than `--sound-margin` (3) under the best candidate's is out. That is a trap that doesn't
     leave you decent when they find the right reply. The sound value is shrunk like the deep
-    score, so a move's few hundred lucky games can't put better-known moves out.
+    score, and the best candidate's counts at its lower bound (`--sound-z` 1 SE under), so
+    a move's few lucky games can't put better-known moves out. A thin move that still wins
+    over one with four times its games is flagged for review (`thin-lead`).
   - **Prac**: ChessDB's evals after their replies, weighed by how often people play them,
     risk-averse. This is the Practical column at depth 1.
-- **Blend**: `--weights 0.1,0.2,0.7` of ChessDB, Prac and deep (win% for you).
+- **ChessDB's view in the shrinkage** (`--engine-prior` 1): a candidate's deep score and
+  sound value shrink towards the position's score plus ChessDB's win% for the move over the
+  average move's (by games), not towards the position's score alone. A thin move keeps its
+  games' lead only as far as ChessDB backs it; a move with many games barely moves. `0`
+  shrinks towards the position's score, as before 2026-10-19.
+- **Blend**: `--weights 0.3,0.2,0.5` of ChessDB, Prac and deep (win% for you). Before
+  2026-10-19 the default was `0.1,0.2,0.7`, so an engine edge of a few win% counted for
+  less than a point.
 - **Learning cost**: `--learn-cost` (1) points of the whole repertoire's score per 100
   positions you'd have to learn. At a move reached in a share `reach` of games, the cost
   is learnCost/100 × (positions the move adds) / reach. A move into positions the repertoire

@@ -106,7 +106,8 @@ var USAGE = [
   '                          LEDGERs are left to it, so two sessions meet in the middle',
   '  node tools/explorerdb.mjs query <index> (--moves "1.e4 c5" | --fen "<fen>")',
   '  node tools/explorerdb.mjs info <index>',
-  '  node tools/explorerdb.mjs serve <index> [--port 9337] [--host 127.0.0.1]',
+  '  node tools/explorerdb.mjs serve <index> [--port 9337] [--host 127.0.0.1] [--origin <url> ...]',
+  '      --origin <url>      a web page that may read the answers, besides Repworks (repeatable)',
   '',
   'Many months, into an accumulator (<name>.acc/, kept down to single games):',
   '  node tools/explorerdb.mjs all --into <name> [options]',
@@ -420,11 +421,15 @@ function cmdInfo(argv) {
 }
 
 function cmdServe(argv) {
-  var name = null, port = DEFAULT_PORT, host = '127.0.0.1';
+  var name = null, port = DEFAULT_PORT, host = '127.0.0.1', origins = [];
   for (var i = 0; i < argv.length; i++) {
     var a = argv[i];
     if (a === '--port') port = num(argv[++i], '--port');
     else if (a === '--host') host = argv[++i];
+    else if (a === '--origin') {
+      if (!argv[i + 1]) throw new Error('--origin needs a URL like https://example.org');
+      origins.push(argv[++i]);
+    }
     else if (!name && !/^--/.test(a)) name = a;
     else throw new Error('Unexpected argument: ' + a + '\n' + USAGE);
   }
@@ -433,6 +438,7 @@ function cmdServe(argv) {
   var info = indexInfo(db);
   var t0 = Date.now(), last = 0;
   var server = createServer(db, {
+    origins: origins,
     log: function (s) { console.log(s); },
     onServed: function (n) {
       // A line a minute at most while it's being used.

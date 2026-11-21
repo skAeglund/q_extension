@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 635 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 646 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -260,6 +260,10 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
   `deeprep/pgn.mjs` `moveComment`, the search's root comment in `deeprep.mjs`, and the
   share note in `build.mjs` `toTree`. test/deeprep.js cleans real build and search PGNs and
   expects nothing left but shares and transpositions, so a new note fails there.
+- `tools/pgnshare.mjs` puts each branching move's played share in front of its comment, in
+  deeprep's wording (`N% of M games`), from Lichess, a served local explorer (`--explorer`)
+  or an index file (`--index`). The core is `repgen/shares.mjs`, pure; it replaces a share
+  already there (deeprep's, or pgnclean's bare `N%`), so it can run on its own output.
 - `tools/cdbexplore.mjs` deepens ChessDB's tree below a PGN's line ends and close decisions
   of mine (`repgen/explore.mjs`, pure: ChessDB, sleep and clock come through deps). The
   search follows vondele/cdbexplore (GPL-3), rewritten, not copied: keep it that way. It
@@ -290,6 +294,14 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
   index keeps games the ply limit cut off (`CUT`) apart from ended ones (`ENDED`). The answer's
   totals leave the cut games out, because the search reads moves as shares of the total and
   those games' next moves are unknown. Index format 2; format 1 files must be re-imported.
+  Answers carry CORS only for `dubious-moves.github.io` (Repworks) plus `o.origins` (`serve
+  --origin`), matched as exact strings, never `*`: a wildcard would let any site you visit read
+  your index. The extension sends no `Origin` and gets the answer with no CORS headers, as
+  before. An allowed origin gets them on errors too, so the page can read a 400. Its preflight
+  is a 204 with no body, since it only asks whether the GET may follow; the 204 also carries
+  `Access-Control-Allow-Private-Network`, because Chrome's Private Network Access check refuses
+  a public page's fetch to localhost without it. A preflight from any other origin is a 405,
+  as before. Preflights count in `served`.
 - `tools/deeprep.mjs` scores moves from the local index alone (`deeprep/search.mjs`): an
   expectimax over games, mine the max by score, theirs the games-weighted mean, leaves the
   results of the games through a position. It walks one chess.js board with
@@ -1193,6 +1205,45 @@ requests): 87 positions, 58.54% in sample, against v2's 98 and 58.61%. So the cu
 0.07 points for 11 positions. Nine positions came back below transpositions, among them
 6.Bg5 Qb6 7.Bxf6 Bxf2+, the refutation of 7.Bxf6 (ChessDB mates). The 3.c4 branch is still
 at 55.0: its refutation lines stay under the limit.
+
+**Thin moves and the sound check (2026-10-19).** The Scandi Gambit build
+(`scandi_gambit_deep_v2`, Black after 1.e4 d5 2.exd5 c6 3.dxc6 Nxc6) played 10...Rxf6 after
+4.Nf3 e5 5.d3 f5 6.Be2 Nf6 7.O-O Bd6 8.Nc3 O-O 9.Bg5 h6 10.Bxf6: 58 games at 75% raw, deep
+67.6 ±5.5, a leaf just over `minGames`. Qxf6 (982 games, 64.5, 6% blunders, better by ChessDB
+and Prac) was put out as unsound by 0.12, against Rxf6's sound value, which was the same 58
+games' luck. The bar is now the best sound value minus `soundZ` (1) times its candidate's
+SE. Rxf6 can still win on its deep score; the review now lists a thin pick that beat a move
+with 4x its games (`thin-lead`), where before `thin` alone never made the list.
+
+**ChessDB in deeprep's shrinkage, and its weight (2026-10-19).** The user, on 4.Nc3 e5 5.d3
+Nf6 6.Bg5 of the same build: Qb6 (ChessDB -0.29 for Black, 52.7 win%, 153 games at 76.8 raw)
+lost to Bc5 (50.0, 2,787 games), and "if one move gives us the advantage, this should be
+valued higher than a couple of % in prepared score". Two changes in `build.mjs`, not in
+`search.mjs` (the search's inner choices still shrink towards the position's score):
+- `enginePrior` (1): a candidate shrinks towards mu + enginePrior x (its ChessDB win% - the
+  games-weighted ChessDB win% of the position's moves), which is the search's value plus
+  `(1 - w)` times that lean (`c.lean` in the JSON). The sound value leans the same, unless
+  it is ChessDB's own eval for want of replies (`replyCheck`'s `pulled`).
+- `weights` default 0.3/0.2/0.5 (was 0.1/0.2/0.7). repgen's own `weights` are unchanged.
+Offline from v3's JSON, before building: either alone changed 5 picks, together 6
+(46% of reach). `scandi_gambit_deep_v4` (same decisions file): 116 positions (128), 56.6%
+in sample (56.9), holdout 53.6% ±2.4 (51.3; the holdout's month is in the index). 3 picks
+changed: 5.d3 Nf6 over f5 (ChessDB 48.2 vs 45.5, 14.8% reach), which drops the 10...Rxf6
+line; 7.d3 Nd5 over Bd6 after 4.Nc3 e5 5.Bb5 Nf6 6.Bxc6+ bxc6 (57 games, lean +4.1); and one
+at 0.1%. 6.Bg5 stays Bc5: Qb6 now blends 1.8 higher, but learning costs it 2.7 to Bc5's 0.3.
+
+**Prac in the lean (2026-11-21).** Asked: the blend's weights are the same at every decision,
+but with fewer games deeper in a line ChessDB and Prac should decide. Weights by ply were
+turned down, since thinness is a matter of games, not move number. Instead the deep score's
+shrinkage target leans on Prac too (`pracLean`, 1): the lead is ChessDB's `engine - eref` plus
+`b x` (the move's Prac - ChessDB gap minus the candidates' games-weighted gap), b = Prac's
+share of the ChessDB + Prac weights (0.4 at 0.3/0.2). As a move thins, its deep weight now
+goes to ChessDB and Prac in the blend's own proportion, not to ChessDB a second time. Replayed
+offline on the 22 saved builds with `enginePrior` (from each candidate's saved lean, so the
+unsound check and polishing aren't redone): 0–2 picks change per build, mostly under 1%
+reach; `nc3_nf6_g4_white` 2 of 26 (6.3%). At `--prac-lean 2.5` (Prac's lead alone): 0–3,
+17% at most. Small, because at `minGames` 50 only about 14% of the candidates have under 200
+games, and the candidates' Prac gaps rarely differ much. Harness; no build run yet.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

@@ -457,6 +457,62 @@ module.exports = async function run(check) {
     assert.strictEqual(rootOf(b).cands.find(c => c.san === 'e4').out, 'unsound');
     luckDb.close();
   });
+  await check('build: deep and sound shrink towards ChessDB\'s view of the move, not the position\'s score alone', async () => {
+    // e4 50% on 400 games, d4 65% on 20; ChessDB likes d4 (+1.30) over e4 (+0.30).
+    const luckDb = await mkIdx('lean', [['e4 e5', 200, 0, 200], ['d4 d5', 13, 0, 7]]);
+    const cdb = { [PE.fenKey(START)]: [['e4', 30], ['d4', 130]], [PE.fenKey(fenAfter('e4'))]: [['e5', 0]],
+      [PE.fenKey(fenAfter('d4'))]: [['d5', 0]] };
+    const plain = rootOf(await build(luckDb, { soundMargin: 0, prior: 200, enginePrior: 0, maxLoss: 0 }, cdb));
+    const leaned = rootOf(await build(luckDb, { soundMargin: 0, prior: 200, enginePrior: 1, maxLoss: 0 }, cdb));
+    // BASE's weights give Prac nothing, so its lean is ChessDB's alone.
+    const e1 = PE.winFromCp(30), e2 = PE.winFromCp(130), eref = (400 * e1 + 20 * e2) / 420;
+    const p = s => plain.cands.find(c => c.san === s), l = s => leaned.cands.find(c => c.san === s);
+    near(l('d4').deep, p('d4').deep + (1 - p('d4').w) * (e2 - eref), 'd4: shrunk towards mu + its lead by ChessDB');
+    near(l('d4').sound, p('d4').sound + l('d4').lean, 'sound leans the same');
+    assert.ok(l('d4').lean > 3, 'a thin move leans most of the way');
+    assert.ok(Math.abs(l('e4').lean) < 0.5, 'a well-known one barely moves');
+    near(p('d4').lean, 0, 'enginePrior 0: as before');
+    luckDb.close();
+  });
+  await check('build: with Prac weighed, the lean adds Prac\'s lead over the candidates\' average gap', async () => {
+    // Same games; ChessDB rates both moves +0.30, but after d4 their reply is a mistake (Prac
+    // over ChessDB), after e4 it isn't.
+    const luckDb = await mkIdx('leanp', [['e4 e5', 200, 0, 200], ['d4 d5', 13, 0, 7]]);
+    const cdb = { [PE.fenKey(START)]: [['e4', 30], ['d4', 30]], [PE.fenKey(fenAfter('e4'))]: [['e5', -30]],
+      [PE.fenKey(fenAfter('d4'))]: [['d5', -130], ['c5', -30]] };
+    const W = { soundMargin: 0, prior: 200, enginePrior: 1, maxLoss: 0, weights: [0.3, 0.2, 0.5] };
+    const off = rootOf(await build(luckDb, Object.assign({ pracLean: 0 }, W), cdb));
+    const on = rootOf(await build(luckDb, Object.assign({ pracLean: 1 }, W), cdb));
+    const o = s => off.cands.find(c => c.san === s), n = s => on.cands.find(c => c.san === s);
+    near(o('d4').lean, 0, 'pracLean 0: ChessDB alone, and it sees no difference');
+    const gapE = n('e4').prac - n('e4').engine, gapD = n('d4').prac - n('d4').engine;
+    const gap = (400 * gapE + 20 * gapD) / 420;
+    near(n('d4').lean, (1 - n('d4').w) * 0.4 * (gapD - gap), 'd4: Prac\'s share 0.2 / 0.5 of its extra gap');
+    assert.ok(n('d4').lean > 2, 'a thin move with Prac behind it leans up');
+    assert.ok(Math.abs(n('e4').lean) < 0.5, 'a well-known one barely moves');
+    near(n('d4').deep - o('d4').deep, n('d4').lean, 'deep moves by the lean');
+    luckDb.close();
+  });
+  await check('build: the bar for "unsound" is the best sound value at its lower bound; a thin winner is flagged', async () => {
+    // 1.e4 e5 is 62% on 400 games; 1.d4 d5 75% on 12, just over minGames. No blunders.
+    const thinDb = await mkIdx('thin', [['e4 e5', 248, 0, 152], ['d4 d5', 9, 0, 3]]);
+    const thinCdb = { [PE.fenKey(START)]: [['e4', 30], ['d4', 30]], [PE.fenKey(fenAfter('e4'))]: [['e5', 0]],
+      [PE.fenKey(fenAfter('d4'))]: [['d5', 0]] };
+    let b = await build(thinDb, { soundMargin: 3 }, thinCdb);
+    let r = rootOf(b), d4 = r.cands.find(c => c.san === 'd4'), e4 = r.cands.find(c => c.san === 'e4');
+    near(d4.sound, 75, 'd4 sound, unshrunk');
+    assert.ok(d4.se > 10, 'd4 is thin');
+    assert.ok(e4.sound < d4.sound - 3, 'by the plain sound values e4 would be out');
+    assert.strictEqual(e4.out, undefined, 'e4 stays in: d4\'s lower bound is under it');
+    assert.strictEqual(r.move, 'd4', 'd4 still wins on its deep score');
+    assert.deepStrictEqual(R.flagsOf(r, b.config).filter(f => /^thin/.test(f)), ['thin', 'thin-lead']);
+    // soundZ 0 is the old rule.
+    b = await build(thinDb, { soundMargin: 3, soundZ: 0 }, thinCdb);
+    r = rootOf(b);
+    assert.strictEqual(r.cands.find(c => c.san === 'e4').out, 'unsound');
+    assert.ok(R.flagsOf(r, b.config).includes('thin-lead'), 'a well-known move put out as unsound counts too');
+    thinDb.close();
+  });
   await check('build: the loss limit, with an eval from the position after a move ChessDB doesn\'t list', async () => {
     let b = await build(trapDb, { soundMargin: 0 }, Object.assign({}, trapCdb, { [PE.fenKey(START)]: [['e4', -200], ['d4', 30]] }));
     assert.strictEqual(rootOf(b).move, 'd4');
