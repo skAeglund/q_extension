@@ -133,3 +133,7 @@
 07:05:34 Banned: d4 at rnbqkbnr/ppp1pppp/8/3p4/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -; e4/d4 at rnbqkb1r/pppppppp/5n2/8/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -; d4/e4 at rnbqkbnr/pppp1ppp/4p3/8/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -
 07:05:34 repgen: White from rnbqkbnr/pppppppp/8/8/8/2N5/PPPPPPPP/R1BQKBNR b KQkq - 1 1 (Nc3); Lichess blitz,rapid,classical / 1600,1800,2000,2200,2500.
 07:05:34 Options: {"weights":[0.1,0.2,0.7],"maxLoss":5,"banned":{"rnbqkbnr/ppp1pppp/8/3p4/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -":["d4"],"rnbqkb1r/pppppppp/5n2/8/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -":["e4","d4"],"rnbqkbnr/pppp1ppp/4p3/8/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -":["d4","e4"]},"riskAversion":0.05}
+07:10:39 Me   [1.26%] 1...g6 2.h4 h5: e4 (Prac 56.0 d7, prep 55.6, blend 55.2, close call: d5→d7 e4/d4/Nf3; d4 55.1 (Prac 55.8), Nf3 55.0 (Prac 54.6), Nh3 52.8 (Prac 52.0) d5, g3 51.9 (Prac 52.0) d5; 5m04s, 92 requests)
+07:10:39 Opp  [1.26%] 1...g6 2.h4 h5 3.e4: Bg7 62% of 9269 games
+07:12:23 Me   [1.24%] 1...e5 2.Nf3 Nc6 3.d4 exd4 4.Nxd4 Nf6 5.Bg5 Be7: Nf5 (Prac 67.0 d3, prep 64.6, blend 64.6; g3 53.9 (Prac 51.6), Qd2 59.7 (Prac 58.8), e3 60.0 (Prac 61.2), Nxc6 50.1 (Prac 50.8); 1m40s, 25 requests)
+07:12:23 Opp  [1.24%] 1...e5 2.Nf3 Nc6 3.d4 exd4 4.Nxd4 Nf6 5.Bg5 Be7 6.Nf5: O-O 75% of 11086 games
