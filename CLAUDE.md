@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 623 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 629 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -1200,6 +1200,19 @@ in sample (56.9), holdout 53.6% ±2.4 (51.3; the holdout's month is in the index
 changed: 5.d3 Nf6 over f5 (ChessDB 48.2 vs 45.5, 14.8% reach), which drops the 10...Rxf6
 line; 7.d3 Nd5 over Bd6 after 4.Nc3 e5 5.Bb5 Nf6 6.Bxc6+ bxc6 (57 games, lean +4.1); and one
 at 0.1%. 6.Bg5 stays Bc5: Qb6 now blends 1.8 higher, but learning costs it 2.7 to Bc5's 0.3.
+
+**Prac in the lean (2026-11-21).** Asked: the blend's weights are the same at every decision,
+but with fewer games deeper in a line ChessDB and Prac should decide. Weights by ply were
+turned down, since thinness is a matter of games, not move number. Instead the deep score's
+shrinkage target leans on Prac too (`pracLean`, 1): the lead is ChessDB's `engine - eref` plus
+`b x` (the move's Prac - ChessDB gap minus the candidates' games-weighted gap), b = Prac's
+share of the ChessDB + Prac weights (0.4 at 0.3/0.2). As a move thins, its deep weight now
+goes to ChessDB and Prac in the blend's own proportion, not to ChessDB a second time. Replayed
+offline on the 22 saved builds with `enginePrior` (from each candidate's saved lean, so the
+unsound check and polishing aren't redone): 0–2 picks change per build, mostly under 1%
+reach; `nc3_nf6_g4_white` 2 of 26 (6.3%). At `--prac-lean 2.5` (Prac's lead alone): 0–3,
+17% at most. Small, because at `minGames` 50 only about 14% of the candidates have under 200
+games, and the candidates' Prac gaps rarely differ much. Harness; no build run yet.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

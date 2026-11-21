@@ -63,6 +63,8 @@ export var BUILD_DEFAULTS = {
   soundZ: 1,              // ...whose sound value counts at its lower bound, minus this many SEs
   enginePrior: 1,         // deep and sound shrink towards the position's score plus this times
                           // ChessDB's win% for the move over the average move's (0: the score alone)
+  pracLean: 1,            // ...and Prac's lead over the average candidate's, in the blend's own
+                          // ChessDB : Prac proportion (0: ChessDB alone, as before 2026-11-21)
   learnCost: 1,           // points of the repertoire's score 100 new positions must earn (0: off)
   theme: 0.5,             // a move played elsewhere with the same pawns costs this much less than a new one
   costCap: 300,           // positions counted per move at most
@@ -448,6 +450,7 @@ export function createBuilder(db, o) {
       });
       if (ew > 0) eref = es / ew;
     }
+    var live = n.cands.filter(function (c) { return !c.out; });
     n.cands.forEach(function (c, i) {
       if (wins.has(moveKey(c.san))) c.engine = wins.get(moveKey(c.san));
       if (c.out) return;
@@ -460,20 +463,39 @@ export function createBuilder(db, o) {
       // A move ChessDB lists no eval for here still has one: after it, their best reply.
       // Without it, the loss limit would pass exactly the moves it knows least about.
       if (c.engine == null && chk.refuteValue != null) c.engine = chk.refuteValue;
-      // Shrink towards what ChessDB predicts for the move, not the position's score alone:
-      // v'' = T + w (v - T), T = mu + enginePrior x (engine - eref), which is the search's
-      // v' plus (1 - w) x that lean. A thin move then keeps its games' lead only as far as
-      // the engine backs it; a well-known one barely moves. Asked 2026-10-19, after the
-      // Scandi build: 6.Bg5 Qb6 (ChessDB -0.29, 153 games) and 10.Bxf6 Rxf6 (58 games, over
-      // Qxf6, ChessDB's best) were both decided by thin games' luck pulled to the average.
-      c.lean = 0;
-      if (eref != null && c.engine != null && c.w != null) {
-        c.lean = (1 - c.w) * cfg.enginePrior * (c.engine - eref);
-        c.deep += c.lean;
-        if (chk.pulled) c.sound += c.lean;
-      }
+      c.pulled = chk.pulled;
       if (cfg.maxLoss > 0 && c.engine != null && best != null && best - c.engine > cfg.maxLoss + 1e-9) c.out = 'max-loss';
     });
+    // Shrink towards what ChessDB and Prac predict for the move, not the position's score
+    // alone: v'' = T + w (v - T), T = mu + enginePrior x lead, which is the search's v' plus
+    // (1 - w) x enginePrior x lead. A thin move then keeps its games' lead only as far as the
+    // engine and Prac back it; a well-known one barely moves. Asked 2026-10-19, after the
+    // Scandi build: 6.Bg5 Qb6 (ChessDB -0.29, 153 games) and 10.Bxf6 Rxf6 (58 games, over
+    // Qxf6, ChessDB's best) were both decided by thin games' luck pulled to the average.
+    // The lead is ChessDB's (engine - eref) plus, at Prac's share b of the blend's ChessDB and
+    // Prac weights, how much more Prac's view of the move beats ChessDB's than it does for
+    // the candidates on average, by games. Prac is known only for candidates, while eref is
+    // over every move, hence the gap and not Prac over an average of its own. Without Prac in
+    // T, a thin move's deep weight went to ChessDB a second time, and the blend's Prac share
+    // stayed 0.2 however thin the games were (asked 2026-11-21: deeper in the line, with fewer
+    // games, ChessDB and Prac should decide).
+    var W = cfg.weights || [], wE = W[0] > 0 ? W[0] : 0, wP = W[1] > 0 ? W[1] : 0;
+    var b = cfg.pracLean > 0 && wE + wP > 0 ? cfg.pracLean * wP / (wE + wP) : 0;
+    var gw = 0, gs = 0;
+    live.forEach(function (c) {
+      if (c.engine != null && c.prac != null) { gw += c.games; gs += c.games * (c.prac - c.engine); }
+    });
+    var gap = gw > 0 ? gs / gw : null;
+    live.forEach(function (c) {
+      c.lean = 0;
+      if (eref == null || c.engine == null || c.w == null) return;
+      var lead = c.engine - eref;
+      if (b > 0 && gap != null && c.prac != null) lead += b * (c.prac - c.engine - gap);
+      c.lean = (1 - c.w) * cfg.enginePrior * lead;
+      c.deep += c.lean;
+      if (c.pulled) c.sound += c.lean;
+    });
+    n.cands.forEach(function (c) { delete c.pulled; });
     n.cands.forEach(function (c) { c.blend = blend(cfg.weights, [c.engine, c.prac, c.deep]); });
     if (cfg.soundMargin > 0) {
       // The bar is the best sound value at its lower bound, with the move's deep SE: a thin

@@ -202,7 +202,7 @@ export function reviewMarkdown(ctx) {
   L.push('Repertoire for ' + side + ' from ' + (ctx.prefix && ctx.prefix.length ? lineText(STANDARD, ctx.prefix) : ctx.root) +
     ' · index ' + ctx.index + ' (' + ctx.filter.speeds.join(', ') + '; ' + ctx.filter.ratings.join(', ') + ') · ' + ctx.date);
   L.push('');
-  L.push('Settings: ' + ['plies', 'minGames', 'prior', 'risk', 'weights', 'maxLoss', 'blunder', 'soundMargin', 'soundZ', 'enginePrior', 'learnCost',
+  L.push('Settings: ' + ['plies', 'minGames', 'prior', 'risk', 'weights', 'maxLoss', 'blunder', 'soundMargin', 'soundZ', 'enginePrior', 'pracLean', 'learnCost',
     'theme', 'coverage', 'coverageStep', 'singleBelow'].map(function (k) { return k + ' ' + cfg[k]; }).join(', ') +
     (ctx.chessdb ? '' : '. **No ChessDB**: no loss limit, sound value or Prac d1.'));
   L.push('');
@@ -226,7 +226,7 @@ export function reviewMarkdown(ctx) {
   }).join(', ') + '. ' + flagged.length + ' to review below.');
   L.push('');
   L.push('Columns: deep is the deep score (shrunk, ±SE' + (cfg.enginePrior > 0 ? ', towards the position\'s score plus ChessDB\'s ' +
-    'view of the move' : '') + '); ChessDB the engine\'s win% for my move; Prac the risk-averse mean ' +
+    (cfg.pracLean > 0 && cfg.weights[1] > 0 ? 'and Prac\'s ' : '') + 'view of the move' : '') + '); ChessDB the engine\'s win% for my move; Prac the risk-averse mean ' +
     'of ChessDB\'s evals after their replies, by how often they\'re played; sound the deep score over their replies that ' +
     'aren\'t blunders (more than ' + cfg.blunder + ' win% over their best), shrunk like deep; new the share of the move\'s line the ' +
     'repertoire doesn\'t have yet; score = blend (' + cfg.weights.join('/') + ' of ChessDB/Prac/deep) minus learning. ' +
