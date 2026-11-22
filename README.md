@@ -909,7 +909,8 @@ replies by coverage (`--coverage 90 --coverage-step 10 --single-below 50`, `--mi
   a line that runs out early isn't cheap for that reason. At 1 a wholly new line pays about
   2 points at a typical decision (1.5 above 2% reach, more below: lines don't shrink as fast
   as reach does). A move the repertoire already plays elsewhere with the same pawns counts
-  `--theme` (0.5) less.
+  `--theme` (0.5) less. "The same pawns" are both sides' by default; `--theme-key mine`
+  compares only yours, so Bf4 after ...d5 counts as the Bf4 you play after ...Nf6.
 - The move with the best **score** (blend − learning) is played.
 
 Once everything is built, `--passes` (3) polishing passes decide every move again, most
@@ -933,7 +934,39 @@ the PGN down to the moves, the replies' shares and where lines transpose, for ke
 ```
 
 `--decisions repertoires/e5.decisions.json` plays `play` whatever it scores (it needs
-`--min-games` games there) and never plays `avoid`. A Claude session can do this review
+`--min-games` games there) and never plays `avoid`.
+
+**Repertoires you already know** (`--known`). A build otherwise knows only its own
+positions: it gets no credit for transposing into a repertoire you have, and decides that
+repertoire's positions all over again. `--known <pgn>[,<pgn>...]` takes PGNs you already
+know: deeprep's, pgnclean's, or Lichess study exports (several chapters are fine, and so are
+spaces in the name; comments are ignored). Every position in them, alternatives and line
+ends included, counts as learned:
+
+- A move into them costs nothing new to learn. Candidates are still valued by deep score,
+  ChessDB and Prac as before; only the learning cost changes.
+- Their moves seed the recurring-move discount (`--theme`), so playing their kind of move
+  elsewhere is cheaper. `--theme-key mine` makes that match far more often.
+- A line that reaches one of their positions ends there. Its move says "transposes to
+  <that file's line> (in <file>)", and pgnclean keeps that note.
+- The summary, the `.json` (`meta.known`) and the review count the lines that end in them,
+  and the review lists where each one joins. The in-sample and holdout scores play the
+  known repertoire's moves past those points.
+- If the root is itself one of their positions, the build says so and stops.
+
+For sidelines that reach a main repertoire, build each from its own root, most common
+first, and add each finished build to `--known` for the next:
+
+```bash
+node tools/deeprep.mjs build lichess --moves "1. Nc3 Nf6 2. d4" --side white --out nc3_nf6_d4 \
+  --known "1. Nc3 - Jobava.pgn" --theme-key mine --holdout lichess_holdout
+node tools/deeprep.mjs build lichess --moves "1. Nc3 e6 2. d4" --side white --out nc3_e6_d4 \
+  --known "1. Nc3 - Jobava.pgn,nc3_nf6_d4" --theme-key mine --holdout lichess_holdout
+```
+
+A root at each sideline gives its first decision the full `--coverage`. A build from
+`"1. Nc3"` narrows coverage by `--coverage-step` at every decision, so it would drop rarer
+first moves and second-level replies. A Claude session can do this review
 for you. The repo has a skill for it (`.claude/skills/repertoire-review`), which runs
 build, reads the review, looks closer with `moves`, writes the decisions with reasons,
 builds again and compares on the holdout.
@@ -943,7 +976,9 @@ builds again and compares on the holdout.
 `eval <index> <pgn>` plays any repertoire PGN (build's, search's, repgen's, or your own) as
 a fixed policy against the index's games. Your move is the PGN's. Their replies count by how
 often they're played, and a reply that transposes into the repertoire goes on there.
-Everything else ends at its own games' score. It prints:
+Everything else ends at its own games' score. `--known <pgn>[,<pgn>...]` adds repertoires
+you already know: a reply that transposes into one goes on there with its moves, so the score
+covers the combined repertoire, not just the lines up to "transposes to". It prints:
 
 - the expected score against everyone's from the same position;
 - how many positions you have to know;

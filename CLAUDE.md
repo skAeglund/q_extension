@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 629 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 634 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -258,7 +258,7 @@ https://qchess.net/study/3411d48d-b0f1-43fb-a667-b49057243e1c
   `engine move`, `end: `, …): change `pgn.mjs`'s wording and that list together. It knows
   deeprep's too (`DEEPREP`, matched whole): `deeprep/report.mjs` `moveNote`/`rootNote`,
   `deeprep/pgn.mjs` `moveComment`, the search's root comment in `deeprep.mjs`, and the
-  share note in `build.mjs` `toTree`. test/deeprep.js cleans real build and search PGNs and
+  share note in `build.mjs` `toTree`, and keeps `knownNote`'s (`KNOWN`). test/deeprep.js cleans real build and search PGNs and
   expects nothing left but shares and transpositions, so a new note fails there.
 - `tools/pgnshare.mjs` puts each branching move's played share in front of its comment, in
   deeprep's wording (`N% of M games`), from Lichess, a served local explorer (`--explorer`)
@@ -1217,6 +1217,25 @@ unsound check and polishing aren't redone): 0–2 picks change per build, mostly
 reach; `nc3_nf6_g4_white` 2 of 26 (6.3%). At `--prac-lean 2.5` (Prac's lead alone): 0–3,
 17% at most. Small, because at `minGames` 50 only about 14% of the candidates have under 200
 games, and the candidates' Prac gaps rarely differ much. Harness; no build run yet.
+
+**Known repertoires and the theme key (2026-11-22).** Asked: White lines for the 1.Nc3
+sidelines (1...Nf6/e6/c6/Nc6 2.d4, which reach the user's Jobava London on ...d5, and
+1...g6/d6 2.d4, which meet 1...Nf6 2.d4 g6/d6) that transpose into the Jobava where they can.
+The learning cost and the theme discount only knew the build's own `nodes`/`themes`, so a
+sideline got no credit for joining the Jobava and re-decided its positions. Pinning them in a
+decisions file still walked the whole Jobava and holds only with `minGames` games.
+`--known <pgn>,...` (`deeprep/known.mjs`): every position of the files (every node, any side
+to move, alternatives and line ends) is `inside` in `linePositions`, which follows the file's
+own moves there. Their moves of mine seed a theme count kept apart from `themes`, because
+`addTheme` takes counts down and puts them back while pricing, and `prune()` takes them out.
+A node created at a known position is a leaf with end `known` and `n.known = { line, name }`,
+and `toTree` notes "transposes to <line> (in <file>)". `clean.mjs` keeps that note (`KNOWN`)
+as "Transposes into …", since nothing in the game says where it leads. The in-sample and
+holdout evals play the known moves past the join (`withKnown`, entries marked `known`, counted
+apart as `knownCards`). `knownEnds()` counts the joins for the summary, `meta.known` and the
+review. A known root is an error. `--theme-key mine` keys the discount on my pawns only: of
+161 White moves in the user's sideline drafts outside the Jobava, none matched a Jobava move
+on both sides' pawns and 46 (29%) on White's. `both` stays the default.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

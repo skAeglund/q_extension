@@ -632,6 +632,104 @@ module.exports = async function run(check) {
   await check('pawnKey: the pawns alone', () => {
     assert.strictEqual(B.pawnKey(fenAfter('d4', 'c5', 'dxc5', 'e5')), '8/pp1p1ppp/8/2P1p3/8/8/PPP1PPPP/8');
     assert.strictEqual(B.pawnKey(START), B.pawnKey(fenAfter('Nf3', 'Nf6')));
+    // 'w' / 'b': that side's pawns alone.
+    assert.notStrictEqual(B.pawnKey(fenAfter('d4', 'Nf6')), B.pawnKey(fenAfter('d4', 'd5')));
+    assert.strictEqual(B.pawnKey(fenAfter('d4', 'Nf6'), 'w'), B.pawnKey(fenAfter('d4', 'd5'), 'w'));
+    assert.strictEqual(B.pawnKey(fenAfter('d4', 'Nf6'), 'w'), '8/8/8/8/3P4/8/PPP1PPPP/8');
+    assert.strictEqual(B.pawnKey(fenAfter('d4', 'd5'), 'b'), '8/ppp1pppp/8/3p4/8/8/8/8');
+  });
+
+  /* --- known repertoires (--known) and the theme key ------------------------- */
+  const K = await load('tools/deeprep/known.mjs');
+  const knownOf = (...pgns) => K.mergeKnown(pgns.map((t, i) => K.knownFromPgn(t, { side: 'w', name: 'rep' + (i || '') })));
+  await check('known: every position of a Lichess study export, every move of mine, the shortest line to each', () => {
+    const pgn = ['[Event "Study: A"]', '[StudyName "Study"]', '[ChapterName "A"]', '[Orientation "white"]', '',
+      '1. d4 d5 { 44% } (1... Nf6 { 30% } 2. c4 (2. Nf3 { mine too }) 2... e6) 2. c4 { Nf6 transposes into 1... Nf6 2. c4 } *', '',
+      '[Event "Study: B"]', '[StudyName "Study"]', '[ChapterName "B"]', '[Orientation "white"]', '', '1. e4 e5 2. Nf3 *', ''].join('\n');
+    const k = K.knownFromPgn(pgn, { side: 'w', name: K.knownName('repertoires/1. Nc3 - my study.pgn') });
+    assert.strictEqual(k.games, 2);
+    const at = (...s) => k.positions.get(String(G.keyOf(fenAfter(...s))));
+    assert.deepStrictEqual(at('d4', 'Nf6', 'Nf3'), { line: '1. d4 Nf6 2. Nf3', name: '1. Nc3 - my study, A' }, 'an alternative of mine');
+    assert.ok(at('d4', 'Nf6', 'c4', 'e6'), 'a line\'s last position');
+    assert.strictEqual(at('e4', 'e5', 'Nf3').name, '1. Nc3 - my study, B');
+    assert.strictEqual(at().line, '', 'the start, in both chapters, by its shortest line');
+    const here = String(G.keyOf(fenAfter('d4', 'Nf6')));
+    assert.deepStrictEqual(k.mine.filter(m => m.key === here).map(m => m.san), ['c4', 'Nf3']);
+    assert.strictEqual(k.first.get(here).san, 'c4', 'the main line\'s move first');
+    assert.strictEqual(E.repertoireFromPgn(pgn).side, 'w', 'a study\'s Orientation gives the side');
+  });
+  const KN1 = '[White "Repertoire"]\n\n1. d4 d5 2. Nf3 Nf6 3. e3 *\n';
+  const afterNf6 = fenAfter('d4', 'Nf6');
+  const atRoot = b => b.nodes.get(b.rootKey);
+  await check('build --known: a move into the known repertoire costs nothing new, and its line ends there', async () => {
+    const cfg = Object.assign({ learnCost: 300 }, LEARN);
+    let b = await build(trDb1, cfg, null, { root: afterNf6 });
+    assert.strictEqual(atRoot(b).move, 'c4', 'without it, c4 scores 2.5 more and both lines are new');
+    const known = knownOf(KN1);
+    b = await build(trDb1, cfg, null, { root: afterNf6, known });
+    const n = atRoot(b);
+    assert.strictEqual(n.move, 'Nf3');
+    assert.strictEqual(n.why, 'learn');
+    const nf3 = n.cands.find(c => c.san === 'Nf3'), c4 = n.cands.find(c => c.san === 'c4');
+    near(nf3.newShare, 0, 'Nf3 ... d5 is the known 1. d4 d5 2. Nf3 Nf6');
+    near(c4.newShare, 1, 'c4 is all new');
+    near(c4.penalty - nf3.penalty, 3, 'learnCost/100 x size x new / reach');
+    const j = b.nodes.get(String(G.keyOf(fenAfter('d4', 'Nf6', 'Nf3', 'd5'))));
+    assert.strictEqual(j.status, 'leaf');
+    assert.strictEqual(j.end, 'known');
+    assert.deepStrictEqual(j.known, { line: '1. d4 d5 2. Nf3 Nf6', name: 'rep' });
+    assert.ok(!j.move, 'not decided again');
+    const ends = B.knownEnds(b.nodes);
+    assert.strictEqual(ends.lines, 1);
+    near(ends.reach, 1, 'every game after 2.Nf3 goes there');
+    // The PGN says where it joins; chess.js reads it, and pgnclean keeps it.
+    const pgn = P.toPgn(B.toTree(b.nodes, b.rootKey, R.moveNote, p => p.join(' ')), { prefix: ['d4', 'Nf6'],
+      headers: { White: 'Repertoire', Black: 'Lichess' } });
+    assert.ok(pgn.replace(/\s+/g, ' ').includes('transposes to 1. d4 d5 2. Nf3 Nf6 (in rep)'), pgn);
+    assert.ok(!/end: known/.test(pgn), pgn);
+    new Chess().loadPgn(pgn);
+    assert.deepStrictEqual(leftAfterClean(pgn, 'w'), []);
+    const [g] = T.parsePgn(pgn);
+    C.cleanGame(g, 'w');
+    assert.ok(/Transposes into 1\. d4 d5 2\. Nf3 Nf6 \(in rep\)/.test(T.writePgn([g])), 'kept by pgnclean');
+    // The review counts it and lists where.
+    const md = R.reviewMarkdown({ out: 'x', side: 'w', root: afterNf6, prefix: ['d4', 'Nf6'], index: 'test',
+      filter: { speeds: ['blitz'], ratings: [2000] }, cfg: b.config, nodes: b.nodes, inSample: null, holdout: null,
+      chessdb: false, known: { names: known.names, ends }, date: '2026-11-22' });
+    assert.ok(md.includes('**1 line** end in it'), md);
+    assert.ok(md.includes('| 1. d4 Nf6 2. Nf3 d5 | 100% | 1. d4 d5 2. Nf3 Nf6 |'), md);
+    // A root the known repertoire has already: nothing to build.
+    await assert.rejects(build(trDb1, cfg, null, { root: fenAfter('d4', 'd5', 'Nf3', 'Nf6'), known }), /known repertoire already/);
+  });
+  await check('build --known: its moves seed the theme discount, and polishing can\'t take them out', async () => {
+    // 1.d4 Nc6 2.Nf3: Nf3 with the same pawns as after 1.d4 Nf6.
+    const b = await build(trDb1, Object.assign({ learnCost: 100, passes: 2 }, LEARN), null,
+      { root: afterNf6, known: knownOf('1. d4 Nc6 2. Nf3 *') });
+    const n = atRoot(b);
+    near(n.cands.find(c => c.san === 'Nf3').own, 0.5, 'Nf3 recurs');
+    near(n.cands.find(c => c.san === 'c4').own, 1, 'c4 doesn\'t');
+  });
+  await check('build --theme-key mine: the same pawns of mine, whatever the opponent\'s', async () => {
+    // 1.d4 d5 2.Nf3: Black's pawns differ from 1.d4 Nf6, White's don't.
+    const known = knownOf('1. d4 d5 2. Nf3 *');
+    const own = async themeKey => atRoot(await build(trDb1, Object.assign({ learnCost: 100, themeKey }, LEARN), null,
+      { root: afterNf6, known })).cands.find(c => c.san === 'Nf3').own;
+    near(await own('both'), 1, 'both sides\' pawns: no match');
+    near(await own('mine'), 0.5, 'White\'s pawns: a match');
+    assert.throws(() => B.createBuilder(trDb1, { root: START, config: { themeKey: 'theirs' } }), /themeKey/);
+  });
+  await check('eval --known: a reply that transposes into the known repertoire is followed there', () => {
+    const rep = E.repertoireFromPgn('[White "Repertoire"]\n\n1. d4 Nf6 2. Nf3 *', { root: afterNf6 });
+    const alone = E.evaluateRepertoire(trDb1, rep, { minGames: 10 });
+    near(alone.ends.end, 1, 'alone, 2...d5 ends the line');
+    assert.strictEqual(alone.cards, 1);
+    const both = E.evaluateRepertoire(trDb1, Object.assign({}, rep, { moves: K.withKnown(rep.moves, knownOf(KN1)) }), { minGames: 10 });
+    near(both.ends.end, 0, 'with the known repertoire it goes on with 3.e3');
+    near(both.ends.over, 1, 'and the games end inside it');
+    assert.strictEqual(both.cards, 2);
+    assert.strictEqual(both.knownCards, 1);
+    assert.strictEqual(both.unreached, alone.unreached, 'the known moves elsewhere aren\'t "unreached"');
+    assert.strictEqual(rep.moves.size, 2, 'withKnown leaves the repertoire\'s own map alone');
   });
 
   /* --- the fenced reader --------------------------------------------------- */

@@ -23,6 +23,10 @@ import { fenKey, sideToMove } from '../../src/pe/search.js';
 var SEP = '\n\n';
 // repgen's notes, by how they start. A note is the text between ' · '.
 var GENERATED = /^(Prac |engine move|transposes to |not searched yet|end: )/;
+// Except deeprep build's note on a line that joins a repertoire you already know (--known;
+// build.mjs knownNote()): nothing in this game says where that is, so it stays, worded as
+// this file's own transposition notes are.
+var KNOWN = /^transposes to (.+) \(in (.+)\)$/;
 
 // deeprep's, whole: build's moveNote (deeprep/report.mjs) and rootNote, the search's
 // moveComment (deeprep/pgn.mjs) and its root comment (deeprep.mjs). deeprep joins some
@@ -57,6 +61,7 @@ var SHARE = /^(\d+(?:\.\d+)?%) of [\d,]+ games(?:, deep \S+ ±\S+)?$/;
 // The notes of a paragraph: [[part]], parts being what deeprep joined with '; '.
 function notes(p) {
   return p.replace(/\s+/g, ' ').trim().split(' · ').map(function (b) {
+    if (KNOWN.test(b)) return [b.replace(KNOWN, 'Transposes into $1 (in $2)')];
     return GENERATED.test(b) ? [] : b.split('; ');
   });
 }

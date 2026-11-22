@@ -74,7 +74,9 @@ function sideFromHeaders(hs) {
   if (h.White === 'Repertoire') return 'w';
   if (h.Black === 'Repertoire') return 'b';
   var m = /for (White|Black)/.exec(h.Event || '');
-  return m ? (m[1] === 'White' ? 'w' : 'b') : null;
+  if (m) return m[1] === 'White' ? 'w' : 'b';
+  // A Lichess study export says which way the board faces.
+  return h.Orientation === 'white' ? 'w' : h.Orientation === 'black' ? 'b' : null;
 }
 
 function sumRecs(recs) {
@@ -118,7 +120,9 @@ function codeOfSan(fen, san) {
  * Returns {
  *   s, se, games          the repertoire's expected score for its side, from the root
  *   raw                   the root's own score: what everyone in the index scored from there
- *   cards                 positions of mine the walk reached (moves to know), and `unreached`
+ *   cards                 positions of mine the walk reached (moves to know), and `unreached`;
+ *                         knownCards: those whose move is a known repertoire's (rep.moves
+ *                         entries marked `known`, known.mjs withKnown())
  *   ends                  shares of the games (by reach): out (an unprepared reply), end (my
  *                         line ran out), over (the game ended inside the repertoire)
  *   first                 the opponent's first decision: each reply's share, the
@@ -242,11 +246,12 @@ export function evaluateRepertoire(db, rep, o) {
   }
 
   var root = nodes.get(rootKey);
-  var cards = 0;
+  var cards = 0, knownCards = 0;
   var weak = [];
   nodes.forEach(function (n) {
     if (!n.mine || n.leaf || !n.move) return;
     cards++;
+    if (rep.moves.get(n.key).known) knownCards++;
     if (n.reach < o.minReach) return;
     // My move's own games against my other moves' here, and against the position's.
     var mineRec = n.kids[0].rec;
@@ -268,7 +273,8 @@ export function evaluateRepertoire(db, rep, o) {
   weak.sort(function (x, y) { return y.reach * y.gap - x.reach * x.gap; });
   unprepared.sort(function (x, y) { return y.reach - x.reach; });
   var unreached = 0;
-  rep.moves.forEach(function (_, k) { if (!nodes.has(k)) unreached++; });
+  // A known repertoire's moves (known.mjs withKnown()) are mostly elsewhere: not counted.
+  rep.moves.forEach(function (m, k) { if (!m.known && !nodes.has(k)) unreached++; });
 
   // The opponent's first decision on the way: the root, or after my move from it.
   var first = [];
@@ -292,7 +298,7 @@ export function evaluateRepertoire(db, rep, o) {
     side: me, root: rep.root,
     s: root && root.v ? root.v.s : NaN, se: root && root.v ? root.v.se : Infinity,
     games: root && root.a ? root.a.total : 0, raw: root && root.raw ? root.raw.s : NaN,
-    cards: cards, unreached: unreached, positions: nodes.size,
+    cards: cards, knownCards: knownCards, unreached: unreached, positions: nodes.size,
     ends: ends, first: first, weak: weak, unprepared: unprepared, unseen: unseen
   };
 }

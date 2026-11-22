@@ -116,7 +116,8 @@ export function moveNote(n, kid) {
     parts.push('ChessDB best ' + n.engineBest.san + ' ' + f1(n.engineBest.win));
   }
   if (kid && kid.status === 'done' && kid.other > 0.005) parts.push('replies not covered ' + p0(kid.other));
-  if (kid && kid.status === 'leaf') parts.push('end: ' + (kid.end === 'few-games' ? 'few games' : kid.end === 'rare' ? 'no reply likely enough' : kid.end));
+  // A line into a known repertoire gets its "transposes to" from toTree() instead.
+  if (kid && kid.status === 'leaf' && kid.end !== 'known') parts.push('end: ' + (kid.end === 'few-games' ? 'few games' : kid.end === 'rare' ? 'no reply likely enough' : kid.end));
   return parts.join(' · ');
 }
 
@@ -181,7 +182,7 @@ var FLAG_TEXT = {
 
 /*
  * ctx = { out, side, root, prefix, index, filter, cfg, nodes (Map), stats, inSample (eval),
- * holdout: { name, eval } or null, date }
+ * holdout: { name, eval } or null, known: { names, ends (build.mjs knownEnds()) } or null, date }
  */
 export function reviewMarkdown(ctx) {
   var cfg = ctx.cfg;
@@ -203,12 +204,21 @@ export function reviewMarkdown(ctx) {
     ' · index ' + ctx.index + ' (' + ctx.filter.speeds.join(', ') + '; ' + ctx.filter.ratings.join(', ') + ') · ' + ctx.date);
   L.push('');
   L.push('Settings: ' + ['plies', 'minGames', 'prior', 'risk', 'weights', 'maxLoss', 'blunder', 'soundMargin', 'soundZ', 'enginePrior', 'pracLean', 'learnCost',
-    'theme', 'coverage', 'coverageStep', 'singleBelow'].map(function (k) { return k + ' ' + cfg[k]; }).join(', ') +
+    'theme', 'themeKey', 'coverage', 'coverageStep', 'singleBelow'].map(function (k) { return k + ' ' + cfg[k]; }).join(', ') +
     (ctx.chessdb ? '' : '. **No ChessDB**: no loss limit, sound value or Prac d1.'));
   L.push('');
   L.push('## Summary');
   L.push('');
   L.push('- ' + mine.length + ' positions of mine to know, ' + opp + ' of theirs.');
+  var kn = ctx.known;
+  if (kn) {
+    L.push('- Known repertoire (`--known`): ' + kn.names.join('; ') + '. **' + kn.ends.lines + ' line' +
+      (kn.ends.lines === 1 ? '' : 's') + '** end in it, at ' + kn.ends.positions + ' position' + (kn.ends.positions === 1 ? '' : 's') +
+      ' reached ' + p0(kn.ends.reach) + ' of the time' + (kn.names.length > 1 ? ' (' + Object.keys(kn.ends.byName).map(function (k) {
+        var b = kn.ends.byName[k];
+        return k + ': ' + b.lines + ', ' + p0(b.reach);
+      }).join('; ') + ')' : '') + '. The scores below play the known repertoire\'s moves there.');
+  }
   if (ctx.inSample) {
     L.push('- On the index it was built from: ' + f1(100 * ctx.inSample.s) + '%, everyone ' + f1(100 * ctx.inSample.raw) +
       '% (this shares the choices\' luck).');
@@ -254,6 +264,16 @@ export function reviewMarkdown(ctx) {
     L.push('Decide: `"' + lineOf(ctx, n.path) + '": { "play": "' + c.san + '" }`');
     L.push('');
   });
+  if (kn && kn.ends.list.length) {
+    L.push('## Where it joins the known repertoire');
+    L.push('');
+    L.push('| line | reach | joins |');
+    L.push('|---|--:|---|');
+    kn.ends.list.forEach(function (x) {
+      L.push('| ' + lineOf(ctx, x.path) + ' | ' + p0(x.reach) + ' | ' + x.line + (kn.names.length > 1 || x.name !== kn.names[0] ? ' (' + x.name + ')' : '') + ' |');
+    });
+    L.push('');
+  }
   L.push('## Every decision');
   L.push('');
   L.push('| line | reach | move | why | score | runner-up | flags |');

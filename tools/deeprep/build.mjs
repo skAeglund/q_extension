@@ -28,7 +28,12 @@
  *      points, the user's "58 new vs 56 known". (It was 0.5, meant as 2 points, and let
  *      5...Qb6, a new line, beat 5...Nc6, a transposition, by 1.1 deep points at 8% reach.)
  *      A move the repertoire already plays in a position with the same pawns counts
- *      `theme` less (recurring moves are easier to learn).
+ *      `theme` less (recurring moves are easier to learn). `themeKey` 'mine' counts only my
+ *      own pawns as "the same pawns".
+ *
+ * o.known (known.mjs mergeKnown(), build --known): repertoires the user already knows. Their
+ * positions count as learned, their moves seed the theme discount, and a position in them
+ * ends a line (end `known`) instead of being built again.
  *
  * The plan is repgen's: work goes best first by reach, my move is decided, their replies
  * are followed by coverage (pickReplies), and a transposition is one node. Then `passes`
@@ -67,6 +72,9 @@ export var BUILD_DEFAULTS = {
                           // ChessDB : Prac proportion (0: ChessDB alone, as before 2026-11-21)
   learnCost: 1,           // points of the repertoire's score 100 new positions must earn (0: off)
   theme: 0.5,             // a move played elsewhere with the same pawns costs this much less than a new one
+  themeKey: 'both',       // "the same pawns": 'both' sides', or 'mine' alone (2026-11-22: of 161 White
+                          // moves in 1.Nc3 sideline drafts, none matched a Jobava move on both sides'
+                          // pawns, 46 on White's)
   costCap: 300,           // positions counted per move at most
   passes: 3,              // polish passes
   switchMargin: 0.25,     // a polish pass changes a move only for this many points
@@ -75,10 +83,12 @@ export var BUILD_DEFAULTS = {
 
 function turn(fen) { return String(fen).split(/\s+/)[1] === 'b' ? 'b' : 'w'; }
 
-// The pawns alone: what "the same structure" means for the theme discount.
-export function pawnKey(fen) {
+// The pawns alone: what "the same structure" means for the theme discount. only: 'w' or
+// 'b' keeps that side's pawns and drops the other's.
+export function pawnKey(fen, only) {
+  var drop = only === 'w' ? /[nbrqkpNBRQK]/g : only === 'b' ? /[nbrqkNBRQKP]/g : /[nbrqkNBRQK]/g;
   return String(fen).split(/\s+/)[0].split('/').map(function (rank) {
-    var x = rank.replace(/\d/g, function (d) { return '1'.repeat(Number(d)); }).replace(/[nbrqkNBRQK]/g, '1');
+    var x = rank.replace(/\d/g, function (d) { return '1'.repeat(Number(d)); }).replace(drop, '1');
     return x.replace(/1+/g, function (m) { return String(m.length); });
   }).join('/');
 }
@@ -175,7 +185,7 @@ export function replyCheck(cdb, fen, side, rp, cfg, pull) {
 /*
  * o = { root: FEN, side: 'w' | 'b', config (BUILD_DEFAULTS' keys), chessdb(fen) -> Promise
  * (or none: no ChessDB), decisions: Map(position key -> { play, avoid: [] }),
- * log(node, 'polish'?) after each decision }.
+ * known: mergeKnown()'s (optional), log(node, 'polish'?) after each decision }.
  * Returns { run(), nodes, rootKey, config }.
  */
 export function createBuilder(db, o) {
@@ -186,6 +196,14 @@ export function createBuilder(db, o) {
     memo: memo, maxLookups: cfg.maxLookups || 1e9 };
   var nodes = new Map();
   var themes = new Map();      // pawnKey|san -> how many of my positions play it
+  if (cfg.themeKey !== 'both' && cfg.themeKey !== 'mine') throw new Error('themeKey is both or mine');
+  // The known repertoires: positions (key -> { line, name }), my first move in each, and
+  // their moves' theme counts. The counts stay apart from `themes`, which addTheme() takes
+  // down and puts back while it prices a node: a known move must never be taken out.
+  var known = o.known || null;
+  var knownPos = known ? known.positions : new Map();
+  var knownMove = known ? known.first : new Map();
+  var seeded = new Map();
   var proxies = new Map();     // key -> my best move by deep score, for counting positions
   var cdbMemo = new Map();
   var decisions = o.decisions || new Map();
@@ -215,6 +233,8 @@ export function createBuilder(db, o) {
     }
     n = { key: k, fen: fen, kind: turn(fen) === side ? 'me' : 'opp', reach: reach, oi: oi, ply: ply,
       path: path, status: 'queued', seq: seq++, arrivals: 1 };
+    // A known position is learned already: the line joins the known repertoire here.
+    if (knownPos.has(k)) { n.status = 'leaf'; n.end = 'known'; n.known = knownPos.get(k); }
     nodes.set(k, n);
     return n;
   }
@@ -284,14 +304,19 @@ export function createBuilder(db, o) {
     return true;
   }
 
-  function themeKey(fen, san) { return pawnKey(fen) + '|' + moveKey(san); }
+  function themeKey(fen, san) { return pawnKey(fen, cfg.themeKey === 'mine' ? side : null) + '|' + moveKey(san); }
   function addTheme(n, d) {
     if (!n.move) return;
     var k = themeKey(n.fen, n.move);
     themes.set(k, (themes.get(k) || 0) + d);
     if (!(themes.get(k) > 0)) themes.delete(k);
   }
-  function cardCost(fen, san) { return themes.has(themeKey(fen, san)) ? 1 - cfg.theme : 1; }
+  function themeCount(k) { return (themes.get(k) || 0) + (seeded.get(k) || 0); }
+  function cardCost(fen, san) { return themeCount(themeKey(fen, san)) > 0 ? 1 - cfg.theme : 1; }
+  if (known) known.mine.forEach(function (m) {
+    var k = themeKey(m.fen, m.san);
+    seeded.set(k, (seeded.get(k) || 0) + 1);
+  });
 
   function proxy(fen) {
     var k = keyStr(fen);
@@ -307,8 +332,9 @@ export function createBuilder(db, o) {
    * moves and replies where it has them, else my best move by deep score and their
    * replies by coverage. Returns { all, fresh }: every one of them, and the ones the
    * repertoire won't have anyway (each 1, or 1 - theme for a recurring move): not in
-   * `elsewhere`, nor below a position that is, since that one's line is built whatever
-   * this decision does. Nearest first, up to cfg.costCap positions.
+   * `elsewhere` or a known repertoire, nor below a position that is, since that one's line
+   * is built (or learned) whatever this decision does. Inside a known repertoire its own
+   * moves are followed. Nearest first, up to cfg.costCap positions.
    */
   function linePositions(fen, reach, oi, ply, elsewhere) {
     var all = 0, fresh = 0, seen = new Set();
@@ -319,11 +345,12 @@ export function createBuilder(db, o) {
       if (seen.has(k)) continue;
       seen.add(k);
       if (x.ply >= cfg.maxPly) continue;
-      var inside = x.inside || elsewhere.has(k);
+      var inside = x.inside || elsewhere.has(k) || knownPos.has(k);
       var known = nodes.get(k);
-      if (known && known.status === 'leaf') continue;
+      // A line that ends here ends; one that joins a known repertoire goes on inside it.
+      if (known && known.status === 'leaf' && known.end !== 'known') continue;
       if (turn(x.fen) === side) {
-        var san = known && known.move ? known.move : proxy(x.fen);
+        var san = known && known.move ? known.move : knownMove.has(k) ? knownMove.get(k).san : proxy(x.fen);
         if (!san) continue;
         all++;
         if (!inside) {
@@ -331,7 +358,7 @@ export function createBuilder(db, o) {
           // playing the same move makes it cheaper.
           var tk = themeKey(x.fen, san);
           var self = known && known.move && themeKey(known.fen, known.move) === tk ? 1 : 0;
-          fresh += (themes.get(tk) || 0) > self ? 1 - cfg.theme : 1;
+          fresh += themeCount(tk) > self ? 1 - cfg.theme : 1;
         }
         var mv = playSan(x.fen, san);
         if (mv) queue.push({ fen: mv.fen, reach: x.reach, oi: x.oi, ply: x.ply + 1, inside: inside });
@@ -621,6 +648,11 @@ export function createBuilder(db, o) {
   }
 
   async function run() {
+    var rk = keyStr(o.root);
+    if (knownPos.has(rk)) {
+      var kp = knownPos.get(rk);
+      throw new Error('The root is a position of the known repertoire already: ' + (kp.line || 'its start') + ' in ' + kp.name + '.');
+    }
     ensure(o.root, 1, 0, 0, []);
     await growAll();
     for (var p = 0; p < cfg.passes; p++) {
@@ -636,6 +668,43 @@ export function createBuilder(db, o) {
   }
 
   return { run: run, nodes: nodes, config: cfg, side: side, stats: stats, rootKey: keyStr(o.root) };
+}
+
+/*
+ * Where the repertoire joins a known one: { lines (moves of the tree that end in a known
+ * position), positions, reach (their summed reach), byName: { name: { lines, positions,
+ * reach } }, list: [{ key, path, line, name, reach, lines }] most reached first }. On a
+ * finished build (pruned, reach recomputed).
+ */
+export function knownEnds(nodes) {
+  var out = { lines: 0, positions: 0, reach: 0, byName: {}, list: [] };
+  var at = new Map();
+  nodes.forEach(function (n) {
+    if (n.status !== 'done' || !(n.reach > 0)) return;
+    var kids = n.kind === 'me' ? (n.child ? [n.child] : []) : (n.replies || []).map(function (r) { return r.child; });
+    kids.forEach(function (k) {
+      var m = nodes.get(k);
+      if (!m || m.end !== 'known') return;
+      out.lines++;
+      if (!at.has(k)) at.set(k, { key: k, path: m.path, line: m.known.line, name: m.known.name, reach: m.reach, lines: 0 });
+      at.get(k).lines++;
+    });
+  });
+  at.forEach(function (x) {
+    out.positions++;
+    out.reach += x.reach;
+    var b = out.byName[x.name] || (out.byName[x.name] = { lines: 0, positions: 0, reach: 0 });
+    b.lines += x.lines; b.positions++; b.reach += x.reach;
+    out.list.push(x);
+  });
+  out.list.sort(function (a, b) { return b.reach - a.reach; });
+  return out;
+}
+
+// The note on a move into a known repertoire. pgnclean keeps it (repgen/clean.mjs KNOWN):
+// change the wording there too.
+export function knownNote(m) {
+  return 'transposes to ' + m.known.line + ' (in ' + m.known.name + ')';
 }
 
 /*
@@ -661,14 +730,16 @@ export function toTree(nodes, rootKey, note, line) {
     if (n.kind === 'me' && n.move) {
       var kidNode = nodes.get(n.child);
       var kid = { san: n.move, mine: true, note: note(n, kidNode) };
-      if (kidNode && shown.has(kidNode.key)) kid.note = joinNote(kid.note, 'transposes to ' + line(shown.get(kidNode.key)));
+      if (kidNode && kidNode.end === 'known') kid.note = joinNote(kid.note, knownNote(kidNode));
+      else if (kidNode && shown.has(kidNode.key)) kid.note = joinNote(kid.note, 'transposes to ' + line(shown.get(kidNode.key)));
       else if (kidNode) build(kidNode, kid);
       out.children.push(kid);
     } else if (n.kind === 'opp' && n.replies) {
       n.replies.slice().sort(function (a, b) { return b.share - a.share; }).forEach(function (r) {
         var m = nodes.get(r.child);
         var kid = { san: r.san, mine: false, note: Math.round(100 * r.share) + '% of ' + r.games.toLocaleString('en-US') + ' games' };
-        if (m && shown.has(m.key)) kid.note = joinNote(kid.note, 'transposes to ' + line(shown.get(m.key)));
+        if (m && m.end === 'known') kid.note = joinNote(kid.note, knownNote(m));
+        else if (m && shown.has(m.key)) kid.note = joinNote(kid.note, 'transposes to ' + line(shown.get(m.key)));
         else if (m) build(m, kid);
         out.children.push(kid);
       });

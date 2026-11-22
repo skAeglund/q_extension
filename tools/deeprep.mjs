@@ -51,7 +51,8 @@ import { keyOf } from './explorerdb/games.mjs';
 import { createSearch, fitPrior, DEFAULTS } from './deeprep/search.mjs';
 import { toPgn, candidateLines, lineText, dumpsOf } from './deeprep/pgn.mjs';
 import { repertoireFromPgn, evaluateRepertoire } from './deeprep/evaluate.mjs';
-import { createBuilder, repertoireMoves, toTree, positionOf, BUILD_DEFAULTS } from './deeprep/build.mjs';
+import { createBuilder, repertoireMoves, toTree, positionOf, knownEnds, BUILD_DEFAULTS } from './deeprep/build.mjs';
+import { knownFromPgn, mergeKnown, withKnown, knownName } from './deeprep/known.mjs';
 import { moveNote, rootNote, parseDecisions, reviewMarkdown, lineOf } from './deeprep/report.mjs';
 import { createProviders } from '../src/pe/providers.js';
 import { createFileCache } from './repgen/filecache.mjs';
@@ -64,8 +65,10 @@ var USAGE = [
   '  node tools/deeprep.mjs moves  <index> (--moves ... | --fen ...) [options]',
   '  node tools/deeprep.mjs browse <index> (--moves ... | --fen ...) [options]',
   '  node tools/deeprep.mjs build  <index> (--moves ... | --fen ...) --out <name> [--side ...] [--holdout <index>]',
-  '                                [--decisions <file>] [--no-chessdb] [build options, see the README]',
-  '  node tools/deeprep.mjs eval   <index> <pgn> [--side white|black] [--moves ... | --fen ...] [--json <file>]',
+  '                                [--decisions <file>] [--known <pgn>[,<pgn>...]] [--theme-key both|mine]',
+  '                                [--no-chessdb] [build options, see the README]',
+  '  node tools/deeprep.mjs eval   <index> <pgn> [--known <pgn>[,<pgn>...]] [--side white|black] [--moves ... | --fen ...]',
+  '                                [--json <file>]',
   '  node tools/deeprep.mjs slice  <index> (--moves ... | --fen ...) --out <name> [--plies 42] [--min-games 50]',
   '  node tools/deeprep.mjs fit    <index> [--moves ... | --fen ...] [--side white|black] [--samples 2000]',
   '  node tools/deeprep.mjs bench  <index> [--samples 2000]',
@@ -81,10 +84,16 @@ var USAGE = [
   '  --risk ' + DEFAULTS.risk + '          risk aversion at their moves, per win% point (0: plain mean)',
   '  --max-lookups N      give up past this many lookups (default 20,000,000)',
   'build: its own --plies (' + BUILD_DEFAULTS.plies + '), and --' + Object.keys(BUILD_DEFAULTS).filter(function (k) {
-    return k !== 'plies' && k !== 'minGames' && k !== 'prior' && k !== 'risk';
+    return k !== 'plies' && k !== 'minGames' && k !== 'prior' && k !== 'risk' && k !== 'themeKey';
   }).map(function (k) { return k.replace(/[A-Z]/g, function (ch) { return '-' + ch.toLowerCase(); }) + ' ' + BUILD_DEFAULTS[k]; })
     .join(', --'),
   '  --chessdb-rate 60 (per minute), --cache <file> (default repertoires/repgen-cache.jsonl)',
+  'build and eval:',
+  '  --known <pgn>,...    repertoires you already know (deeprep\'s, pgnclean\'s, Lichess study exports).',
+  '                       build: their positions count as learned, their moves seed --theme, and a line',
+  '                       that reaches one of their positions ends there ("transposes to ..."). eval:',
+  '                       a reply into them is followed there. Repeat it or separate files with commas.',
+  '  --theme-key both     "the same pawns" for --theme: both sides\' (both) or yours alone (mine)',
   'search only:',
   '  --keep 1             my moves expanded at each of my moves (best scores first)',
   '  --no-safe            don\'t also expand the move with the best lower bound',
@@ -109,6 +118,32 @@ function num(s, what) {
 }
 
 function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
+
+// --known's value: PGNs separated by commas (names may hold spaces).
+function knownList(s) {
+  if (s == null) throw new Error('--known needs a PGN');
+  return String(s).split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+}
+
+function pgnPath(name) {
+  var file = inPath(name);
+  if (!/\.pgn$/i.test(file) && !fs.existsSync(file) && fs.existsSync(file + '.pgn')) file += '.pgn';
+  if (!fs.existsSync(file)) throw new Error('No PGN at ' + file);
+  return file;
+}
+
+// The known repertoires, read for `side`, as one (known.mjs mergeKnown()); null for none.
+function loadKnown(names, side) {
+  if (!names || !names.length) return null;
+  var k = mergeKnown(names.map(function (nm) {
+    var file = pgnPath(nm);
+    var r = knownFromPgn(fs.readFileSync(file, 'utf8'), { side: side, name: knownName(file) });
+    r.file = file;
+    return r;
+  }));
+  k.files = names.map(pgnPath);
+  return k;
+}
 
 function parse(argv, extra, positional) {
   var o = { name: null, fen: null, moves: null, search: {}, tree: {}, out: null, samples: 2000,
@@ -140,6 +175,7 @@ function parse(argv, extra, positional) {
     else if (a === '--out' && extra) o.out = argv[++i];
     else if (a === '--samples') o.samples = num(argv[++i], '--samples');
     else if (a === '--json') o.json = argv[++i];
+    else if (a === '--known' && positional) o.known = (o.known || []).concat(knownList(argv[++i]));
     else if (!o.name && !/^--/.test(a)) o.name = a;
     else if (o.positional && !o.file && !/^--/.test(a)) o.file = a;
     else throw new Error('Unexpected argument: ' + a + '\n' + USAGE);
@@ -315,9 +351,11 @@ function pct(x) { return isFinite(x) ? (100 * x).toFixed(1) + '%' : '?'; }
 function cmdEval(argv) {
   var o = parse(argv, false, true);
   if (!o.file) throw new Error('Which PGN? deeprep eval <index> <pgn>');
-  var file = inPath(o.file);
-  if (!/\.pgn$/i.test(file) && !fs.existsSync(file) && fs.existsSync(file + '.pgn')) file += '.pgn';
+  var file = pgnPath(o.file);
   var rep = repertoireFromPgn(fs.readFileSync(file, 'utf8'), { side: o.search.side, root: o.fen });
+  // Known repertoires: a reply that transposes into one goes on there.
+  var known = loadKnown(o.known, rep.side);
+  if (known) rep.moves = withKnown(rep.moves, known);
   var db = open(o.name);
   try {
     var r = evaluateRepertoire(db, rep, { minGames: o.search.minGames || DEFAULTS.minGames });
@@ -325,6 +363,7 @@ function cmdEval(argv) {
     var from = rep.prefix && rep.prefix.length ? lineText(rep.start, rep.prefix)
       : rep.root === new Chess().fen() ? 'the start' : rep.root;
     console.log('Repertoire for ' + me + ' from ' + from +
+      (known ? ', with ' + known.names.join('; ') + ' where it transposes' : '') +
       '\n  on ' + db.meta.source + ' (' + db.meta.filter.speeds.join(',') + ', ' + db.meta.filter.ratings.join(',') + ')');
     // The dumps it was made from, when the run's JSON says.
     var json = file.replace(/\.pgn$/i, '.json');
@@ -341,7 +380,8 @@ function cmdEval(argv) {
     if (!r.games) throw new Error('The root is not in this index.');
     console.log('  Score ' + pct(r.s) + ' ±' + (100 * r.se).toFixed(1) + ' over ' + fmt(r.games) + ' games; everyone ' +
       'scored ' + pct(r.raw) + ' from there (' + ((r.s - r.raw) >= 0 ? '+' : '') + (100 * (r.s - r.raw)).toFixed(1) + ').');
-    console.log('  Moves to know: ' + fmt(r.cards) + ' positions' + (r.unreached ? ' (and ' + fmt(r.unreached) +
+    console.log('  Moves to know: ' + fmt(r.cards) + ' positions' +
+      (known ? ' (' + fmt(r.knownCards) + ' of them from the known repertoire)' : '') + (r.unreached ? ' (and ' + fmt(r.unreached) +
       ' these games never reach)' : '') + '.' + (rep.conflicts ? ' ' + rep.conflicts + ' positions had two moves of ' +
       'mine in the PGN; the first counts.' : '') + (rep.alternatives ? ' ' + rep.alternatives + ' alternative moves ' +
       'of mine (variations) are left out.' : ''));
@@ -478,7 +518,7 @@ function kebab(s) { return s.replace(/[A-Z]/g, function (ch) { return '-' + ch.t
 
 function parseBuild(argv) {
   var o = { name: null, fen: null, moves: null, side: null, out: null, config: {}, decisions: null, holdout: null,
-    chessdb: true, chessdbRate: 60, cache: null };
+    chessdb: true, chessdbRate: 60, cache: null, known: [] };
   for (var i = 0; i < argv.length; i++) {
     var a = argv[i];
     if (a === '--fen') o.fen = argv[++i];
@@ -494,6 +534,12 @@ function parseBuild(argv) {
     else if (a === '--no-chessdb') o.chessdb = false;
     else if (a === '--chessdb-rate') o.chessdbRate = num(argv[++i], '--chessdb-rate');
     else if (a === '--cache') o.cache = argv[++i];
+    else if (a === '--known') o.known = o.known.concat(knownList(argv[++i]));
+    else if (a === '--theme-key') {
+      var tk = argv[++i];
+      if (tk !== 'both' && tk !== 'mine') throw new Error('--theme-key is both or mine');
+      o.config.themeKey = tk;
+    }
     else if (a === '--weights') {
       var w = String(argv[++i]).split(',').map(Number);
       if (w.length !== 3 || w.some(function (x) { return !(x >= 0); }) || !(w[0] + w[1] + w[2] > 0)) {
@@ -562,12 +608,17 @@ async function cmdBuild(argv) {
         (both.length > 3 ? ', ...' : '') + '), so its score shares the choices\' luck too.');
     }
     var decisions = o.decisions ? parseDecisions(JSON.parse(fs.readFileSync(inPath(o.decisions), 'utf8')), o.fen) : new Map();
+    var known = loadKnown(o.known, o.side || new Chess(o.fen).turn());
+    if (known) {
+      console.log('Known: ' + known.names.join('; ') + ': ' + fmt(known.positions.size) +
+        ' positions, ' + fmt(known.mine.length) + ' moves of mine.');
+    }
     var cdb = o.chessdb ? makeChessdb(o) : null;
     var t0 = Date.now();
     // Lookups counted, for the summary: a build's cost is mostly index reads.
     var lookups = 0;
     var counted = { meta: db.meta, records: function (k) { lookups++; return db.records(k); } };
-    var b = createBuilder(counted, { root: o.fen, side: o.side, config: o.config, chessdb: cdb, decisions: decisions,
+    var b = createBuilder(counted, { root: o.fen, side: o.side, config: o.config, chessdb: cdb, decisions: decisions, known: known,
       log: function (n, what) {
         var c = n.cands.find(function (x) { return x.san === n.move; });
         var alt = n.cands.filter(function (x) { return x !== c && !x.out; }).sort(function (x, y) { return y.score - x.score; })[0];
@@ -596,7 +647,10 @@ async function cmdBuild(argv) {
         });
       });
     }
-    var rep = { side: b.side, root: o.fen, moves: repertoireMoves(b.nodes) };
+    // With known repertoires, the score is the combined one: a line that joins one goes on
+    // there with its moves.
+    var rep = { side: b.side, root: o.fen, moves: withKnown(repertoireMoves(b.nodes), known) };
+    var ends = known ? knownEnds(b.nodes) : null;
     var inSample = evaluateRepertoire(db, rep, { minGames: cfg.minGames });
     var held = hdb ? evaluateRepertoire(hdb, rep, { minGames: cfg.minGames }) : null;
     var base = outPath(o.out.replace(/\.(pgn|json|md)$/i, ''));
@@ -605,7 +659,11 @@ async function cmdBuild(argv) {
     b.nodes.forEach(function (n) { nodes.push(n); });
     var meta = { tool: 'deeprep build', index: db.meta.source + '@' + db.meta.created, dumps: dumpsOf(db.meta),
       filter: db.meta.filter, fen: o.fen, moves: o.prefix, side: b.side, config: cfg, chessdb: !!cdb,
-      decisions: o.decisions, holdout: hdb ? { index: hdb.meta.source, dumps: dumpsOf(hdb.meta), eval: held } : null,
+      decisions: o.decisions,
+      known: known ? { files: known.files, names: known.names, positions: known.positions.size, moves: known.mine.length,
+        ends: { lines: ends.lines, positions: ends.positions, reach: ends.reach, byName: ends.byName,
+          list: ends.list.map(function (x) { return { path: x.path, line: x.line, name: x.name, reach: x.reach, lines: x.lines }; }) } } : null,
+      holdout: hdb ? { index: hdb.meta.source, dumps: dumpsOf(hdb.meta), eval: held } : null,
       inSample: inSample, stats: Object.assign({ ms: Date.now() - t0, lookups: lookups, chessdbRequests: cdb ? cdb.stats.chessdbRequests || 0 : 0 }, b.stats),
       created: new Date().toISOString() };
     var replacer = function (k, v) { return typeof v === 'bigint' ? String(v) : v; };
@@ -618,10 +676,18 @@ async function cmdBuild(argv) {
       rootComment: rootNote(mineCount, inSample, held) }));
     fs.writeFileSync(base + '.review.md', reviewMarkdown({ out: path.basename(base), side: b.side, root: o.fen, prefix: o.prefix,
       index: db.meta.source, filter: db.meta.filter, cfg: cfg, nodes: b.nodes, inSample: inSample, chessdb: !!cdb,
-      holdout: hdb ? { name: hdb.meta.source, eval: held } : null, date: new Date().toISOString().slice(0, 10) }));
+      holdout: hdb ? { name: hdb.meta.source, eval: held } : null, known: known ? { names: known.names, ends: ends } : null,
+      date: new Date().toISOString().slice(0, 10) }));
     console.log(mineCount + ' positions of mine; ' + b.stats.decisions + ' decisions, ' + b.stats.polished +
       ' changed by polishing; ' + fmt(lookups) + ' lookups, ' + (cdb ? (cdb.stats.chessdbRequests || 0) + ' ChessDB requests, ' : '') +
       mmss(Date.now() - t0) + '.');
+    if (ends) {
+      console.log(ends.lines + ' line' + (ends.lines === 1 ? '' : 's') + ' end in the known repertoire, at ' + ends.positions +
+        ' position' + (ends.positions === 1 ? '' : 's') + ' reached ' + (100 * ends.reach).toFixed(1) + '% of the time' +
+        (known.names.length > 1 ? ' (' + Object.keys(ends.byName).map(function (k) {
+          return k + ': ' + ends.byName[k].lines;
+        }).join('; ') + ')' : '') + '. The scores below play its moves there.');
+    }
     console.log('In sample: ' + (100 * inSample.s).toFixed(1) + '% (everyone ' + (100 * inSample.raw).toFixed(1) + '%)' +
       (held ? '. Holdout: ' + (100 * held.s).toFixed(1) + '% ±' + (100 * held.se).toFixed(1) + ' (everyone ' + (100 * held.raw).toFixed(1) + '%).' : '.'));
     console.log('Wrote ' + base + '.pgn, .json and .review.md');
