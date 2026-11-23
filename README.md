@@ -880,7 +880,12 @@ replies by coverage (`--coverage 90 --coverage-step 10 --single-below 50`, `--mi
 `--line-min-reach`), and a transposition is one node. At each of your moves:
 
 - **Candidates**: your `--consider` (4) best moves by deep score (`--plies` 12 ahead, from
-  that move), plus the most played.
+  that move), plus the most played, plus ChessDB's best and a pinned move whatever their
+  games. A move with fewer than `--min-games` games, none included, is valued from its own
+  games shrunk towards the position's score (with none, the score itself), which the lean
+  below turns into what ChessDB and Prac make of it. Such a move is never put out as
+  unsound, and doesn't set that bar either: with no human replies, its sound value is
+  ChessDB's eval, not a score in games.
 - **ChessDB** (cached in `repertoires/repgen-cache.jsonl`, shared with repgen, at
   `--chessdb-rate` 60 a minute):
   - A move more than `--max-loss` (5) win% under ChessDB's best is out. A move ChessDB lists
@@ -913,6 +918,12 @@ replies by coverage (`--coverage 90 --coverage-step 10 --single-below 50`, `--mi
   compares only yours, so Bf4 after ...d5 counts as the Bf4 you play after ...Nf6.
 - The move with the best **score** (blend − learning) is played.
 
+A line never ends with you to move. Where it would (fewer than `--min-games` games, no move
+with that many, or `--max-ply`), ChessDB's best is played as a last move (a pinned one, if
+you pinned one there), and the position after it ends the line. Its PGN comment says
+"ChessDB's move to end the line". The summary counts these. Without ChessDB the line ends
+there as before.
+
 Once everything is built, `--passes` (3) polishing passes decide every move again, most
 reached first, with the whole repertoire known. An early move could only guess what the
 rest would share. A move changes only for `--switch-margin` (0.25) points. `--no-chessdb`
@@ -933,8 +944,8 @@ the PGN down to the moves, the replies' shares and where lines transpose, for ke
   "1. d4 c5 2. dxc5 e5 3. Nf3": { "avoid": ["Nf6"] } }
 ```
 
-`--decisions repertoires/e5.decisions.json` plays `play` whatever it scores (it needs
-`--min-games` games there) and never plays `avoid`.
+`--decisions repertoires/e5.decisions.json` plays `play` whatever it scores and whatever its
+games, and never plays `avoid`.
 
 **Repertoires you already know** (`--known`). A build otherwise knows only its own
 positions: it gets no credit for transposing into a repertoire you have, and decides that

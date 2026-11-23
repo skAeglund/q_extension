@@ -108,6 +108,7 @@ export function moveNote(n, kid) {
   }
   if (n.why === 'pinned') parts.push('pinned');
   if (n.why === 'all-out') parts.push('every move over a limit: the safest');
+  if (n.why === 'engine') parts.push('ChessDB\'s move to end the line');
   var alts = n.cands.filter(function (x) { return x !== c && !x.out; }).sort(function (a, b) { return b.score - a.score; });
   if (alts.length) parts.push('also ' + alts.slice(0, 3).map(function (x) { return x.san + ' ' + f1(x.score); }).join(', '));
   var out = n.cands.filter(function (x) { return x.out && x.out !== 'avoid'; });
@@ -177,7 +178,7 @@ var FLAG_TEXT = {
   holdout: 'the holdout prefers another move',
   pinned: 'pinned by you',
   'all-out': 'every move over a limit',
-  'pin-missing': 'the pinned move has too few games'
+  'pin-missing': 'the pinned move isn\'t legal here'
 };
 
 /*
@@ -232,7 +233,8 @@ export function reviewMarkdown(ctx) {
     L.push('- No holdout: give `--holdout <index of other months>` for a score the choices\' luck can\'t flatter.');
   }
   L.push('- Moves: ' + Object.keys(whys).map(function (k) {
-    return whys[k] + ' ' + ({ best: 'best by score', learn: 'chosen for learning', pinned: 'pinned', 'all-out': 'all over a limit' }[k] || k);
+    return whys[k] + ' ' + ({ best: 'best by score', learn: 'chosen for learning', pinned: 'pinned', 'all-out': 'all over a limit',
+      engine: 'ChessDB\'s at a line\'s end' }[k] || k);
   }).join(', ') + '. ' + flagged.length + ' to review below.');
   L.push('');
   L.push('Columns: deep is the deep score (shrunk, ±SE' + (cfg.enginePrior > 0 ? ', towards the position\'s score plus ChessDB\'s ' +

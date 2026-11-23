@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 634 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 639 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -1236,6 +1236,22 @@ apart as `knownCards`). `knownEnds()` counts the joins for the summary, `meta.kn
 review. A known root is an error. `--theme-key mine` keys the discount on my pawns only: of
 161 White moves in the user's sideline drafts outside the Jobava, none matched a Jobava move
 on both sides' pawns and 46 (29%) on White's. `both` stays the default.
+
+**No move left out for its games (2026-11-23).** The user's `_ev` pass over six 1.Nc3 builds
+left decisions more than 5 win% under ChessDB's best with no candidate within 5, mostly near
+line ends: ChessDB's best was the loss limit's yardstick only, never a candidate, so under
+`minGames` (10.O-O-O, 12 games; 8.gxf3, 35) it couldn't be played or pinned (`pinMissing`),
+and outside the `consider` best by deep score (5.Be3, 2,102 games) it was never weighed;
+with everything weighed over the limit, `choose()` fell back on `all-out`. The user's rule:
+a move must never be excluded just because it has few or no games. Now `decide()` adds
+ChessDB's best, and a pinned move, whatever their games (`thinOption()`: own games shrunk
+towards the position's score, w 0 with none, so the lean makes it ChessDB's and Prac's
+view). A move under minGames (`c.thin`) neither sets the "unsound" bar nor is put out by
+it. A position of mine that would be a leaf (few-games, thin, max-ply) plays ChessDB's best
+as a final move (`finalMove()`, `why: 'engine'`, `n.final`), which polishing leaves alone.
+`playSan()` refuses a null SAN: chess.js plays `move(null)` as a null move. evaluate.mjs
+already scored a move with no games at its position's own games (`unseen`). Harness; the
+rebuilds follow.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

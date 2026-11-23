@@ -623,8 +623,8 @@ async function cmdBuild(argv) {
         var c = n.cands.find(function (x) { return x.san === n.move; });
         var alt = n.cands.filter(function (x) { return x !== c && !x.out; }).sort(function (x, y) { return y.score - x.score; })[0];
         console.log('[' + (100 * n.reach).toFixed(2).padStart(6) + '%] ' + (line(n.path) || '(root)') + ': ' + n.move +
-          (what === 'polish' ? ' (was ' + n.was[n.was.length - 1] + ')' : '') + ' (score ' + c.score.toFixed(1) + ', deep ' +
-          c.deep.toFixed(1) + (c.engine != null ? ', ChessDB ' + c.engine.toFixed(1) : '') +
+          (what === 'polish' ? ' (was ' + n.was[n.was.length - 1] + ')' : '') + ' (score ' +
+          (c.score != null ? c.score.toFixed(1) : '–') + ', deep ' + (c.deep != null ? c.deep.toFixed(1) : '–') + (c.engine != null ? ', ChessDB ' + c.engine.toFixed(1) : '') +
           (c.sound != null ? ', sound ' + c.sound.toFixed(1) : '') + '; ' + n.why +
           (alt ? '; ' + alt.san + ' ' + alt.score.toFixed(1) : '') + ') ' + mmss(Date.now() - t0));
       } });
@@ -679,7 +679,8 @@ async function cmdBuild(argv) {
       holdout: hdb ? { name: hdb.meta.source, eval: held } : null, known: known ? { names: known.names, ends: ends } : null,
       date: new Date().toISOString().slice(0, 10) }));
     console.log(mineCount + ' positions of mine; ' + b.stats.decisions + ' decisions, ' + b.stats.polished +
-      ' changed by polishing; ' + fmt(lookups) + ' lookups, ' + (cdb ? (cdb.stats.chessdbRequests || 0) + ' ChessDB requests, ' : '') +
+      ' changed by polishing, ' + nodes.filter(function (n) { return n.final && n.status === 'done'; }).length +
+      ' at line ends (ChessDB\'s move); ' + fmt(lookups) + ' lookups, ' + (cdb ? (cdb.stats.chessdbRequests || 0) + ' ChessDB requests, ' : '') +
       mmss(Date.now() - t0) + '.');
     if (ends) {
       console.log(ends.lines + ' line' + (ends.lines === 1 ? '' : 's') + ' end in the known repertoire, at ' + ends.positions +

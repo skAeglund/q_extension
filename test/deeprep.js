@@ -605,6 +605,99 @@ module.exports = async function run(check) {
     assert.strictEqual(b.nodes.get(String(G.keyOf(fenAfter('d4', 'Nf6')))).move, 'Nf3');
     assert.throws(() => R.parseDecisions({ '1. d4 Ke2': { play: 'x' } }, START), /not a line of legal moves/);
   });
+  // 2026-11-23: a move is never left out for having few or no games.
+  await check('build: ChessDB\'s best with no games is weighed, and wins when the others are over the loss limit', async () => {
+    // ChessDB likes 1.Nf3, which no game here plays; e4 and d4 are 3 pawns down.
+    const cdb = Object.assign({}, trapCdb, { [PE.fenKey(START)]: [['Nf3', 50], ['e4', -300], ['d4', -300]] });
+    const b = await build(trapDb, { soundMargin: 3 }, cdb);
+    const r = rootOf(b), nf3 = r.cands.find(c => c.san === 'Nf3');
+    assert.ok(nf3, 'weighed');
+    assert.strictEqual(r.move, 'Nf3');
+    assert.strictEqual(r.why, 'best', 'not all-out');
+    assert.strictEqual(nf3.games, 0);
+    assert.strictEqual(nf3.thin, true);
+    assert.strictEqual(nf3.w, 0);
+    // The position's score (126 of 200 games) plus ChessDB's lead over the average move.
+    near(nf3.deep, 63 + (PE.winFromCp(50) - PE.winFromCp(-300)), 'mu + lead');
+    assert.ok(r.cands.filter(c => c !== nf3).every(c => c.out === 'max-loss'));
+    // Eval scores the line through it at the position's own games, and says it is unseen.
+    const ev = E.evaluateRepertoire(trapDb, { side: 'w', root: START, moves: B.repertoireMoves(b.nodes) }, { minGames: 10 });
+    near(ev.s, 0.63, 'the root\'s own score');
+    assert.deepStrictEqual(ev.unseen.map(u => u.san), ['Nf3']);
+    // The PGN and the review take 0 games.
+    const pgn = P.toPgn(B.toTree(b.nodes, b.rootKey, R.moveNote, p => p.join(' ')), { prefix: [],
+      headers: { White: 'Repertoire', Black: 'Lichess' } });
+    assert.ok(pgn.includes('0 games, raw –'), pgn);
+    new Chess().loadPgn(pgn);
+    assert.deepStrictEqual(leftAfterClean(pgn, 'w'), [], pgn);
+    const md = R.reviewMarkdown({ out: 'x', side: 'w', root: START, prefix: [], index: 'test', filter: { speeds: ['blitz'], ratings: [2000] },
+      cfg: b.config, nodes: b.nodes, inSample: null, holdout: null, chessdb: true, date: '2026-11-23' });
+    assert.ok(!/NaN|undefined/.test(md), md);
+  });
+  await check('build: ChessDB\'s best with plenty of games outside the `consider` best is weighed', async () => {
+    // e4 70% (100 games) is best by deep score, d4 the most played; c4 (100 games, 40%) is
+    // neither, but ChessDB's best by a pawn.
+    const db = await mkIdx('consider', [['e4 e5', 70, 0, 30], ['d4 d5', 80, 0, 120], ['c4 e5', 40, 0, 60]]);
+    const cdb = { [PE.fenKey(START)]: [['c4', 100], ['e4', 20], ['d4', 20]] };
+    const r = rootOf(await build(db, { consider: 1, soundMargin: 0 }, cdb));
+    const c4 = r.cands.find(c => c.san === 'c4');
+    assert.ok(c4, 'weighed');
+    assert.strictEqual(c4.thin, undefined, 'a normal candidate');
+    assert.strictEqual(r.move, 'c4', 'the others are over the loss limit');
+    db.close();
+  });
+  await check('build: a pin to a move under minGames is played; only an illegal one is missing', async () => {
+    const db = await mkIdx('pinthin', [['e4 e5', 30, 0, 30], ['d4 d5', 58, 0, 42], ['Nf3 d5', 4, 0, 1]]);
+    let b = await build(db, {}, null, { decisions: R.parseDecisions({ [START]: { play: 'Nf3' } }, START) });
+    const r = rootOf(b), nf3 = r.cands.find(c => c.san === 'Nf3');
+    assert.strictEqual(r.move, 'Nf3');
+    assert.strictEqual(r.why, 'pinned');
+    assert.strictEqual(r.pinMissing, undefined);
+    assert.strictEqual(nf3.games, 5);
+    near(nf3.raw, 80, 'its own games');
+    b = await build(db, {}, null, { decisions: R.parseDecisions({ [START]: { play: 'Nf6' } }, START) });
+    assert.strictEqual(rootOf(b).pinMissing, 'Nf6');
+    assert.ok(R.flagsOf(rootOf(b), b.config).includes('pin-missing'));
+    db.close();
+  });
+  await check('build: a move under minGames is never put out as unsound, nor sets the bar', async () => {
+    // e4 scores 70% on 100 games; Nf3 (6 games) is ChessDB's best, and after it ChessDB's
+    // eval (50) is its sound value, far under e4's 70.
+    const db = await mkIdx('soundthin', [['e4 e5', 70, 0, 30], ['Nf3 d5', 3, 0, 3]]);
+    const cdb = { [PE.fenKey(START)]: [['Nf3', 40], ['e4', 30]], [PE.fenKey(fenAfter('e4'))]: [['e5', 0]],
+      [PE.fenKey(fenAfter('Nf3'))]: [['d5', 0]] };
+    const r = rootOf(await build(db, { soundMargin: 3 }, cdb));
+    const nf3 = r.cands.find(c => c.san === 'Nf3'), e4 = r.cands.find(c => c.san === 'e4');
+    assert.strictEqual(nf3.thin, true);
+    assert.ok(nf3.sound < e4.sound - 3, 'by the sound values it would be out');
+    assert.strictEqual(nf3.out, undefined);
+    assert.strictEqual(e4.out, undefined, 'and it doesn\'t put e4 out either');
+    db.close();
+  });
+  await check('build: a position of mine with no move of minGames games ends on ChessDB\'s move', async () => {
+    // After 1.e4 e5: 54 games, but Nf3 has 8 and Bc4 6.
+    const db = await mkIdx('final', [['e4 e5', 20, 0, 20], ['e4 e5 Nf3 Nc6', 4, 0, 4], ['e4 e5 Bc4 Nf6', 3, 0, 3]]);
+    const cdb = { [PE.fenKey(START)]: [['e4', 30]], [PE.fenKey(fenAfter('e4', 'e5'))]: [['Nf3', 30], ['Bc4', 20]] };
+    let b = await build(db, { passes: 2 }, cdb);
+    const at = b => b.nodes.get(String(G.keyOf(fenAfter('e4', 'e5'))));
+    let n = at(b);
+    assert.strictEqual(n.move, 'Nf3');
+    assert.strictEqual(n.why, 'engine');
+    assert.strictEqual(n.final, 'thin');
+    assert.strictEqual(b.nodes.get(n.child).end, 'few-games', 'the position after it ends the line');
+    const pgn = P.toPgn(B.toTree(b.nodes, b.rootKey, R.moveNote, p => p.join(' ')), { prefix: [],
+      headers: { White: 'Repertoire', Black: 'Lichess' } });
+    assert.ok(pgn.includes('ChessDB\'s move to end the line'), pgn);
+    assert.deepStrictEqual(leftAfterClean(pgn, 'w'), [], pgn);
+    const ev = E.evaluateRepertoire(db, { side: 'w', root: START, moves: B.repertoireMoves(b.nodes) }, { minGames: 10 });
+    assert.ok(isFinite(ev.s), 'eval goes through it');
+    // Without ChessDB the line ends there, as before.
+    b = await build(db, {}, null);
+    n = at(b);
+    assert.strictEqual(n.status, 'leaf');
+    assert.strictEqual(n.end, 'thin');
+    db.close();
+  });
   await check('build: the review lists flagged decisions with a line to answer with', async () => {
     const b = await build(trDb1, Object.assign({ learnCost: 200 }, LEARN));
     const md = R.reviewMarkdown({ out: 'x', side: 'w', root: START, prefix: [], index: 'test', filter: { speeds: ['blitz'], ratings: [2000] },

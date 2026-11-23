@@ -35,6 +35,18 @@
  * positions count as learned, their moves seed the theme discount, and a position in them
  * ends a line (end `known`) instead of being built again.
  *
+ * No move is left out for having few or no games (2026-11-23). The search lists my moves with
+ * `minGames` games, and the `consider` best of those by deep score are weighed, plus the most
+ * played. ChessDB's best is always weighed too, and so is a pinned move, whatever their
+ * games: a move under minGames (`thin`) is valued as the search values thin moves, its own
+ * games shrunk towards the position's score (with none, the score itself), and the lean
+ * below then makes it what ChessDB and Prac say. It neither sets the bar for "unsound" nor
+ * is put out by it, its sound value being ChessDB's eval for want of human replies. And a
+ * line no longer ends with me to move: a position of mine that would be a leaf (few games,
+ * no move with minGames, the last ply) gets ChessDB's best as a final move (`why: 'engine'`,
+ * `final`), and the position after it ends the line. Before this, lines thinning out ended
+ * in all-out picks 10+ points under ChessDB's best (10.a4 for 10.O-O-O on 12 games).
+ *
  * The plan is repgen's: work goes best first by reach, my move is decided, their replies
  * are followed by coverage (pickReplies), and a transposition is one node. Then `passes`
  * polish passes decide every move of mine again, most reached first, with the whole
@@ -49,7 +61,7 @@ import { Chess } from '../../src/vendor/chess.js';
 import { riskMean, scoreToRootWin, moveKey } from '../../src/pe/search.js';
 import { pickReplies } from '../repgen/generator.mjs';
 import { CUT, ENDED, keyOf, codeParts, fullFen } from '../explorerdb/games.mjs';
-import { createSearch } from './search.mjs';
+import { createSearch, leafStat, shrinkWeight } from './search.mjs';
 
 export var BUILD_DEFAULTS = {
   plies: 12,              // each decision's deep scores look this many plies ahead
@@ -94,6 +106,7 @@ export function pawnKey(fen, only) {
 }
 
 function playSan(fen, san) {
+  if (!san) return null;                     // chess.js plays move(null) as a null move
   var c = new Chess(fullFen(fen));
   try {
     var mo = c.move(san);
@@ -209,7 +222,7 @@ export function createBuilder(db, o) {
   var decisions = o.decisions || new Map();
   var log = o.log || function () {};
   var seq = 0;
-  var stats = { decisions: 0, chessdb: 0, polished: 0 };
+  var stats = { decisions: 0, chessdb: 0, polished: 0, finals: 0 };
 
   function keyStr(fen) { return String(keyOf(fen)); }
 
@@ -433,40 +446,123 @@ export function createBuilder(db, o) {
     n.status = 'done';
   }
 
-  async function decide(n) {
-    if (n.ply >= cfg.maxPly) return leaf(n, 'max-ply');
-    var op = createSearch(db, n.fen, sopts).candidates();
-    n.games = op.total;
-    if (!op.list.length) return leaf(n, op.total < cfg.minGames ? 'few-games' : 'thin');
-    var d = decisions.get(n.key);
-    var picked = op.list.slice(0, cfg.consider);
-    var add = function (x) { if (x && picked.indexOf(x) < 0) picked.push(x); };
-    add(op.list.reduce(function (a, b) { return b.games > a.games ? b : a; }));
-    if (d && d.play) {
-      var want = op.list.find(function (x) { return moveKey(x.san) === moveKey(d.play); });
-      if (want) add(want);
-      else n.pinMissing = d.play;              // not a move with minGames games here
-    }
-    n.cands = picked.map(function (x) {
-      var c = { san: x.san, fen: playSan(n.fen, x.san).fen, games: x.games, share: x.share, raw: 100 * x.raw,
-        deep: 100 * x.s, se: 100 * x.se, w: x.w, engine: null, prac: null, sound: null, trap: null };
-      if (d && d.avoid && d.avoid.some(function (a) { return moveKey(a) === moveKey(x.san); })) c.out = 'avoid';
-      return c;
-    });
-    // ChessDB here and after each candidate, asked together.
-    var answers = await Promise.all([chessdb(n.fen)].concat(n.cands.map(function (c) {
-      return c.out ? null : chessdb(c.fen);
-    })));
-    var here = answers[0];
+  // ChessDB's answer for a position of mine: { wins: Map(move key -> win% for me), best, bestSan }.
+  function engineOf(here, fen) {
     var wins = new Map(), best = null, bestSan = null;
     if (here && here.status === 'ok' && here.moves) {
       here.moves.forEach(function (m) {
-        var v = scoreToRootWin(m.score, n.fen, side);
+        var v = scoreToRootWin(m.score, fen, side);
         wins.set(moveKey(m.san), v);
         if (best == null || v > best) { best = v; bestSan = m.san; }
       });
     }
+    return { wins: wins, best: best, bestSan: bestSan };
+  }
+
+  /*
+   * A move of mine the search doesn't list (under minGames games, or none at all), in the
+   * search's candidates() shape: valued as the search values a thin move, its own games
+   * shrunk towards the position's score by the prior; with no games, the position's score
+   * itself and w 0, so the lean in decide() makes it what ChessDB and Prac say. Its SE with
+   * no games is the prior's spread, sqrt(var / prior). Null if the move isn't legal here.
+   * (Asked 2026-11-23: a move must never be excluded just because it has few or no games.
+   * ChessDB's best was only the loss limit's yardstick, so with under 50 games it could
+   * never be played, and lines thinning out ended in all-out picks 10+ points under it.)
+   */
+  function thinOption(fen, san, pos) {
+    var mv = playSan(fen, san);
+    if (!mv) return null;
+    pos = pos || positionOf(db, fen);
+    var m = pos.moves.find(function (x) { return moveKey(x.san) === moveKey(mv.san); }) || { games: 0, w: 0, d: 0, b: 0 };
+    var all = leafStat(pos.w, pos.d, pos.b, side);
+    var vr = all.n > 0 && isFinite(all.se) ? all.se * all.se * all.n : 0.25;
+    var own = leafStat(m.w, m.d, m.b, side);
+    var x = { san: mv.san, games: m.games, share: pos.total ? m.games / pos.total : 0, raw: own.s, s: all.s,
+      se: cfg.prior > 0 ? Math.sqrt(vr / cfg.prior) : null, w: 0, thin: true };
+    if (m.games > 0) {
+      x.w = isFinite(all.s) ? shrinkWeight(own.se, vr, cfg.prior) : 1;
+      x.s = isFinite(all.s) ? all.s + x.w * (own.s - all.s) : own.s;
+      x.se = own.se;
+    }
+    return x;
+  }
+
+  function candOf(n, x, d) {
+    var c = { san: x.san, fen: playSan(n.fen, x.san).fen, games: x.games, share: x.share,
+      raw: isFinite(x.raw) ? 100 * x.raw : null, deep: isFinite(x.s) ? 100 * x.s : null,
+      se: x.se != null && isFinite(x.se) ? 100 * x.se : null, w: x.w, engine: null, prac: null, sound: null, trap: null };
+    if (x.thin) c.thin = true;
+    if (d && d.avoid && d.avoid.some(function (a) { return moveKey(a) === moveKey(x.san); })) c.out = 'avoid';
+    return c;
+  }
+
+  /*
+   * A position of mine where the line would end (`why`: few-games, thin, max-ply) ends on my
+   * move instead: ChessDB's best, or a pinned move, so no line stops with me to move and no
+   * answer. The position after it ends the line as usual. No candidates are weighed: it is
+   * scored on ChessDB and its own games (shrunk) alone, and polishing leaves it.
+   */
+  async function finalMove(n, why, d) {
+    var pos = positionOf(db, n.fen);
+    if (n.games == null) n.games = pos.total;
+    var e = engineOf(await chessdb(n.fen), n.fen);
+    n.engineBest = e.bestSan != null ? { san: e.bestSan, win: e.best } : null;
+    var pin = d && d.play ? playSan(n.fen, d.play) : null;
+    if (d && d.play && !pin) n.pinMissing = d.play;
+    var x = thinOption(n.fen, pin ? pin.san : e.bestSan, pos);
+    if (!x) return leaf(n, why);
+    var c = candOf(n, x, null);
+    if (e.wins.has(moveKey(c.san))) c.engine = e.wins.get(moveKey(c.san));
+    c.blend = blend(cfg.weights, [c.engine, null, c.deep]);
+    c.penalty = 0;
+    c.score = c.blend;
+    n.cands = [c];
+    n.final = why;
+    stats.finals++;
+    settle(n, { c: c, why: pin ? 'pinned' : 'engine' });
+    log(n);
+  }
+
+  async function decide(n) {
+    var d = decisions.get(n.key);
+    if (n.ply >= cfg.maxPly) return finalMove(n, 'max-ply', d);
+    var op = createSearch(db, n.fen, sopts).candidates();
+    n.games = op.total;
+    if (!op.list.length) return finalMove(n, op.total < cfg.minGames ? 'few-games' : 'thin', d);
+    var pos = null;
+    var optionOf = function (san) {
+      var mv = playSan(n.fen, san);
+      if (!mv) return null;
+      var x = op.list.find(function (y) { return moveKey(y.san) === moveKey(mv.san); });
+      return x || thinOption(n.fen, mv.san, pos || (pos = positionOf(db, n.fen)));
+    };
+    var picked = op.list.slice(0, cfg.consider);
+    var add = function (x) { if (x && !picked.some(function (y) { return moveKey(y.san) === moveKey(x.san); })) picked.push(x); };
+    add(op.list.reduce(function (a, b) { return b.games > a.games ? b : a; }));
+    if (d && d.play) {
+      // A pinned move is weighed whatever its games; only an illegal one is missing.
+      var want = optionOf(d.play);
+      if (want) add(want);
+      else n.pinMissing = d.play;
+    }
+    n.cands = picked.map(function (x) { return candOf(n, x, d); });
+    // ChessDB here and after each candidate, asked together.
+    var answers = await Promise.all([chessdb(n.fen)].concat(n.cands.map(function (c) {
+      return c.out ? null : chessdb(c.fen);
+    })));
+    var e = engineOf(answers[0], n.fen);
+    var wins = e.wins, best = e.best, bestSan = e.bestSan;
     n.engineBest = bestSan != null ? { san: bestSan, win: best } : null;
+    // ChessDB's best is always weighed, whatever its games: outside the `consider` best by
+    // deep score (5.Be3, 2,102 games) or under minGames (10.O-O-O, 12) it never was.
+    if (bestSan != null && !n.cands.some(function (c) { return moveKey(c.san) === moveKey(bestSan); })) {
+      var bx = optionOf(bestSan);
+      if (bx) {
+        var bc = candOf(n, bx, d);
+        n.cands.push(bc);
+        answers.push(bc.out ? null : await chessdb(bc.fen));
+      }
+    }
     // ChessDB's view of the average move here, by games: what the position's score stands for.
     var eref = null;
     if (cfg.enginePrior > 0) {
@@ -529,12 +625,15 @@ export function createBuilder(db, o) {
       // move's luck is its sound value too. The Scandi build (2026-10-19) put 10...Qxf6 (982
       // games, 6% blunders, sound 64.4) out as unsound by 0.12 against Rxf6's 67.6 ±5.5 on
       // 58 games, and Rxf6 won.
-      var sounds = n.cands.filter(function (c) { return !c.out && c.sound != null; }).map(function (c) {
+      // A move under minGames (c.thin) neither sets the bar nor is put out: with no human
+      // replies its sound value is ChessDB's eval after their best one, a different scale
+      // from the others' scores in games.
+      var sounds = n.cands.filter(function (c) { return !c.out && !c.thin && c.sound != null; }).map(function (c) {
         return c.sound - cfg.soundZ * (c.se || 0);
       });
       var top = sounds.length ? Math.max.apply(null, sounds) : null;
       n.cands.forEach(function (c) {
-        if (!c.out && c.sound != null && c.sound < top - cfg.soundMargin - 1e-9) c.out = 'unsound';
+        if (top != null && !c.out && !c.thin && c.sound != null && c.sound < top - cfg.soundMargin - 1e-9) c.out = 'unsound';
       });
     }
     price(n, new Set(nodes.keys()));
@@ -628,7 +727,7 @@ export function createBuilder(db, o) {
       var n = order[i];
       if (nodes.get(n.key) !== n || !(n.reach > 0)) continue;
       var d = decisions.get(n.key);
-      if (d && d.play) continue;
+      if ((d && d.play) || n.final) continue;
       price(n, reachable(n.key));
       var cur = n.cands.find(function (c) { return c.san === n.move; });
       var pick = choose(n);
@@ -662,7 +761,7 @@ export function createBuilder(db, o) {
     recomputeReach();
     // The final costs, as the repertoire stands.
     nodes.forEach(function (n) {
-      if (n.kind === 'me' && n.status === 'done' && n.cands) price(n, reachable(n.key));
+      if (n.kind === 'me' && n.status === 'done' && n.cands && !n.final) price(n, reachable(n.key));
     });
     return { nodes: nodes, stats: stats };
   }

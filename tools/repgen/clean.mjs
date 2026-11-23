@@ -43,6 +43,7 @@ var DEEPREP = [
   'over \\S+ ' + N + ', learning -' + N,
   'pinned',
   'every move over a limit: the safest',
+  'ChessDB\'s move to end the line',
   'also \\S+ ' + N + '(?:, \\S+ ' + N + ')*',
   OUT + '(?:, ' + OUT + ')*',
   'ChessDB best \\S+ ' + N,
