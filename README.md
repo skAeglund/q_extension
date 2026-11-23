@@ -913,8 +913,8 @@ replies by coverage (`--coverage 90 --coverage-step 10 --single-below 50`, `--mi
   already has adds none. A wholly new line adds as many as the largest candidate's line, so
   a line that runs out early isn't cheap for that reason. At 1 a wholly new line pays about
   2 points at a typical decision (1.5 above 2% reach, more below: lines don't shrink as fast
-  as reach does). A move the repertoire already plays elsewhere with the same pawns counts
-  `--theme` (0.5) less. "The same pawns" are both sides' by default; `--theme-key mine`
+  as reach does). A move the chapter already plays elsewhere with the same pawns counts
+  `--theme` (0.5) less (moves of `--known` files only with `--known-theme 1`). "The same pawns" are both sides' by default; `--theme-key mine`
   compares only yours, so Bf4 after ...d5 counts as the Bf4 you play after ...Nf6.
 - The move with the best **score** (blend − learning) is played, but only among the moves
   whose blend is within `--learn-margin` (2) points of the best blend. So learning settles
@@ -960,8 +960,10 @@ ends included, counts as learned:
 
 - A move into them costs nothing new to learn. Candidates are still valued by deep score,
   ChessDB and Prac as before; only the learning cost changes.
-- Their moves seed the recurring-move discount (`--theme`), so playing their kind of move
-  elsewhere is cheaper. `--theme-key mine` makes that match far more often.
+- Their moves don't seed the recurring-move discount (`--theme`): it counts ideas that recur
+  inside the chapter being built, and a known file's move with the same pawns is no easier to
+  learn unless a line actually transposes into it. `--known-theme 1` lets them seed it, as
+  before 2026-11-23.
 - A line that reaches one of their positions ends there. Its move says "transposes to
   <that file's line> (in <file>)", and pgnclean keeps that note.
 - The summary, the `.json` (`meta.known`) and the review count the lines that end in them,

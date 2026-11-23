@@ -822,18 +822,22 @@ module.exports = async function run(check) {
     // A root the known repertoire has already: nothing to build.
     await assert.rejects(build(trDb1, cfg, null, { root: fenAfter('d4', 'd5', 'Nf3', 'Nf6'), known }), /known repertoire already/);
   });
-  await check('build --known: its moves seed the theme discount, and polishing can\'t take them out', async () => {
-    // 1.d4 Nc6 2.Nf3: Nf3 with the same pawns as after 1.d4 Nf6.
-    const b = await build(trDb1, Object.assign({ learnCost: 100, passes: 2 }, LEARN), null,
-      { root: afterNf6, known: knownOf('1. d4 Nc6 2. Nf3 *') });
-    const n = atRoot(b);
+  await check('build --known: its moves seed the theme discount only with --known-theme 1', async () => {
+    // 1.d4 Nc6 2.Nf3: Nf3 with the same pawns as after 1.d4 Nf6, in a position the chapter
+    // never reaches. By default that doesn't make Nf3 here any easier to learn.
+    const known = knownOf('1. d4 Nc6 2. Nf3 *');
+    let n = atRoot(await build(trDb1, Object.assign({ learnCost: 100, passes: 2 }, LEARN), null, { root: afterNf6, known }));
+    near(n.cands.find(c => c.san === 'Nf3').own, 1, 'the known file\'s Nf3 doesn\'t count');
+    assert.strictEqual(B.BUILD_DEFAULTS.knownTheme, 0);
+    // As before 2026-11-23: it seeds the discount, and polishing can't take it out.
+    n = atRoot(await build(trDb1, Object.assign({ learnCost: 100, passes: 2, knownTheme: 1 }, LEARN), null, { root: afterNf6, known }));
     near(n.cands.find(c => c.san === 'Nf3').own, 0.5, 'Nf3 recurs');
     near(n.cands.find(c => c.san === 'c4').own, 1, 'c4 doesn\'t');
   });
   await check('build --theme-key mine: the same pawns of mine, whatever the opponent\'s', async () => {
     // 1.d4 d5 2.Nf3: Black's pawns differ from 1.d4 Nf6, White's don't.
     const known = knownOf('1. d4 d5 2. Nf3 *');
-    const own = async themeKey => atRoot(await build(trDb1, Object.assign({ learnCost: 100, themeKey }, LEARN), null,
+    const own = async themeKey => atRoot(await build(trDb1, Object.assign({ learnCost: 100, themeKey, knownTheme: 1 }, LEARN), null,
       { root: afterNf6, known })).cands.find(c => c.san === 'Nf3').own;
     near(await own('both'), 1, 'both sides\' pawns: no match');
     near(await own('mine'), 0.5, 'White\'s pawns: a match');

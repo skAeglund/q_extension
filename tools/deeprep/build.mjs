@@ -32,8 +32,11 @@
  *      own pawns as "the same pawns".
  *
  * o.known (known.mjs mergeKnown(), build --known): repertoires the user already knows. Their
- * positions count as learned, their moves seed the theme discount, and a position in them
- * ends a line (end `known`) instead of being built again.
+ * positions count as learned, and a position in them ends a line (end `known`) instead of
+ * being built again. Their moves seed the theme discount only with `knownTheme` 1: the
+ * discount is for ideas that recur inside the chapter, and a known file's move with the same
+ * pawns is no easier to learn unless a line actually transposes into it (2026-11-23: 1...f5
+ * was being steered by Jobava moves).
  *
  * No move is left out for having few or no games (2026-11-23). The search lists my moves with
  * `minGames` games, and the `consider` best of those by deep score are weighed, plus the most
@@ -89,6 +92,7 @@ export var BUILD_DEFAULTS = {
   themeKey: 'both',       // "the same pawns": 'both' sides', or 'mine' alone (2026-11-22: of 161 White
                           // moves in 1.Nc3 sideline drafts, none matched a Jobava move on both sides'
                           // pawns, 46 on White's)
+  knownTheme: 0,          // 1: --known files' moves seed the theme discount too (as before 2026-11-23)
   costCap: 300,           // positions counted per move at most
   passes: 3,              // polish passes
   switchMargin: 0.25,     // a polish pass changes a move only for this many points
@@ -328,7 +332,7 @@ export function createBuilder(db, o) {
   }
   function themeCount(k) { return (themes.get(k) || 0) + (seeded.get(k) || 0); }
   function cardCost(fen, san) { return themeCount(themeKey(fen, san)) > 0 ? 1 - cfg.theme : 1; }
-  if (known) known.mine.forEach(function (m) {
+  if (known && cfg.knownTheme > 0) known.mine.forEach(function (m) {
     var k = themeKey(m.fen, m.san);
     seeded.set(k, (seeded.get(k) || 0) + 1);
   });

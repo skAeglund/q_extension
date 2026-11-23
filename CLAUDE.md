@@ -1261,6 +1261,13 @@ outweighed everything: 3...Nh5 4.Bc1 (4...Nf6 repeats 2...Nf6; 4.Bg5 and 4.Be5 d
 the best blend. Polishing drops a move outside the margin whatever its score, since its
 learning saving can exceed any switch margin. Harness; the rebuilds follow.
 
+**Known files no longer seed the theme discount (2026-11-23).** The user: learning cost is a
+budget local to one chapter, where ideas repeat, so the 50/f rule is dropped (every chapter at
+`learnCost` 1), and the theme discount counts only the chapter's own moves. `--known` files'
+moves seeded it (`seeded`), so 1...f5 was steered by Jobava moves with the same pawns though no
+line transposed. Now they seed it only with `knownTheme` 1. Their positions still count as
+learned: a real transposition is still less to learn.
+
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where
 the site already consults `REP_STATE.map`.
