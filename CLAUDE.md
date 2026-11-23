@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 639 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 640 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -1252,6 +1252,14 @@ as a final move (`finalMove()`, `why: 'engine'`, `n.final`), which polishing lea
 `playSan()` refuses a null SAN: chess.js plays `move(null)` as a null move. evaluate.mjs
 already scored a move with no games at its position's own games (`unseen`). Harness; the
 rebuilds follow.
+
+**Learning only breaks ties (2026-11-23).** The 1.Nc3 builds set `--learn-cost` by a 50/f
+rule (f = the root's share of 1.Nc3, in %), so the rarest roots got 600-2,174, and learning
+outweighed everything: 3...Nh5 4.Bc1 (4...Nf6 repeats 2...Nf6; 4.Bg5 and 4.Be5 deep 58.4 and
+57.7 against 56.3) and 3...Bd7 4.Qd2 (below everyone's average; ChessDB's best 4.e3). Now
+`choose()` takes the best score only among moves whose blend is within `learnMargin` (2) of
+the best blend. Polishing drops a move outside the margin whatever its score, since its
+learning saving can exceed any switch margin. Harness; the rebuilds follow.
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

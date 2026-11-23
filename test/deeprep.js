@@ -537,7 +537,8 @@ module.exports = async function run(check) {
   const lines = (d5, nf6) => [['d4 d5 Nf3 Nf6 e3', d5 / 2, 0, d5 / 2], ['d4 Nf6 Nf3 d5 e3', nf6 / 4, 0, nf6 / 4],
     ['d4 Nf6 c4 e6 Nc3', nf6 / 4 + 1, 0, nf6 / 4 - 1]];
   const trDb1 = await mkIdx('learn1', lines(120, 80));
-  const LEARN = { plies: 4, minGames: 10, coverage: 1, singleBelow: 0, minReach: 0, lineMinReach: 0 };
+  // learnMargin 3: c4 leads by 2.5, so learning may still decide between the two here.
+  const LEARN = { plies: 4, minGames: 10, coverage: 1, singleBelow: 0, minReach: 0, lineMinReach: 0, learnMargin: 3 };
   await check('build: the learning cost takes a move into known positions over a new line that scores more', async () => {
     let b = await build(trDb1, Object.assign({ learnCost: 0 }, LEARN));
     const at = b => b.nodes.get(String(G.keyOf(fenAfter('d4', 'Nf6'))));
@@ -559,6 +560,33 @@ module.exports = async function run(check) {
     const c = new Chess();
     c.loadPgn(pgn);
     assert.strictEqual(c.history()[0], 'd4');
+  });
+  await check('build: learning only breaks ties within --learn-margin of the best blend', async () => {
+    const at = b => b.nodes.get(String(G.keyOf(fenAfter('d4', 'Nf6'))));
+    // c4's blend is 2.5 over Nf3's: outside a margin of 2, learning can't make up for it,
+    // however large the learn cost (2,000 here makes Nf3's score lead about 50 points).
+    let b = await build(trDb1, Object.assign({}, LEARN, { learnCost: 2000, learnMargin: 2 }));
+    let n = at(b);
+    assert.strictEqual(n.move, 'c4');
+    assert.strictEqual(n.why, 'best');
+    const nf3 = n.cands.find(c => c.san === 'Nf3'), c4 = n.cands.find(c => c.san === 'c4');
+    assert.ok(nf3.score > c4.score + 40, 'Nf3 still has the better score');
+    near(c4.blend - nf3.blend, 2.5, 'c4 blends 2.5 more');
+    // Inside the margin learning decides, as before; negative means no limit at all.
+    for (const learnMargin of [3, -1]) {
+      n = at(await build(trDb1, Object.assign({}, LEARN, { learnCost: 2000, learnMargin })));
+      assert.strictEqual(n.move, 'Nf3', 'margin ' + learnMargin);
+      assert.strictEqual(n.why, 'learn');
+    }
+    // Polishing doesn't keep a move outside the margin, even with the better score: 1...Nf6
+    // is decided first (c4: nothing to share yet), and Nf3 stays out once the 1...d5 line exists.
+    const db = await mkIdx('learnm', lines(80, 120));
+    b = await build(db, Object.assign({}, LEARN, { learnCost: 2000, learnMargin: 0.5, passes: 2 }));
+    n = at(b);
+    assert.strictEqual(n.move, 'c4');
+    assert.ok(n.cands.find(c => c.san === 'c4').blend > n.cands.find(c => c.san === 'Nf3').blend + 0.5, 'outside the margin');
+    assert.ok(!n.was, 'never switched');
+    assert.strictEqual(B.BUILD_DEFAULTS.learnMargin, 2);
   });
   // The other way round: 1...Nf6 is decided first, before the line after 1...d5 exists.
   const trDb2 = await mkIdx('learn2', lines(80, 120));

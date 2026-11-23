@@ -916,7 +916,11 @@ replies by coverage (`--coverage 90 --coverage-step 10 --single-below 50`, `--mi
   as reach does). A move the repertoire already plays elsewhere with the same pawns counts
   `--theme` (0.5) less. "The same pawns" are both sides' by default; `--theme-key mine`
   compares only yours, so Bf4 after ...d5 counts as the Bf4 you play after ...Nf6.
-- The move with the best **score** (blend − learning) is played.
+- The move with the best **score** (blend − learning) is played, but only among the moves
+  whose blend is within `--learn-margin` (2) points of the best blend. So learning settles
+  near-ties and never picks a clearly worse move, however large the learn cost: at a rare
+  root a cost of several hundred would otherwise outweigh everything else. A negative margin
+  removes the limit, as before 2026-11-23.
 
 A line never ends with you to move. Where it would (fewer than `--min-games` games, no move
 with that many, or `--max-ply`), ChessDB's best is played as a last move (a pinned one, if

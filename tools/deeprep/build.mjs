@@ -83,6 +83,8 @@ export var BUILD_DEFAULTS = {
   pracLean: 1,            // ...and Prac's lead over the average candidate's, in the blend's own
                           // ChessDB : Prac proportion (0: ChessDB alone, as before 2026-11-21)
   learnCost: 1,           // points of the repertoire's score 100 new positions must earn (0: off)
+  learnMargin: 2,         // ...but only among moves whose blend is within this many points of the
+                          // best blend (negative: no limit, as before 2026-11-23)
   theme: 0.5,             // a move played elsewhere with the same pawns costs this much less than a new one
   themeKey: 'both',       // "the same pawns": 'both' sides', or 'mine' alone (2026-11-22: of 161 White
                           // moves in 1.Nc3 sideline drafts, none matched a Jobava move on both sides'
@@ -431,9 +433,15 @@ export function createBuilder(db, o) {
         .sort(function (a, b) { return ((b.engine != null ? b.engine : -1) - (a.engine != null ? a.engine : -1)) || (b.deep - a.deep); })[0];
       return safe ? { c: safe, why: 'all-out' } : null;
     }
-    var best = ok.reduce(function (a, b) { return b.score > a.score ? b : a; });
+    // Learning only breaks near-ties: the best score (blend - learning) among the moves whose
+    // blend is within learnMargin of the best blend. (Asked 2026-11-23: at the rarest roots the
+    // 50/f learn cost reached 600-2,000, so learning picked 4.Bc1 against 3...Nh5 and 4.Qd2
+    // against 3...Bd7, several points under the best move by every other measure.)
     var top = ok.reduce(function (a, b) { return b.blend > a.blend ? b : a; });
-    return { c: best, why: best === top ? 'best' : 'learn' };
+    var eligible = cfg.learnMargin >= 0
+      ? ok.filter(function (c) { return c.blend >= top.blend - cfg.learnMargin; }) : ok;
+    var best = eligible.reduce(function (a, b) { return b.score > a.score ? b : a; });
+    return { c: best, why: best === top ? 'best' : 'learn', eligible: eligible };
   }
 
   function settle(n, pick) {
@@ -732,7 +740,10 @@ export function createBuilder(db, o) {
       var cur = n.cands.find(function (c) { return c.san === n.move; });
       var pick = choose(n);
       if (!pick || !cur || pick.c === cur) { if (pick && cur) n.why = pick.why; continue; }
-      if (cur.out || pick.c.score - cur.score >= cfg.switchMargin) {
+      // A move outside the learning margin goes whatever its score: its learning saving
+      // can be larger than any switch margin.
+      var gone = pick.eligible && pick.eligible.indexOf(cur) < 0;
+      if (cur.out || gone || pick.c.score - cur.score >= cfg.switchMargin) {
         var was = n.move;
         settle(n, pick);
         n.was = (n.was || []).concat(was);

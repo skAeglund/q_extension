@@ -204,7 +204,7 @@ export function reviewMarkdown(ctx) {
   L.push('Repertoire for ' + side + ' from ' + (ctx.prefix && ctx.prefix.length ? lineText(STANDARD, ctx.prefix) : ctx.root) +
     ' · index ' + ctx.index + ' (' + ctx.filter.speeds.join(', ') + '; ' + ctx.filter.ratings.join(', ') + ') · ' + ctx.date);
   L.push('');
-  L.push('Settings: ' + ['plies', 'minGames', 'prior', 'risk', 'weights', 'maxLoss', 'blunder', 'soundMargin', 'soundZ', 'enginePrior', 'pracLean', 'learnCost',
+  L.push('Settings: ' + ['plies', 'minGames', 'prior', 'risk', 'weights', 'maxLoss', 'blunder', 'soundMargin', 'soundZ', 'enginePrior', 'pracLean', 'learnCost', 'learnMargin',
     'theme', 'themeKey', 'coverage', 'coverageStep', 'singleBelow'].map(function (k) { return k + ' ' + cfg[k]; }).join(', ') +
     (ctx.chessdb ? '' : '. **No ChessDB**: no loss limit, sound value or Prac d1.'));
   L.push('');
