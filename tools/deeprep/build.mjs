@@ -81,6 +81,8 @@ export var BUILD_DEFAULTS = {
   blunder: 8,             // a reply giving me this many win% over their best is a blunder
   soundMargin: 3,         // sound value at most this far under the best candidate's (0: off)
   soundZ: 1,              // ...whose sound value counts at its lower bound, minus this many SEs
+  soundTopShare: 0.05,    // ...among candidates with at least this share of the position's games
+                          // (0: any candidate with minGames, as before 2026-11-23)
   enginePrior: 1,         // deep and sound shrink towards the position's score plus this times
                           // ChessDB's win% for the move over the average move's (0: the score alone)
   pracLean: 1,            // ...and Prac's lead over the average candidate's, in the blend's own
@@ -640,7 +642,14 @@ export function createBuilder(db, o) {
       // A move under minGames (c.thin) neither sets the bar nor is put out: with no human
       // replies its sound value is ChessDB's eval after their best one, a different scale
       // from the others' scores in games.
-      var sounds = n.cands.filter(function (c) { return !c.out && !c.thin && c.sound != null; }).map(function (c) {
+      // Nor does a move with under soundTopShare of the position's games set it, though it can
+      // still be put out, and still be chosen. The lower bound wasn't enough (2026-11-23): after
+      // 1.Nc3 d5 2.d4 Nf6 3.Bf4 g6 4.e3 Bg7 5.h4 O-O, 6.Nb5 (150 games, sound 59.1 ±2.3) put 6.h5
+      // (24,762, 53.0) out, and after 3.Bf4 Bd7, 4.Be5 (113 games) did the same to 4.e3.
+      var minTop = cfg.soundTopShare > 0 && n.games > 0 ? cfg.soundTopShare * n.games : 0;
+      var sounds = n.cands.filter(function (c) {
+        return !c.out && !c.thin && c.sound != null && c.games >= minTop;
+      }).map(function (c) {
         return c.sound - cfg.soundZ * (c.se || 0);
       });
       var top = sounds.length ? Math.max.apply(null, sounds) : null;

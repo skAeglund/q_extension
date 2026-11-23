@@ -451,8 +451,9 @@ module.exports = async function run(check) {
     near(d4.sound, d4.deep, 'd4: sound pulled as far as its deep score');
     assert.ok(d4.sound < 55, 'not its 65% of 20 games');
     assert.strictEqual(e4.out, undefined, 'e4 stays in');
-    // Unshrunk, d4's 65 put e4's 50 out as "unsound".
-    b = await build(luckDb, { soundMargin: 3, prior: 0 }, luckCdb);
+    // Unshrunk, d4's 65 put e4's 50 out as "unsound" (d4's 20 of 420 games are under
+    // soundTopShare's 5%, which would keep e4 in by itself).
+    b = await build(luckDb, { soundMargin: 3, prior: 0, soundTopShare: 0 }, luckCdb);
     near(rootOf(b).cands.find(c => c.san === 'd4').sound, 65, 'prior 0: unshrunk');
     assert.strictEqual(rootOf(b).cands.find(c => c.san === 'e4').out, 'unsound');
     luckDb.close();
@@ -506,11 +507,21 @@ module.exports = async function run(check) {
     assert.strictEqual(e4.out, undefined, 'e4 stays in: d4\'s lower bound is under it');
     assert.strictEqual(r.move, 'd4', 'd4 still wins on its deep score');
     assert.deepStrictEqual(R.flagsOf(r, b.config).filter(f => /^thin/.test(f)), ['thin', 'thin-lead']);
-    // soundZ 0 is the old rule.
-    b = await build(thinDb, { soundMargin: 3, soundZ: 0 }, thinCdb);
+    // soundZ 0 and soundTopShare 0 are the old rule.
+    b = await build(thinDb, { soundMargin: 3, soundZ: 0, soundTopShare: 0 }, thinCdb);
     r = rootOf(b);
     assert.strictEqual(r.cands.find(c => c.san === 'e4').out, 'unsound');
     assert.ok(R.flagsOf(r, b.config).includes('thin-lead'), 'a well-known move put out as unsound counts too');
+    // d4 has 12 of 412 games (2.9%), under soundTopShare's 5%: it can't set the bar, even at its
+    // plain sound value, but is still weighed and still wins.
+    b = await build(thinDb, { soundMargin: 3, soundZ: 0 }, thinCdb);
+    r = rootOf(b);
+    assert.strictEqual(r.cands.find(c => c.san === 'e4').out, undefined, 'e4 stays in: d4 is under 5% of the games');
+    assert.strictEqual(r.cands.find(c => c.san === 'd4').out, undefined, 'd4 is still weighed');
+    assert.strictEqual(r.move, 'd4', 'd4 still wins on its deep score');
+    // At 2% it may set the bar again.
+    b = await build(thinDb, { soundMargin: 3, soundZ: 0, soundTopShare: 0.02 }, thinCdb);
+    assert.strictEqual(rootOf(b).cands.find(c => c.san === 'e4').out, 'unsound', 'over the share, d4 sets the bar');
     thinDb.close();
   });
   await check('build: the loss limit, with an eval from the position after a move ChessDB doesn\'t list', async () => {

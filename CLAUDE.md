@@ -1268,6 +1268,13 @@ moves seeded it (`seeded`), so 1...f5 was steered by Jobava moves with the same 
 line transposed. Now they seed it only with `knownTheme` 1. Their positions still count as
 learned: a real transposition is still less to learn.
 
+**Rare moves don't set the sound bar (2026-11-23).** The lower bound (`soundZ`) still let a
+move just over `minGames` put a well-played one out: after 1.Nc3 d5 2.d4 Nf6 3.Bf4 g6 4.e3 Bg7
+5.h4 O-O, 6.Nb5 (150 games, sound 59.1 ±2.3) put 6.h5 (24,762 games, 53.0) out as unsound, and
+an earlier build had 4.Be5 (113 games) do the same to 4.e3 after 3.Bf4 Bd7. Now only a candidate
+with `soundTopShare` (0.05) of the position's games sets the bar. A rarer one is still tested
+against it and can still be chosen. In the accepted 1.Nc3 set it changed 4 decisions' out list.
+
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where
 the site already consults `REP_STATE.map`.

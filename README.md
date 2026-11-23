@@ -895,7 +895,9 @@ replies by coverage (`--coverage 90 --coverage-step 10 --single-below 50`, `--mi
     than `--sound-margin` (3) under the best candidate's is out. That is a trap that doesn't
     leave you decent when they find the right reply. The sound value is shrunk like the deep
     score, and the best candidate's counts at its lower bound (`--sound-z` 1 SE under), so
-    a move's few lucky games can't put better-known moves out. A thin move that still wins
+    a move's few lucky games can't put better-known moves out. Only a candidate with at least
+    `--sound-top-share` (0.05) of the position's games can be that best candidate; a rarer
+    one can still be put out, and still be chosen. A thin move that still wins
     over one with four times its games is flagged for review (`thin-lead`).
   - **Prac**: ChessDB's evals after their replies, weighed by how often people play them,
     risk-averse. This is the Practical column at depth 1.
