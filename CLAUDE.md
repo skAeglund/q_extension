@@ -1310,6 +1310,14 @@ position's own; no Prac, sound value or reply search; no polishing), since Chess
 of `maxMinutes` more. A plan line past the data takes ChessDB's querypv (`chessdbPv`, cached as
 `chessdbpv` in the same file) instead of one queryall per ply.
 
+**Base extensions join transpositions at the owner's move order (2026-11-24).** The owner's
+Jobava file goes on from each position at one move order and ends the others there, but the
+first `--base` builds extended both (131 positions twice in the Jobava chapter, 17 in 1... e5):
+`toTree()` expands a position at the first path it meets, the most played reply first, and
+`mergeBase()` then kept the owner's subtree as well. Now `baseFromPgn()` records `continuing`
+(each position the file goes on from, and its path), and `toTree(..., { fixed })` expands those
+positions only at that path; any other path ends with "transposes to" it.
+
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where
 the site already consults `REP_STATE.map`.

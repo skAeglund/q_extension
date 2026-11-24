@@ -52,7 +52,7 @@ import { createSearch, fitPrior, DEFAULTS } from './deeprep/search.mjs';
 import { toPgn, candidateLines, lineText, dumpsOf } from './deeprep/pgn.mjs';
 import { repertoireFromPgn, evaluateRepertoire } from './deeprep/evaluate.mjs';
 import { createBuilder, repertoireMoves, toTree, positionOf, knownEnds, BUILD_DEFAULTS } from './deeprep/build.mjs';
-import { knownFromPgn, mergeKnown, withKnown, knownName, baseFromPgn, mergeBase } from './deeprep/known.mjs';
+import { knownFromPgn, mergeKnown, withKnown, knownName, baseFromPgn, baseFixed, mergeBase } from './deeprep/known.mjs';
 import { writePgn } from './repgen/pgntree.mjs';
 import { moveNote, rootNote, parseDecisions, reviewMarkdown, lineOf } from './deeprep/report.mjs';
 import { createProviders } from '../src/pe/providers.js';
@@ -726,7 +726,7 @@ async function cmdBuild(argv) {
     var replacer = function (k, v) { return typeof v === 'bigint' ? String(v) : v; };
     fs.writeFileSync(out + '.json', JSON.stringify({ meta: meta, nodes: nodes }, replacer, 1));
     var mineCount = nodes.filter(function (n) { return n.kind === 'me' && n.status === 'done'; }).length;
-    var tree = toTree(b.nodes, b.rootKey, moveNote, line);
+    var tree = toTree(b.nodes, b.rootKey, moveNote, line, base ? { fixed: baseFixed(base, o.prefix || []) } : null);
     var headers = { Event: 'deeprep build for ' + side, Annotator: 'deeprep (' + db.meta.source + ')',
       White: b.side === 'w' ? 'Repertoire' : 'Lichess', Black: b.side === 'b' ? 'Repertoire' : 'Lichess' };
     // With a base, the owner's game (headers, moves and comments) with the build grafted on.

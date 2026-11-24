@@ -124,11 +124,13 @@ export function withKnown(moves, known) {
 export function baseFromPgn(text, side) {
   var games = parsePgn(text);
   if (games.length !== 1) throw new Error('A base PGN holds one game (it has ' + games.length + ').');
-  var moves = new Map(), replies = new Map(), positions = new Set();
+  var moves = new Map(), replies = new Map(), positions = new Set(), continuing = new Map();
   (function walk(n) {
     var k = String(keyOf(n.fen));
     positions.add(k);
     if (n.children.length) {
+      // Where the file goes on from this position: its own move order, kept by toTree().
+      if (!continuing.has(k)) continuing.set(k, pathOf(n).map(function (x) { return x.san; }));
       if (turn(n.fen) === side) { if (!moves.has(k)) moves.set(k, n.children[0].san); }
       else {
         var r = replies.get(k) || [];
@@ -140,7 +142,20 @@ export function baseFromPgn(text, side) {
   })(games[0].root);
   var prefix = [];
   for (var n = games[0].root; n.children.length === 1; n = n.children[0]) prefix.push(n.children[0].san);
-  return { games: games, moves: moves, replies: replies, positions: positions, prefix: prefix };
+  return { games: games, moves: moves, replies: replies, positions: positions, continuing: continuing, prefix: prefix };
+}
+
+// baseFromPgn()'s continuing positions as toTree()'s opts.fixed: paths from the build's root
+// (after `prefix`), for the positions the file goes on from at or past the root.
+export function baseFixed(base, prefix) {
+  var fixed = new Map();
+  prefix = prefix || [];
+  base.continuing.forEach(function (p, k) {
+    if (p.length < prefix.length) return;
+    for (var i = 0; i < prefix.length; i++) if (moveKey(p[i]) !== moveKey(prefix[i])) return;
+    fixed.set(k, p.slice(prefix.length));
+  });
+  return fixed;
 }
 
 /*

@@ -912,7 +912,9 @@ of `--max-minutes` more. Past the data, a plan line takes ChessDB's whole line i
 played as they are (no candidates weighed), its replies always followed, and its positions are
 never another `--known` file's line end. Past its line ends, and for new replies at its
 positions, the build works as usual. The output is its game, headers, moves and comments as
-they were, with the build's moves added; at a line end it doesn't carry on, the plan and
+they were, with the build's moves added (a position your file goes on from is extended at your
+move order only; reached another way, it ends with "transposes to" it); at a line end it
+doesn't carry on, the plan and
 "transposes to" notes are appended to your comment. Without `--moves`, the build starts where
 the file starts branching.
 

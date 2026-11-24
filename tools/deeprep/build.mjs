@@ -1107,36 +1107,53 @@ export function repertoireMoves(nodes) {
  * The repertoire as a tree for deeprep/pgn.mjs toPgn(): most likely reply first, a
  * position met a second time ends with "transposes to" the first one's line. `note(n,
  * kid)` writes a move's comment.
+ *
+ * opts.fixed: Map(position key -> [SAN] from the root): positions that go on at that path
+ * only (a --base file's own move order, 2026-11-24). Reached any other way, the line ends there
+ * with "transposes to" that path, even before the tree has got there. Without it, a base
+ * extension went on under the owner's other move order too (131 positions twice in the Jobava
+ * chapter), since the tree takes the most played reply first, not the owner's path.
  */
-export function toTree(nodes, rootKey, note, line) {
+export function toTree(nodes, rootKey, note, line, opts) {
   var shown = new Map();
-  function build(n, out) {
+  var fixed = opts && opts.fixed || new Map();
+  function same(a, b) { return a.length === b.length && a.every(function (s, i) { return moveKey(s) === moveKey(b[i]); }); }
+  // How the child at `at` (its path from the root) ends: a known join, a transposition, or null
+  // when it goes on here.
+  function joinOf(m, at) {
+    if (m.end === 'known') return knownNote(m);
+    var fx = fixed.get(m.key);
+    if (fx && !same(fx, at)) return 'transposes to ' + line(fx);
+    if (shown.has(m.key)) return 'transposes to ' + line(shown.get(m.key));
+    return null;
+  }
+  function build(n, out, at) {
     out.children = [];
     if (shown.has(n.key)) return out;
-    shown.set(n.key, n.path);
+    shown.set(n.key, fixed.get(n.key) || n.path);
     if (n.kind === 'me' && n.move) {
       var kidNode = nodes.get(n.child);
       var kid = { san: n.move, mine: true, note: note(n, kidNode) };
       if (kidNode && kidNode.plan) { kid.plan = kidNode.plan; kid.note = joinNote(kid.note, kidNode.plan); }
-      if (kidNode && kidNode.end === 'known') kid.note = joinNote(kid.note, knownNote(kidNode));
-      else if (kidNode && shown.has(kidNode.key)) kid.note = joinNote(kid.note, 'transposes to ' + line(shown.get(kidNode.key)));
-      else if (kidNode) build(kidNode, kid);
+      var j = kidNode ? joinOf(kidNode, at.concat(n.move)) : null;
+      if (j) kid.note = joinNote(kid.note, j);
+      else if (kidNode) build(kidNode, kid, at.concat(n.move));
       out.children.push(kid);
     } else if (n.kind === 'opp' && n.replies) {
       n.replies.slice().sort(function (a, b) { return b.share - a.share; }).forEach(function (r) {
         var m = nodes.get(r.child);
         var kid = { san: r.san, mine: false, note: Math.round(100 * r.share) + '% of ' + r.games.toLocaleString('en-US') + ' games' };
         if (m && m.plan) { kid.plan = m.plan; kid.note = joinNote(kid.note, m.plan); }
-        if (m && m.end === 'known') kid.note = joinNote(kid.note, knownNote(m));
-        else if (m && shown.has(m.key)) kid.note = joinNote(kid.note, 'transposes to ' + line(shown.get(m.key)));
-        else if (m) build(m, kid);
+        var jr = m ? joinOf(m, at.concat(r.san)) : null;
+        if (jr) kid.note = joinNote(kid.note, jr);
+        else if (m) build(m, kid, at.concat(r.san));
         out.children.push(kid);
       });
     }
     return out;
   }
   var root = nodes.get(rootKey);
-  return build(root, { fen: root.fen, root: true, other: root.other || 0 });
+  return build(root, { fen: root.fen, root: true, other: root.other || 0 }, []);
 }
 
 function joinNote(a, b) { return a ? a + ' · ' + b : b; }

@@ -1151,6 +1151,31 @@ module.exports = async function run(check) {
     assert.strictEqual(n.plan.split(') (')[0], '(2... d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3', n.plan);
     assert.ok(pvAsked.length >= 1);
   });
+  await check('build --base: a position the file goes on from is extended at the file\'s own move order only', async () => {
+    // 2...Nf6 3.Bc4 Nc6 (60 games) and 2...Nc6 3.Bc4 Nf6 (40) reach the same position. The file goes
+    // on from it after 2...Nc6 (4.d3) and ends the other order there; the tree takes Nf6 first.
+    const tdb2 = await mkIdx('basetr', [['e4 e5 Nf3 Nf6 Bc4 Nc6 d3 Be7', 60, 0, 0], ['e4 e5 Nf3 Nc6 Bc4 Nf6 d3 Be7', 40, 0, 0]]);
+    const text = '[Event "mine"]\n\n1. e4 e5 2. Nf3 Nc6 {A} (2... Nf6 3. Bc4 Nc6 {B ends}) 3. Bc4 Nf6 4. d3 *\n';
+    const baseR = K.baseFromPgn(text, 'w');
+    const root = fenAfter('e4', 'e5', 'Nf3');
+    const b = await build(tdb2, Object.assign({}, RD, { coverReach: 0.05 }), null, { root, base: baseR });
+    const fixed = K.baseFixed(baseR, ['e4', 'e5', 'Nf3']);
+    const X = String(G.keyOf(fenAfter('e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Nf6')));
+    assert.deepStrictEqual(fixed.get(X), ['Nc6', 'Bc4', 'Nf6']);
+    const games = K.mergeBase(baseR, B.toTree(b.nodes, b.rootKey, R.moveNote, p => p.join(' '), { fixed }), ['e4', 'e5', 'Nf3']);
+    const goesOn = [];
+    (function walk(n, path) { n.children.forEach(c => { const p = path.concat(c.san); if (c.children.length && String(G.keyOf(c.fen)) === X) goesOn.push(p.join(' ')); walk(c, p); }); })(games[0].root, []);
+    assert.deepStrictEqual(goesOn, ['e4 e5 Nf3 Nc6 Bc4 Nf6'], 'once, at the file\'s order');
+    const leaf = games[0].root.children[0].children[0].children[0].children.find(c => c.san === 'Nf6').children[0].children[0];
+    assert.strictEqual(leaf.san, 'Nc6');
+    assert.ok(/^B ends transposes to Nc6 Bc4 Nf6/.test(leaf.comment), leaf.comment);
+    // Without the paths, the most played order would have gone on too.
+    const plain = K.mergeBase(K.baseFromPgn(text, 'w'), B.toTree(b.nodes, b.rootKey, R.moveNote, p => p.join(' ')), ['e4', 'e5', 'Nf3']);
+    let twice = 0;
+    (function walk(n) { n.children.forEach(c => { if (c.children.length && String(G.keyOf(c.fen)) === X) twice++; walk(c); }); })(plain[0].root);
+    assert.strictEqual(twice, 2, 'the duplicate this fixes');
+    tdb2.close();
+  });
   rdDb.close();
 
   [hdb, hdb2, pdb, tdb, trapDb, trDb1, trDb2, cdb, db].forEach(d => d.close());
