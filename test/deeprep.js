@@ -415,7 +415,7 @@ module.exports = async function run(check) {
     [PE.fenKey(fenAfter('d4'))]: [['d5', -50]]
   };
   // The coverage percentages, as the tests before reach-driven coverage were written for.
-  const BASE = { plies: 2, minGames: 10, prior: 0, risk: 0, weights: [0, 0, 1], learnCost: 0, passes: 0, coverReach: 0, planLines: 0 };
+  const BASE = { plies: 2, minGames: 10, prior: 0, risk: 0, weights: [0, 0, 1], learnCost: 0, passes: 0, coverReach: 0, planLines: 0, mainReach: 0 };
   const build = async (db, cfg, cdb, extra) => {
     const b = B.createBuilder(db, Object.assign({ root: START, side: 'w', config: Object.assign({}, BASE, cfg),
       chessdb: cdb ? fakeCdb(cdb) : null }, extra || {}));
@@ -1175,6 +1175,27 @@ module.exports = async function run(check) {
     (function walk(n) { n.children.forEach(c => { if (c.children.length && String(G.keyOf(c.fen)) === X) twice++; walk(c); }); })(plain[0].root);
     assert.strictEqual(twice, 2, 'the duplicate this fixes');
     tdb2.close();
+  });
+  await check('build: a main line (reach >= mainReach) goes on past the data to mainPly, their main reply only', async () => {
+    // The index stops at ply 4. 1.e4 e5 2.Nf3 Nc6 has reach 39%, 1.e4 e5 2.Nf3 d6 19.5%.
+    const L = (...s) => PE.fenKey(fenAfter(...s));
+    const cdb = { [L('e4', 'e5', 'Nf3', 'Nc6')]: [['Bb5', 30]], [L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5')]: [['a6', -30], ['Nf6', -60]],
+      [L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6')]: [['Ba4', 30]], [L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4')]: [['Nf6', -30]],
+      [L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6')]: [['O-O', 30]], [L('e4', 'e5', 'Nf3', 'd6')]: [['d4', 30]] };
+    const cfg = Object.assign({}, RD, { coverReach: 0.15, mainReach: 0.25, mainPly: 8 });
+    let b = await build(rdDb, cfg, cdb);
+    const at = (...s) => b.nodes.get(String(G.keyOf(fenAfter(...s))));
+    const bb5 = at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5');
+    assert.deepStrictEqual(bb5.replies.map(r => [r.san, r.main]), [['a6', true]], 'ChessDB\'s best, the one reply');
+    assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6').move, 'O-O', 'to ply 8, my move ChessDB\'s best');
+    assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O').status, 'leaf', 'ply 9 is past mainPly');
+    const d4 = at('e4', 'e5', 'Nf3', 'd6', 'd4');
+    assert.ok(!d4 || d4.status === 'leaf', 'a line under mainReach ends as before');
+    // rootPly counts: from a root 4 plies in, ply 8 is reached 4 plies sooner.
+    b = await build(rdDb, Object.assign({}, cfg, { rootPly: 4 }), cdb);
+    assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5').status, 'leaf');
+    b = await build(rdDb, Object.assign({}, cfg, { mainReach: 0 }), cdb);
+    assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5').status, 'leaf', 'off with mainReach 0');
   });
   rdDb.close();
 

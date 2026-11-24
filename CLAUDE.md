@@ -1318,6 +1318,14 @@ first `--base` builds extended both (131 positions twice in the Jobava chapter, 
 (each position the file goes on from, and its path), and `toTree(..., { fixed })` expands those
 positions only at that path; any other path ends with "transposes to" it.
 
+**Main lines deep (2026-11-24).** Reviewing 1...c5, the owner wanted the main lines drilled
+deep, not left to plan lines (4...d5 ended where the data thinned). A position of theirs whose
+reach is still `mainReach` (0.2%) and short of ply `mainPly` (30) from the start (`rootPly`,
+from the root's FEN) goes on where the rules would end it: their most played move while the
+index has `planGames` games, else ChessDB's best, and that reply only, at the line's full reach
+(share 1, so it stays a main line down to mainPly). My moves there are `finalMove()`'s ChessDB
+best, as at any thin position. Plan lines go at the new ends.
+
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where
 the site already consults `REP_STATE.map`.

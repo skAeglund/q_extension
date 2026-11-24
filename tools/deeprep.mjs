@@ -87,12 +87,12 @@ var USAGE = [
   'build: its own --plies (' + BUILD_DEFAULTS.plies + '), and --' + Object.keys(BUILD_DEFAULTS).filter(function (k) {
     return k !== 'plies' && k !== 'minGames' && k !== 'prior' && k !== 'risk' && k !== 'themeKey';
   }).map(function (k) {
-    var v = k === 'coverReach' || k === 'rootReach' || k === 'drillReach' ? Math.round(1e6 * BUILD_DEFAULTS[k]) / 1e4 : BUILD_DEFAULTS[k];
+    var v = k === 'coverReach' || k === 'rootReach' || k === 'drillReach' || k === 'mainReach' ? Math.round(1e6 * BUILD_DEFAULTS[k]) / 1e4 : BUILD_DEFAULTS[k];
     return k.replace(/[A-Z]/g, function (ch) { return '-' + ch.toLowerCase(); }) + ' ' + v;
   })
     .join(', --'),
   '  --chessdb-rate 60 (per minute), --cache <file> (default repertoires/repgen-cache.jsonl)',
-  '  --cover-reach, --root-reach and --drill-reach are percentages (0.05 is 0.05%); --root-reach defaults to',
+  '  --cover-reach, --root-reach, --drill-reach and --main-reach are percentages (0.05 is 0.05%); --root-reach defaults to',
   '                       the --moves line\'s own reach in the index',
   '  --base <pgn>         extend this file (yours): its moves are played as they are, its replies',
   '                       followed, its comments kept; the output is its game with the build added',
@@ -522,7 +522,7 @@ function cmdSlice(argv) {
 var BUILD_SHARES = ['coverage', 'coverageStep', 'singleBelow', 'minReach', 'minShare', 'lineMinReach',
   'coverShare', 'sharpShare', 'planShare'];
 // Always percentages: a reach of 0.05% is the usual size, so "0.05" can't mean 5%.
-var BUILD_PERCENT = ['coverReach', 'rootReach', 'drillReach'];
+var BUILD_PERCENT = ['coverReach', 'rootReach', 'drillReach', 'mainReach'];
 
 function camel(s) { return s.replace(/-([a-z])/g, function (_, ch) { return ch.toUpperCase(); }); }
 function kebab(s) { return s.replace(/[A-Z]/g, function (ch) { return '-' + ch.toLowerCase(); }); }
@@ -653,6 +653,11 @@ async function cmdBuild(argv) {
     // Reach-driven coverage measures reach from the start (from 1.Nc3 for a 1.Nc3 repertoire:
     // my own moves don't divide it): the root's own is the product of their shares on the way.
     var bcfg = Object.assign({}, BUILD_DEFAULTS, o.config);
+    // The root's ply from the start, for --main-ply: from its FEN's move number.
+    if (o.config.rootPly == null) {
+      var ff = o.fen.split(/\s+/);
+      o.config.rootPly = 2 * ((Number(ff[5]) || 1) - 1) + (ff[1] === 'b' ? 1 : 0);
+    }
     if (bcfg.coverReach > 0 && o.config.rootReach == null && o.prefix && o.prefix.length) {
       var rc = new Chess(), rr = 1;
       o.prefix.forEach(function (san) {

@@ -94,6 +94,11 @@ export var BUILD_DEFAULTS = {
   // played move while the index has planGames games, I play ChessDB's best, and past the data
   // ChessDB's best for both. Never trained: repworks shows them as clickable lines.
   planLines: 3, planPlies: 10, planGames: 20, planShare: 0.02,
+  // Main lines deep (2026-11-24): a line whose reach is still mainReach goes on to at least ply
+  // mainPly from the start (rootPly is the root's own, from --moves), past the data too: they
+  // play their most played move while the index has planGames games, then ChessDB's best,
+  // and only that one reply; I play ChessDB's best. 0: off.
+  mainReach: 0.002, mainPly: 30, rootPly: 0,
   // A deep base (2026-11-24): the drilled region is what reaches drillReach (drillReach /
   // sharpFactor on sharp lines). Only positions inside it cost learning; below it a decision is
   // cheap: no Prac d1 or sound value (the blend renormalises over ChessDB and deep), one ChessDB
@@ -310,6 +315,10 @@ export function createBuilder(db, o) {
   function leaf(n, why) { n.status = 'leaf'; n.end = why; }
 
   function threshold(sharp) { return sharp && cfg.sharpFactor > 1 ? R / cfg.sharpFactor : R; }
+  // A main line: reach still at mainReach and short of ply mainPly from the start.
+  function mainLine(n) {
+    return cfg.mainReach > 0 && cfg.rootPly + n.ply < cfg.mainPly && rootReach * n.reach >= cfg.mainReach - 1e-12;
+  }
   // Below the drilled region: learning costs nothing and decisions are cheap.
   function drillAt(sharp) { return sharp && cfg.sharpFactor > 1 ? cfg.drillReach / cfg.sharpFactor : cfg.drillReach; }
   function cheap(n) { return cfg.drillReach > 0 && rootReach * n.reach < drillAt(n.sharp) - 1e-12; }
@@ -423,6 +432,21 @@ export function createBuilder(db, o) {
     if (n.ply >= cfg.maxPly && !named) return leaf(n, 'max-ply');
     var r = await allPicks(n);
     n.games = r.pos.total;
+    if (!r.picks.length && mainLine(n)) {
+      // A main line goes on past where the rules stop it: their main reply only, at the
+      // line's full reach, so it stays a main line down to mainPly.
+      var san = r.pos.total >= cfg.planGames && r.pos.moves.length
+        ? r.pos.moves.reduce(function (a, b) { return b.games > a.games ? b : a; }).san : await engineBest(n.fen);
+      var m0 = san ? r.pos.moves.find(function (x) { return moveKey(x.san) === moveKey(san); }) : null;
+      if (san && playSan(n.fen, san)) {
+        n.replies = [replyOf(n, { san: san, share: 1, games: m0 ? m0.games : 0 })];
+        n.replies[0].main = true;
+        n.other = 0;
+        n.status = 'done';
+        stats.main = (stats.main || 0) + 1;
+        return;
+      }
+    }
     if (!r.picks.length) return leaf(n, r.pos.total < cfg.minGames ? 'few-games' : 'rare');
     var covered = 0;
     n.replies = r.picks.map(function (p) { covered += p.share; return replyOf(n, p); });

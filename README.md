@@ -899,6 +899,11 @@ about `--plan-plies` (10) plies. They play their most played move while the inde
 `{(9... Nc6 10. Be3 Bxe3 11. fxe3 O-O) (9... Nd7 10. f4 Nf6)}`, which repworks shows as
 clickable lines it never trains. `--plan-lines 0` turns them off.
 
+**Main lines deep:** a line whose reach is still `--main-reach` (0.2%, a percentage) goes on to
+at least ply `--main-ply` (30) from the start, past the data too: their most played move while
+the index has `--plan-games` games, then ChessDB's best, and only that reply; your move
+ChessDB's best. `--main-reach 0` turns it off.
+
 For a deep base (every line at full length, cut down for drilling later), `--drill-reach`
 (a percentage) marks the drilled region: only positions reaching it (a fifth of it on sharp
 lines) cost learning, and below it a decision is cheap: no Prac or sound value, the blend
