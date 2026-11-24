@@ -894,15 +894,23 @@ replies, and a transposition is one node. Which replies:
 
 At every line end that doesn't join a known repertoire, the move gets **plan lines**: up to
 `--plan-lines` (3) groups, one per reply played `--plan-share` (2%), most played first, each
-about `--plan-plies` (10) plies. They play their most played move while the index has
-`--plan-games` (20) games, you play ChessDB's best, and past the data ChessDB's best for both:
+about `--plan-plies` (10) plies. You play ChessDB's best and they play their *main reply*:
 `{(9... Nc6 10. Be3 Bxe3 11. fxe3 O-O) (9... Nd7 10. f4 Nf6)}`, which repworks shows as
 clickable lines it never trains. `--plan-lines 0` turns them off.
 
+Their main reply is the most played with `--maia-until` (100) games; under that the games
+blended with Maia 3 at `--maia-elo` (2100), as the Practical search does: Maia's policy as
+`--maia-weight` (20) pseudo-games, falling to 0 at `--maia-until`; under `--maia-only-below`
+(10) games, Maia alone. In a sharp spot, where you are at most `--sharp-white-cp` (50) after
+their ChessDB best and the blended choice is `--sharp-maia-loss` (5) win% worse for them, they
+play ChessDB's best. Without Maia (`--no-maia`, or no model at `--maia-model`, which is never
+downloaded here) the games decide, else ChessDB. The summary counts each case.
+
 **Main lines deep:** a line whose reach is still `--main-reach` (0.2%, a percentage) goes on to
-at least ply `--main-ply` (30) from the start, past the data too: their most played move while
-the index has `--plan-games` games, then ChessDB's best, and only that reply; your move
-ChessDB's best. `--main-reach 0` turns it off.
+at least ply `--main-ply` (30) from the start, past the data too: their main reply only, your
+move ChessDB's best. Where ChessDB doesn't know the position yet, the next move of its line
+(querypv) from the nearest earlier position whose line passes through it. `--main-reach 0`
+turns it off.
 
 For a deep base (every line at full length, cut down for drilling later), `--drill-reach`
 (a percentage) marks the drilled region: only positions reaching it (a fifth of it on sharp

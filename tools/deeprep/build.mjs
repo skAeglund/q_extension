@@ -99,6 +99,14 @@ export var BUILD_DEFAULTS = {
   // play their most played move while the index has planGames games, then ChessDB's best,
   // and only that one reply; I play ChessDB's best. 0: off.
   mainReach: 0.002, mainPly: 30, rootPly: 0,
+  // Their move in main lines and plan lines (owner, 2026-11-24): with maiaUntil+ games the most
+  // played; under it the games blended with Maia at maiaElo (K pseudo-games spread by Maia's
+  // policy, K from maiaWeight down to 0 at maiaUntil, as the Practical search does), Maia alone
+  // under maiaOnlyBelow. In a sharp spot (White at most sharpWhiteCp after their ChessDB best,
+  // and the blended choice sharpMaiaLoss win% worse for them) ChessDB's best instead. Without
+  // Maia (o.maia) the games, else ChessDB's best.
+  maiaElo: 2100, sharpWhiteCp: 50, sharpMaiaLoss: 5,
+  maiaUntil: 100, maiaOnlyBelow: 10, maiaWeight: 20,   // the blend, as search.js's PE_DEFAULTS (2026-11-24)
   // A deep base (2026-11-24): the drilled region is what reaches drillReach (drillReach /
   // sharpFactor on sharp lines). Only positions inside it cost learning; below it a decision is
   // cheap: no Prac d1 or sound value (the blend renormalises over ChessDB and deep), one ChessDB
@@ -235,6 +243,31 @@ export function replyCheck(cdb, fen, side, rp, cfg, pull) {
 }
 
 /*
+ * Their main reply where the games thin out: the games (positionOf()'s { total, moves }) blended
+ * with Maia's policy ([{ san, prob }] or null) as the Practical search does: K pseudo-games
+ * spread by the policy, K = maiaWeight x (1 - total / maiaUntil); Maia alone under
+ * maiaOnlyBelow; the games alone at maiaUntil or without Maia. The SAN with the most weight,
+ * or null.
+ */
+export function blendedReply(pos, pol, cfg) {
+  var mostPlayed = function () {
+    return pos.moves.length ? pos.moves.reduce(function (a, b) { return b.games > a.games ? b : a; }).san : null;
+  };
+  if (pos.total >= cfg.maiaUntil || !pol || !pol.length) return mostPlayed();
+  if (pos.total < cfg.maiaOnlyBelow) return pol[0].san;
+  var K = cfg.maiaWeight * Math.max(0, 1 - pos.total / cfg.maiaUntil);
+  var w = new Map(), best = null;
+  pos.moves.forEach(function (m) { w.set(moveKey(m.san), { san: m.san, w: m.games }); });
+  pol.forEach(function (m) {
+    var x = w.get(moveKey(m.san)) || { san: m.san, w: 0 };
+    x.w += K * m.prob;
+    w.set(moveKey(m.san), x);
+  });
+  w.forEach(function (x) { if (x.w > 0 && (!best || x.w > best.w)) best = x; });
+  return best ? best.san : null;
+}
+
+/*
  * o = { root: FEN, side: 'w' | 'b', config (BUILD_DEFAULTS' keys), chessdb(fen) -> Promise
  * (or none: no ChessDB), decisions: Map(position key -> { play, avoid: [] }),
  * chessdbPv(fen) -> Promise of { pv: [SAN] } (ChessDB's querypv; optional, for plan lines past
@@ -316,8 +349,11 @@ export function createBuilder(db, o) {
 
   function threshold(sharp) { return sharp && cfg.sharpFactor > 1 ? R / cfg.sharpFactor : R; }
   // A main line: reach still at mainReach and short of ply mainPly from the start.
+  // A position of mine at mainPly itself still gets its move: lines end on my move.
   function mainLine(n) {
-    return cfg.mainReach > 0 && cfg.rootPly + n.ply < cfg.mainPly && rootReach * n.reach >= cfg.mainReach - 1e-12;
+    var ply = cfg.rootPly + n.ply;
+    return cfg.mainReach > 0 && (n.kind === 'me' ? ply <= cfg.mainPly : ply < cfg.mainPly) &&
+      rootReach * n.reach >= cfg.mainReach - 1e-12;
   }
   // Below the drilled region: learning costs nothing and decisions are cheap.
   function drillAt(sharp) { return sharp && cfg.sharpFactor > 1 ? cfg.drillReach / cfg.sharpFactor : cfg.drillReach; }
@@ -432,11 +468,11 @@ export function createBuilder(db, o) {
     if (n.ply >= cfg.maxPly && !named) return leaf(n, 'max-ply');
     var r = await allPicks(n);
     n.games = r.pos.total;
-    if (!r.picks.length && mainLine(n)) {
+    if (!r.picks.length && mainLine(n) && !n.mainTried) {
       // A main line goes on past where the rules stop it: their main reply only, at the
       // line's full reach, so it stays a main line down to mainPly.
-      var san = r.pos.total >= cfg.planGames && r.pos.moves.length
-        ? r.pos.moves.reduce(function (a, b) { return b.games > a.games ? b : a; }).san : await engineBest(n.fen);
+      n.mainTried = true;
+      var san = (await theirMove(n.fen)) || (await pvMove(n));
       var m0 = san ? r.pos.moves.find(function (x) { return moveKey(x.san) === moveKey(san); }) : null;
       if (san && playSan(n.fen, san)) {
         n.replies = [replyOf(n, { san: san, share: 1, games: m0 ? m0.games : 0 })];
@@ -463,6 +499,13 @@ export function createBuilder(db, o) {
    */
   async function widen(n) {
     if (n.ply >= cfg.maxPly) return false;
+    // A line end whose reach has grown into a main line (a transposition added to it) is
+    // expanded again, once, as one.
+    if (n.status === 'leaf' && (n.end === 'rare' || n.end === 'few-games') && mainLine(n) && !n.mainTried) {
+      n.status = 'queued';
+      delete n.end;
+      return true;
+    }
     if (R) {
       // Reach-driven: what a reply needs doesn't depend on the others, so any new pick is added.
       var ra = await allPicks(n);
@@ -702,7 +745,9 @@ export function createBuilder(db, o) {
     n.engineBest = e.bestSan != null ? { san: e.bestSan, win: e.best } : null;
     var pin = d && d.play ? playSan(n.fen, d.play) : null;
     if (d && d.play && !pin) n.pinMissing = d.play;
-    var x = thinOption(n.fen, pin ? pin.san : e.bestSan, pos);
+    // On a main line ChessDB may not know the position yet: its line from an earlier one.
+    var san = pin ? pin.san : e.bestSan || (mainLine(n) ? await pvMove(n) : null);
+    var x = san ? thinOption(n.fen, san, pos) : null;
     if (!x) return leaf(n, why);
     var c = candOf(n, x, null);
     if (e.wins.has(moveKey(c.san))) c.engine = e.wins.get(moveKey(c.san));
@@ -893,7 +938,7 @@ export function createBuilder(db, o) {
       var wider = 0, all = Array.from(nodes.values());
       for (var i = 0; i < all.length; i++) {
         var n = all[i];
-        if (n.kind === 'opp' && n.reach > 0 && (n.status === 'done' || (n.status === 'leaf' && n.end === 'rare')) &&
+        if (n.kind === 'opp' && n.reach > 0 && (n.status === 'done' || (n.status === 'leaf' && (n.end === 'rare' || n.end === 'few-games'))) &&
           await widen(n)) wider++;
       }
       if (!wider) return;
@@ -988,6 +1033,60 @@ export function createBuilder(db, o) {
     return best ? best.san : null;
   }
 
+  /*
+   * Their move in a main line or a plan line: blendedReply() of the games and Maia at maiaElo
+   * (the most played at maiaUntil games), or ChessDB's best in a sharp spot (White at most
+   * sharpWhiteCp after it, and the blended choice sharpMaiaLoss win% worse for them). Counted
+   * in stats (pastData, sharpBest, maiaMoves, noMaia), for the owner to review how often the
+   * exception fires.
+   */
+  async function theirMove(fen) {
+    var p = positionOf(db, fen);
+    if (p.total >= cfg.maiaUntil && p.moves.length) return blendedReply(p, null, cfg);
+    var pol = null;
+    if (o.maia) {
+      try { pol = await o.maia(fen, cfg.maiaElo); } catch (e) { pol = null; }
+      if (pol && !pol.length) pol = null;
+    }
+    var choice = blendedReply(p, pol, cfg);
+    var a = await chessdb(fen), best = null;
+    if (a && a.status === 'ok' && a.moves) a.moves.forEach(function (m) { if (!best || m.score > best.score) best = m; });
+    stats.pastData = (stats.pastData || 0) + 1;
+    if (best && choice) {
+      var mm = a.moves.find(function (m) { return moveKey(m.san) === moveKey(choice); });
+      if (-best.score <= cfg.sharpWhiteCp && mm && winFromCp(best.score) - winFromCp(mm.score) >= cfg.sharpMaiaLoss) {
+        stats.sharpBest = (stats.sharpBest || 0) + 1;
+        return best.san;
+      }
+    }
+    if (choice) { if (pol) stats.maiaMoves = (stats.maiaMoves || 0) + 1; else stats.noMaia = (stats.noMaia || 0) + 1; return choice; }
+    if (best) { stats.noMaia = (stats.noMaia || 0) + 1; return best.san; }
+    return null;
+  }
+
+  /*
+   * A move for `n` where ChessDB doesn't know the position: the next move of ChessDB's line
+   * (querypv) from the nearest earlier position on n's path whose line goes through n.
+   */
+  async function pvMove(n) {
+    if (!o.chessdbPv || !n.path) return null;
+    var fens = [o.root], c = o.root;
+    for (var i = 0; i < n.path.length; i++) {
+      var mv = playSan(c, n.path[i]);
+      if (!mv) return null;
+      c = mv.fen; fens.push(c);
+    }
+    for (var back = 1; back <= Math.min(16, n.path.length); back++) {
+      var start = n.path.length - back;
+      var pv = await o.chessdbPv(fens[start]);
+      if (!pv || !pv.pv || pv.pv.length <= back) continue;
+      var ok = true;
+      for (var k = 0; k < back && ok; k++) ok = moveKey(pv.pv[k]) === moveKey(n.path[start + k]);
+      if (ok) return pv.pv[back];
+    }
+    return null;
+  }
+
   // One plan line from `fen`: `first` (a reply of theirs, or none), then about planPlies plies:
   // their most played move while the index has planGames games, else ChessDB's best; mine
   // always ChessDB's best. Numbered SAN ("9... Nc6 10. Be3"), or null.
@@ -999,22 +1098,9 @@ export function createBuilder(db, o) {
       sans.push(mv0.san); cur = mv0.fen;
     }
     while (sans.length < cfg.planPlies) {
-      var san = null;
-      if (turn(cur) !== side) {
-        var p = positionOf(db, cur);
-        if (p.total >= cfg.planGames && p.moves.length) san = p.moves.reduce(function (a, b) { return b.games > a.games ? b : a; }).san;
-        else if (o.chessdbPv) {
-          // Past the data: ChessDB's line for both sides, in one request (querypv).
-          var pv = await o.chessdbPv(cur);
-          for (var j = 0; pv && pv.pv && j < pv.pv.length && sans.length < cfg.planPlies; j++) {
-            var mp = playSan(cur, pv.pv[j]);
-            if (!mp) break;
-            sans.push(mp.san); cur = mp.fen;
-          }
-          break;
-        }
-      }
-      if (!san) san = await engineBest(cur);
+      // Theirs: the most played while the index has minGames games, then theirMove()'s Maia or
+      // sharp-spot rule; mine: ChessDB's best.
+      var san = turn(cur) !== side ? await theirMove(cur) : await engineBest(cur);
       var mv = san ? playSan(cur, san) : null;
       if (!mv) break;
       sans.push(mv.san); cur = mv.fen;

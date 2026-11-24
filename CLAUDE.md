@@ -1321,10 +1321,21 @@ positions only at that path; any other path ends with "transposes to" it.
 **Main lines deep (2026-11-24).** Reviewing 1...c5, the owner wanted the main lines drilled
 deep, not left to plan lines (4...d5 ended where the data thinned). A position of theirs whose
 reach is still `mainReach` (0.2%) and short of ply `mainPly` (30) from the start (`rootPly`,
-from the root's FEN) goes on where the rules would end it: their most played move while the
-index has `planGames` games, else ChessDB's best, and that reply only, at the line's full reach
-(share 1, so it stays a main line down to mainPly). My moves there are `finalMove()`'s ChessDB
-best, as at any thin position. Plan lines go at the new ends.
+from the root's FEN) goes on where the rules would end it: their main reply only, at the line's
+full reach (share 1, so it stays a main line down to mainPly). My moves there are
+`finalMove()`'s ChessDB best, as at any thin position. Plan lines go at the new ends.
+- Their main reply (`theirMove()`, also in plan lines; owner's rule the same day): the most
+  played at `maiaUntil` (100) games, under it `blendedReply()`, the games blended with Maia 3
+  at `maiaElo` 2100 exactly as `search.js` blends (K = maiaWeight × (1 − games/maiaUntil)
+  pseudo-games, Maia alone under maiaOnlyBelow). In a sharp spot (White at most
+  `sharpWhiteCp` after their ChessDB best, and the blended choice `sharpMaiaLoss` win% worse
+  for them) ChessDB's best. The summary counts each case, so the owner can review how often the
+  exception fires. Maia is repgen's `maia.mjs`, loaded only if the model file is there
+  (`--maia-model`), never downloaded by a build.
+- Where ChessDB doesn't know a main-line position, `pvMove()` takes the next move of ChessDB's
+  querypv line from the nearest earlier position on the path whose line passes through it: the
+  first 1...c5 rebuild stopped 4...d5 at ply 23 for want of an answer. A line end whose reach
+  grows into a main line later (a transposition) is queued again once (`mainTried`).
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

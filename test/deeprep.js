@@ -1141,15 +1141,43 @@ module.exports = async function run(check) {
     assert.ok([...b.nodes.values()].some(n => n.end === 'stopped'));
     assert.strictEqual([...b.nodes.values()].filter(n => n.kind === 'me' && n.status === 'done').length, 1);
   });
-  await check('build: past the data a plan line takes ChessDB\'s whole line (querypv) in one request', async () => {
-    const pvAsked = [];
-    const cdb = { [PE.fenKey(fenAfter('e4', 'c5', 'Nf3', 'd6'))]: [['d4', 30]], [PE.fenKey(fenAfter('e4', 'c5', 'Nf3', 'Nc6'))]: [['Bb5', 20]] };
-    const b = B.createBuilder(rdDb, { root: START, side: 'w', config: Object.assign({}, BASE, RD, { coverReach: 0.25, planLines: 3, planPlies: 6 }),
-      chessdb: fakeCdb(cdb), chessdbPv: fen => { pvAsked.push(fen); return Promise.resolve({ pv: ['cxd4', 'Nxd4', 'Nf6', 'Nc3'] }); } });
-    await b.run();
-    const n = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3'))));
-    assert.strictEqual(n.plan.split(') (')[0], '(2... d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3', n.plan);
-    assert.ok(pvAsked.length >= 1);
+  await check('blendedReply: games alone at maiaUntil, games plus K x Maia under it, Maia alone under maiaOnlyBelow', () => {
+    const C = { maiaUntil: 100, maiaOnlyBelow: 10, maiaWeight: 20 };
+    const pos = (total, moves) => ({ total, moves: moves.map(([san, games]) => ({ san, games })) });
+    const pol = [{ san: 'c5', prob: 0.9 }, { san: 'e5', prob: 0.1 }];
+    assert.strictEqual(B.blendedReply(pos(120, [['e5', 70], ['c5', 50]]), pol, C), 'e5', 'games alone');
+    // 22 games: K = 20 x 0.78 = 15.6; c5 10 + 14.0 beats e5 12 + 1.6.
+    assert.strictEqual(B.blendedReply(pos(22, [['e5', 12], ['c5', 10]]), pol, C), 'c5');
+    // 60 games: K = 8; e5 40 + 0.8 beats c5 20 + 7.2.
+    assert.strictEqual(B.blendedReply(pos(60, [['e5', 40], ['c5', 20]]), pol, C), 'e5');
+    assert.strictEqual(B.blendedReply(pos(6, [['e5', 6]]), pol, C), 'c5', 'Maia alone');
+    assert.strictEqual(B.blendedReply(pos(6, [['e5', 6]]), null, C), 'e5', 'without Maia, the games');
+    assert.strictEqual(B.blendedReply(pos(0, []), pol, C), 'c5');
+  });
+  await check('build: past the data their move is Maia\'s, or ChessDB\'s best in a sharp spot; mine ChessDB\'s best', async () => {
+    // 1.e4 c5 2.Nf3 ends at 25% (plan lines); after 2...d6 3.d4 the index has no games.
+    const L = (...s) => PE.fenKey(fenAfter(...s));
+    const maia = fen => Promise.resolve(PE.fenKey(fen) === L('e4', 'c5', 'Nf3', 'd6', 'd4') ? [{ san: 'cxd4', prob: 0.8 }, { san: 'Nf6', prob: 0.2 }] : []);
+    const run = async extra => {
+      const cdb = Object.assign({ [L('e4', 'c5', 'Nf3', 'd6')]: [['d4', 30]], [L('e4', 'c5', 'Nf3', 'Nc6')]: [['Bb5', 20]],
+        [L('e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4')]: [['Nxd4', 30]], [L('e4', 'c5', 'Nf3', 'd6', 'd4', 'Nf6')]: [['dxc5', 30]] }, extra);
+      const b = B.createBuilder(rdDb, { root: START, side: 'w', config: Object.assign({}, BASE, RD, { coverReach: 0.25, planLines: 3, planPlies: 4 }),
+        chessdb: fakeCdb(cdb), maia });
+      await b.run();
+      return b;
+    };
+    let b = await run({});
+    let n = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3'))));
+    assert.strictEqual(n.plan.split(') (')[0], '(2... d6 3. d4 cxd4 4. Nxd4', 'Maia\'s move, with no ChessDB answer to test');
+    // Sharp: after their best (Nf6, White 0.00) Maia's cxd4 is 13.5 win% worse for them.
+    b = await run({ [L('e4', 'c5', 'Nf3', 'd6', 'd4')]: [['Nf6', 0], ['cxd4', -150]] });
+    n = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3'))));
+    assert.strictEqual(n.plan.split(') (')[0], '(2... d6 3. d4 Nf6 4. dxc5');
+    assert.ok(b.stats.sharpBest >= 1);
+    // Not sharp when White is better than +0.5 after their best.
+    b = await run({ [L('e4', 'c5', 'Nf3', 'd6', 'd4')]: [['Nf6', -80], ['cxd4', -200]] });
+    n = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3'))));
+    assert.strictEqual(n.plan.split(') (')[0], '(2... d6 3. d4 cxd4 4. Nxd4');
   });
   await check('build --base: a position the file goes on from is extended at the file\'s own move order only', async () => {
     // 2...Nf6 3.Bc4 Nc6 (60 games) and 2...Nc6 3.Bc4 Nf6 (40) reach the same position. The file goes
@@ -1196,6 +1224,14 @@ module.exports = async function run(check) {
     assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5').status, 'leaf');
     b = await build(rdDb, Object.assign({}, cfg, { mainReach: 0 }), cdb);
     assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5').status, 'leaf', 'off with mainReach 0');
+    // Where ChessDB doesn't know a position, ChessDB's line from an earlier one goes on.
+    const thin = Object.assign({}, cdb);
+    delete thin[L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4')];
+    delete thin[L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6')];
+    b = await build(rdDb, cfg, thin, { chessdbPv: fen => Promise.resolve(PE.fenKey(fen) === L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6')
+      ? { pv: ['Ba4', 'Nf6', 'O-O', 'Be7'] } : { pv: [] }) });
+    assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4').replies[0].san, 'Nf6', 'their move from the line');
+    assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6').move, 'O-O', 'mine from the line');
   });
   rdDb.close();
 

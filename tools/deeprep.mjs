@@ -58,6 +58,7 @@ import { moveNote, rootNote, parseDecisions, reviewMarkdown, lineOf } from './de
 import { createProviders } from '../src/pe/providers.js';
 import { createFileCache } from './repgen/filecache.mjs';
 import { writeSlice } from './deeprep/slice.mjs';
+import { loadMaia, MAIA_FILE } from './repgen/maia.mjs';
 import { inPath, outPath, EXPLORER } from './repgen/paths.mjs';
 
 var USAGE = [
@@ -94,6 +95,8 @@ var USAGE = [
   '  --chessdb-rate 60 (per minute), --cache <file> (default repertoires/repgen-cache.jsonl)',
   '  --cover-reach, --root-reach, --drill-reach and --main-reach are percentages (0.05 is 0.05%); --root-reach defaults to',
   '                       the --moves line\'s own reach in the index',
+  '  --maia-model <file> Maia 3 for their moves where the games thin out (default repertoires/' + MAIA_FILE + ',',
+  '                       used when it is there, never downloaded); --no-maia: the games, else ChessDB',
   '  --base <pgn>         extend this file (yours): its moves are played as they are, its replies',
   '                       followed, its comments kept; the output is its game with the build added',
   'build and eval:',
@@ -547,6 +550,8 @@ function parseBuild(argv) {
     else if (a === '--cache') o.cache = argv[++i];
     else if (a === '--known') o.known = o.known.concat(knownList(argv[++i]));
     else if (a === '--base') o.base = argv[++i];
+    else if (a === '--maia-model') o.maiaModel = argv[++i];
+    else if (a === '--no-maia') o.maia = false;
     else if (a === '--theme-key') {
       var tk = argv[++i];
       if (tk !== 'both' && tk !== 'mine') throw new Error('--theme-key is both or mine');
@@ -676,11 +681,24 @@ async function cmdBuild(argv) {
         (100 * (o.config.rootReach || 1)).toFixed(3) + '%.');
     }
     var cdb = o.chessdb ? makeChessdb(o) : null;
+    // Maia 3 (repgen's, tools/repgen/maia.mjs) for their moves where the games thin out, if the
+    // model is there: never downloaded here.
+    var maia = null;
+    if (o.maia !== false) {
+      var mfile = o.maiaModel ? path.resolve(o.maiaModel) : outPath(MAIA_FILE);
+      if (fs.existsSync(mfile)) {
+        try {
+          var mm = await loadMaia({ file: mfile, download: false });
+          maia = function (fen, elo) { return mm.policy(fen, elo); };
+          console.log('Maia: ' + mfile + ', at ' + bcfg.maiaElo + '.');
+        } catch (e) { console.log('Maia not used: ' + String(e && e.message || e).split('\n')[0]); }
+      } else console.log('Maia not used: no model at ' + mfile + '. Their moves where the games thin out are the games, else ChessDB\'s best.');
+    }
     var t0 = Date.now();
     // Lookups counted, for the summary: a build's cost is mostly index reads.
     var lookups = 0;
     var counted = { meta: db.meta, records: function (k) { lookups++; return db.records(k); } };
-    var b = createBuilder(counted, { root: o.fen, side: o.side, config: o.config, chessdb: cdb, chessdbPv: cdb ? cdb.pv : null, decisions: decisions, known: known, base: base,
+    var b = createBuilder(counted, { root: o.fen, side: o.side, config: o.config, chessdb: cdb, chessdbPv: cdb ? cdb.pv : null, maia: maia, decisions: decisions, known: known, base: base,
       log: function (n, what) {
         var c = n.cands.find(function (x) { return x.san === n.move; });
         var alt = n.cands.filter(function (x) { return x !== c && !x.out; }).sort(function (x, y) { return y.score - x.score; })[0];
@@ -745,6 +763,11 @@ async function cmdBuild(argv) {
       ' changed by polishing, ' + nodes.filter(function (n) { return n.final && n.status === 'done'; }).length +
       ' at line ends (ChessDB\'s move); ' + fmt(lookups) + ' lookups, ' + (cdb ? (cdb.stats.chessdbRequests || 0) + ' ChessDB requests' + (cdb.stats.pvRequests ? ' and ' + cdb.stats.pvRequests + ' lines' : '') + ', ' : '') +
       mmss(Date.now() - t0) + '.');
+    if (b.stats.main || b.stats.pastData) {
+      console.log('Main lines: ' + (b.stats.main || 0) + ' replies past the rules. Their moves under ' + bcfg.maiaUntil +
+        ' games (main and plan lines): ' + (b.stats.pastData || 0) + ', ' + (b.stats.maiaMoves || 0) + ' with Maia, ' +
+        (b.stats.sharpBest || 0) + ' ChessDB\'s best in a sharp spot, ' + (b.stats.noMaia || 0) + ' without Maia.');
+    }
     if (b.stats.stopped) {
       console.log('Stopped at the ' + (b.stats.stopped === 'time' ? '--max-minutes limit' : '--max-mine limit') +
         ': lines still queued end there (`stopped`).' + (b.stats.plansSkipped ? ' ' + b.stats.plansSkipped + ' line ends got no plan line.' : ''));
