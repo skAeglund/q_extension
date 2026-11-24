@@ -1334,7 +1334,7 @@ full reach (share 1, so it stays a main line down to mainPly). My moves there ar
   `blendedProbs()` for my side, so they play that best reply. The example: 1.Nc3 c5 2.d4 cxd4
   3.Qxd4 Nc6 4.Qh4 d5, where 5.e4 is the only sound move and is played 18%. With no games and
   no Maia for my side it is never sharp: nothing says the moves are hard. Each case goes to
-  `stats.sharp` (path, plan so far, reply, good moves with win% and probability) and the
+  `stats.onlyMoves` (path, plan so far, reply, good moves with win% and probability) and the
   summary. Maia is repgen's `maia.mjs`, loaded only if the model file is there
   (`--maia-model`), never downloaded by a build.
 - Where ChessDB doesn't know a main-line position, `pvMove()` takes the next move of ChessDB's

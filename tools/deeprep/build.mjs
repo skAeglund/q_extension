@@ -1063,7 +1063,7 @@ export function createBuilder(db, o) {
    * me (onlyMoves(): my good moves have under sharpProb together in the same blend for my
    * side): then that best reply, the critical test. Their 1.Nc3 c5 2.d4 cxd4 3.Qxd4 Nc6 4.Qh4
    * d5 is the example: 5.e4 is White's only sound move and is played 18% of the time.
-   * `where` ({ path } or { plan }) labels the cases in stats.sharp for the report; stats also
+   * `where` ({ path } or { plan }) labels the cases in stats.onlyMoves for the report; stats also
    * counts pastData, maiaMoves, noMaia, sharpBest.
    */
   async function maiaOf(fen) {
@@ -1084,7 +1084,7 @@ export function createBuilder(db, o) {
         var om = onlyMoves(wins, blendedProbs(positionOf(db, mv.fen), await maiaOf(mv.fen), cfg), cfg);
         if (om.sharp) {
           stats.sharpBest = (stats.sharpBest || 0) + 1;
-          stats.sharp = (stats.sharp || []).concat([{ path: where && where.path || null, plan: where && where.plan || null,
+          stats.onlyMoves = (stats.onlyMoves || []).concat([{ path: where && where.path || null, plan: where && where.plan || null,
             reply: best.san, good: om.good, prob: om.prob }]);
           return best.san;
         }

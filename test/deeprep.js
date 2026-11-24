@@ -1195,7 +1195,7 @@ module.exports = async function run(check) {
     const plan0 = b => b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3')))).plan.split(') (')[0];
     let b = await run({});
     assert.strictEqual(plan0(b), '(2... d6 3. d4 cxd4 4. Nxd4', 'Maia\'s move: ChessDB knows nothing better');
-    assert.ok(!(b.stats.sharp || []).length);
+    assert.ok(!(b.stats.onlyMoves || []).length);
     // ChessDB prefers 3...Nf6, but nothing says 4.dxc5 is hard to find (no games, no Maia): Maia's move.
     const best = { [D4]: [['Nf6', 0], ['cxd4', -150]] };
     b = await run(best);
@@ -1203,8 +1203,8 @@ module.exports = async function run(check) {
     // After 3...Nf6, 4.dxc5 (the one good move) has 20% in the blend: sharp, they play Nf6.
     b = await run(best, [{ san: 'e5', prob: 0.8 }, { san: 'dxc5', prob: 0.2 }]);
     assert.strictEqual(plan0(b), '(2... d6 3. d4 Nf6 4. dxc5');
-    const s = b.stats.sharp.find(x => x.reply === 'Nf6');
-    assert.ok(s, JSON.stringify(b.stats.sharp));
+    const s = b.stats.onlyMoves.find(x => x.reply === 'Nf6');
+    assert.ok(s, JSON.stringify(b.stats.onlyMoves));
     assert.deepStrictEqual([s.path, s.plan, s.good.map(g => [g.san, g.prob])], [['e4', 'c5', 'Nf3'], ['d6', 'd4'], [['dxc5', 0.2]]]);
     near(s.prob, 0.2);
     // At 70% it isn't.
@@ -1258,7 +1258,7 @@ module.exports = async function run(check) {
     assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5').status, 'leaf', 'off with mainReach 0');
     // Leaving the data at Bb5 with no games and no Maia, their move is ChessDB's best, and nothing is sharp.
     b = await build(rdDb, cfg, cdb);
-    assert.ok(!(b.stats.sharp || []).length);
+    assert.ok(!(b.stats.onlyMoves || []).length);
     // Maia prefers 5...Nf6. After ChessDB's 5...a6, 6.Ba4 is my one good move: at 30% in the blend it is
     // an only-move spot, so they play a6 and the report gets the line; at 60% they play Maia's Nf6.
     const BB5 = L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5'), A6 = L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6');
@@ -1267,7 +1267,7 @@ module.exports = async function run(check) {
       : PE.fenKey(fen) === A6 ? [{ san: 'Bxc6', prob: 1 - ba4 }, { san: 'Ba4', prob: ba4 }] : []) });
     b = await build(rdDb, cfg, cdbX, withMaia(0.3));
     assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5').replies[0].san, 'a6');
-    assert.deepStrictEqual(b.stats.sharp.filter(x => !x.plan).map(x => [x.path.join(' '), x.reply, x.good.map(g => g.san).join(), x.prob]),
+    assert.deepStrictEqual(b.stats.onlyMoves.filter(x => !x.plan).map(x => [x.path.join(' '), x.reply, x.good.map(g => g.san).join(), x.prob]),
       [['e4 e5 Nf3 Nc6 Bb5', 'a6', 'Ba4', 0.3]]);
     b = await build(rdDb, cfg, cdbX, withMaia(0.6));
     assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5').replies[0].san, 'Nf6');

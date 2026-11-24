@@ -766,7 +766,7 @@ async function cmdBuild(argv) {
     if (b.stats.main || b.stats.pastData) {
       // Their moves in main and plan lines (owner, 2026-11-24): the games blended with Maia, or
       // ChessDB's best where it leaves me only moves that the same blend finds under sharpProb.
-      var sh = b.stats.sharp || [];
+      var sh = b.stats.onlyMoves || [];
       console.log('Main lines: ' + (b.stats.main || 0) + ' replies past the rules. Their moves in main and plan lines: ' +
         (b.stats.pastData || 0) + ', ' + (b.stats.maiaMoves || 0) + ' by games and Maia, ' + (b.stats.sharpBest || 0) +
         ' ChessDB\x27s best at only-move spots, ' + (b.stats.noMaia || 0) + ' without Maia.');
