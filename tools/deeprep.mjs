@@ -766,7 +766,13 @@ async function cmdBuild(argv) {
     if (b.stats.main || b.stats.pastData) {
       console.log('Main lines: ' + (b.stats.main || 0) + ' replies past the rules. Their moves under ' + bcfg.maiaUntil +
         ' games (main and plan lines): ' + (b.stats.pastData || 0) + ', ' + (b.stats.maiaMoves || 0) + ' with Maia, ' +
-        (b.stats.sharpBest || 0) + ' ChessDB\'s best in a sharp spot, ' + (b.stats.noMaia || 0) + ' without Maia.');
+        (b.stats.defendMoves || 0) + ' ChessDB\'s best in defending lines, ' + (b.stats.noMaia || 0) + ' without Maia.');
+      var dl = b.stats.defending || [];
+      console.log('Defending lines: ' + dl.filter(function (x) { return !x.plan; }).length + ' main, ' + dl.filter(function (x) { return x.plan; }).length + ' plan.');
+      dl.filter(function (x) { return !x.plan; }).forEach(function (x) {
+        console.log('  ' + line(x.path) + ': ChessDB ' + (x.eval == null ? '–' : (x.eval / 100).toFixed(2)) + ', score ' +
+          (x.score == null ? '–' : x.score.toFixed(1) + '%'));
+      });
     }
     if (b.stats.stopped) {
       console.log('Stopped at the ' + (b.stats.stopped === 'time' ? '--max-minutes limit' : '--max-mine limit') +

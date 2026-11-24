@@ -1154,7 +1154,16 @@ module.exports = async function run(check) {
     assert.strictEqual(B.blendedReply(pos(6, [['e5', 6]]), null, C), 'e5', 'without Maia, the games');
     assert.strictEqual(B.blendedReply(pos(0, []), pol, C), 'c5');
   });
-  await check('build: past the data their move is Maia\'s, or ChessDB\'s best in a sharp spot; mine ChessDB\'s best', async () => {
+  await check('isDefending: my eval at most defendCp, or my score in the games under defendScore', () => {
+    const C = { defendCp: 0, defendScore: 45 };
+    assert.strictEqual(B.isDefending(-14, 55, C), true, 'eval -0.14');
+    assert.strictEqual(B.isDefending(0, 55, C), true, 'eval 0.00');
+    assert.strictEqual(B.isDefending(30, 42, C), true, 'score 42%');
+    assert.strictEqual(B.isDefending(30, 50, C), false);
+    assert.strictEqual(B.isDefending(null, 50, C), false, 'unknown eval');
+    assert.strictEqual(B.isDefending(null, null, C), false);
+  });
+  await check('build: past the data their move is Maia\'s, or ChessDB\'s best once the line defends; mine ChessDB\'s best', async () => {
     // 1.e4 c5 2.Nf3 ends at 25% (plan lines); after 2...d6 3.d4 the index has no games.
     const L = (...s) => PE.fenKey(fenAfter(...s));
     const maia = fen => Promise.resolve(PE.fenKey(fen) === L('e4', 'c5', 'Nf3', 'd6', 'd4') ? [{ san: 'cxd4', prob: 0.8 }, { san: 'Nf6', prob: 0.2 }] : []);
@@ -1168,13 +1177,13 @@ module.exports = async function run(check) {
     };
     let b = await run({});
     let n = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3'))));
-    assert.strictEqual(n.plan.split(') (')[0], '(2... d6 3. d4 cxd4 4. Nxd4', 'Maia\'s move, with no ChessDB answer to test');
-    // Sharp: after their best (Nf6, White 0.00) Maia's cxd4 is 13.5 win% worse for them.
+    assert.strictEqual(n.plan.split(') (')[0], '(2... d6 3. d4 cxd4 4. Nxd4', 'Maia\'s move: no eval, and White scores 100% here');
+    // Where the line leaves the data White is at 0.00 after their best: it defends.
     b = await run({ [L('e4', 'c5', 'Nf3', 'd6', 'd4')]: [['Nf6', 0], ['cxd4', -150]] });
     n = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3'))));
     assert.strictEqual(n.plan.split(') (')[0], '(2... d6 3. d4 Nf6 4. dxc5');
-    assert.ok(b.stats.sharpBest >= 1);
-    // Not sharp when White is better than +0.5 after their best.
+    assert.ok(b.stats.defending.some(x => x.plan && x.eval === 0 && x.score === 100), JSON.stringify(b.stats.defending));
+    // At +0.80, with White's 100% in the games, it doesn't.
     b = await run({ [L('e4', 'c5', 'Nf3', 'd6', 'd4')]: [['Nf6', -80], ['cxd4', -200]] });
     n = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3'))));
     assert.strictEqual(n.plan.split(') (')[0], '(2... d6 3. d4 cxd4 4. Nxd4');
@@ -1224,6 +1233,13 @@ module.exports = async function run(check) {
     assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5').status, 'leaf');
     b = await build(rdDb, Object.assign({}, cfg, { mainReach: 0 }), cdb);
     assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5').status, 'leaf', 'off with mainReach 0');
+    // Leaving the data at Bb5, White is +0.30 after their best and scores 100%: a normal line.
+    b = await build(rdDb, cfg, cdb);
+    assert.ok(!(b.stats.defending || []).length);
+    // At -0.10 it defends, and the report gets the line, its eval and score.
+    b = await build(rdDb, cfg, Object.assign({}, cdb, { [L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5')]: [['a6', 10], ['Nf6', -60]] }));
+    assert.deepStrictEqual(b.stats.defending.filter(x => !x.plan).map(x => [x.path.join(' '), x.eval, x.score]),
+      [['e4 e5 Nf3 Nc6 Bb5', -10, 100]]);
     // Where ChessDB doesn't know a position, ChessDB's line from an earlier one goes on.
     const thin = Object.assign({}, cdb);
     delete thin[L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4')];

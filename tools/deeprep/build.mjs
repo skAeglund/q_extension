@@ -102,10 +102,11 @@ export var BUILD_DEFAULTS = {
   // Their move in main lines and plan lines (owner, 2026-11-24): with maiaUntil+ games the most
   // played; under it the games blended with Maia at maiaElo (K pseudo-games spread by Maia's
   // policy, K from maiaWeight down to 0 at maiaUntil, as the Practical search does), Maia alone
-  // under maiaOnlyBelow. In a sharp spot (White at most sharpWhiteCp after their ChessDB best,
-  // and the blended choice sharpMaiaLoss win% worse for them) ChessDB's best instead. Without
-  // Maia (o.maia) the games, else ChessDB's best.
-  maiaElo: 2100, sharpWhiteCp: 50, sharpMaiaLoss: 5,
+  // under maiaOnlyBelow. Without Maia (o.maia) the games, else ChessDB's best. A line (a main
+  // line, or a plan line's group) that leaves the database (under minGames) where my ChessDB
+  // eval is at most defendCp, or my score at its last position with minGames games is under
+  // defendScore (win%), defends from there: they play ChessDB's best at every move.
+  maiaElo: 2100, defendCp: 0, defendScore: 45,
   maiaUntil: 100, maiaOnlyBelow: 10, maiaWeight: 20,   // the blend, as search.js's PE_DEFAULTS (2026-11-24)
   // A deep base (2026-11-24): the drilled region is what reaches drillReach (drillReach /
   // sharpFactor on sharp lines). Only positions inside it cost learning; below it a decision is
@@ -240,6 +241,14 @@ export function replyCheck(cdb, fen, side, rp, cfg, pull) {
     refute: bestSan,
     refuteValue: bestMe
   };
+}
+
+/*
+ * Whether a line leaving the database defends: my ChessDB eval there (cp, null when unknown) at
+ * most defendCp, or my score in its games (win%, null when none) under defendScore.
+ */
+export function isDefending(evalCp, score, cfg) {
+  return (evalCp != null && evalCp <= cfg.defendCp) || (score != null && score < cfg.defendScore);
 }
 
 /*
@@ -472,11 +481,14 @@ export function createBuilder(db, o) {
       // A main line goes on past where the rules stop it: their main reply only, at the
       // line's full reach, so it stays a main line down to mainPly.
       n.mainTried = true;
-      var san = (await theirMove(n.fen)) || (await pvMove(n));
+      if (!n.lineMode) n.lineMode = { lastScore: pathScore(n), path: n.path };
+      var san = (await theirMove(n.fen, n.lineMode)) || (await pvMove(n));
       var m0 = san ? r.pos.moves.find(function (x) { return moveKey(x.san) === moveKey(san); }) : null;
       if (san && playSan(n.fen, san)) {
         n.replies = [replyOf(n, { san: san, share: 1, games: m0 ? m0.games : 0 })];
         n.replies[0].main = true;
+        var kidm = nodes.get(n.replies[0].child);
+        if (kidm && !kidm.lineMode) kidm.lineMode = n.lineMode;
         n.other = 0;
         n.status = 'done';
         stats.main = (stats.main || 0) + 1;
@@ -678,7 +690,9 @@ export function createBuilder(db, o) {
     n.why = pick.why;
     addTheme(n, 1);
     var mv = playSan(n.fen, n.move);
-    n.child = ensure(mv.fen, n.reach, n.oi, n.ply + 1, n.path.concat(mv.san), n.sharp).key;
+    var kid = ensure(mv.fen, n.reach, n.oi, n.ply + 1, n.path.concat(mv.san), n.sharp);
+    if (n.lineMode && !kid.lineMode) kid.lineMode = n.lineMode;     // a main line's state goes on
+    n.child = kid.key;
     n.status = 'done';
   }
 
@@ -1035,33 +1049,65 @@ export function createBuilder(db, o) {
 
   /*
    * Their move in a main line or a plan line: blendedReply() of the games and Maia at maiaElo
-   * (the most played at maiaUntil games), or ChessDB's best in a sharp spot (White at most
-   * sharpWhiteCp after it, and the blended choice sharpMaiaLoss win% worse for them). Counted
-   * in stats (pastData, sharpBest, maiaMoves, noMaia), for the owner to review how often the
-   * exception fires.
+   * (the most played at maiaUntil games), or ChessDB's best once the line defends (below).
+   * Counted in stats (pastData, maiaMoves, noMaia, defendMoves, and the list `defending`), for
+   * the owner to review how often a line defends.
    */
-  async function theirMove(fen) {
+  // My side's score in a position's games, in win%.
+  function myScore(p) { return p.total ? 100 * (side === 'w' ? p.w + p.d / 2 : p.b + p.d / 2) / p.total : null; }
+
+  /*
+   * `mode` is the line's state, shared down the line: { lastScore (my score at the line's last
+   * position with minGames games), defend (decided where it leaves the database), eval, score,
+   * path }. Where the line first meets a position under minGames games, it defends when my
+   * ChessDB eval there is at most defendCp or lastScore is under defendScore (owner,
+   * 2026-11-24: 1.Nc3 c5 2.d4 cxd4 3.Qxd4 Nc6 4.Qh4 d5, Black with the initiative): from
+   * then on they play ChessDB's best, so I'm prepared for the strongest play. Otherwise
+   * blendedReply() of the games and Maia.
+   */
+  async function theirMove(fen, mode) {
     var p = positionOf(db, fen);
+    if (mode && p.total >= cfg.minGames) mode.lastScore = myScore(p);
     if (p.total >= cfg.maiaUntil && p.moves.length) return blendedReply(p, null, cfg);
+    var a = await chessdb(fen), best = null;
+    if (a && a.status === 'ok' && a.moves) a.moves.forEach(function (m) { if (!best || m.score > best.score) best = m; });
+    if (mode && p.total < cfg.minGames && mode.defend === undefined) {
+      mode.eval = best ? -best.score : null;
+      mode.score = mode.lastScore != null ? mode.lastScore : null;
+      mode.defend = isDefending(mode.eval, mode.score, cfg);
+      if (mode.defend) {
+        stats.defending = (stats.defending || []).concat([{ path: mode.path || null, plan: !!mode.plan, eval: mode.eval, score: mode.score }]);
+      }
+    }
+    stats.pastData = (stats.pastData || 0) + 1;
+    if (mode && mode.defend) {
+      stats.defendMoves = (stats.defendMoves || 0) + 1;
+      return best ? best.san : null;
+    }
     var pol = null;
     if (o.maia) {
       try { pol = await o.maia(fen, cfg.maiaElo); } catch (e) { pol = null; }
       if (pol && !pol.length) pol = null;
     }
     var choice = blendedReply(p, pol, cfg);
-    var a = await chessdb(fen), best = null;
-    if (a && a.status === 'ok' && a.moves) a.moves.forEach(function (m) { if (!best || m.score > best.score) best = m; });
-    stats.pastData = (stats.pastData || 0) + 1;
-    if (best && choice) {
-      var mm = a.moves.find(function (m) { return moveKey(m.san) === moveKey(choice); });
-      if (-best.score <= cfg.sharpWhiteCp && mm && winFromCp(best.score) - winFromCp(mm.score) >= cfg.sharpMaiaLoss) {
-        stats.sharpBest = (stats.sharpBest || 0) + 1;
-        return best.san;
-      }
-    }
     if (choice) { if (pol) stats.maiaMoves = (stats.maiaMoves || 0) + 1; else stats.noMaia = (stats.noMaia || 0) + 1; return choice; }
     if (best) { stats.noMaia = (stats.noMaia || 0) + 1; return best.san; }
     return null;
+  }
+
+  // My score at the deepest position on n's path (from the root) with minGames games.
+  function pathScore(n) {
+    var c = o.root, sc = null;
+    var p0 = positionOf(db, c);
+    if (p0.total >= cfg.minGames) sc = myScore(p0);
+    for (var i = 0; i < (n.path || []).length; i++) {
+      var mv = playSan(c, n.path[i]);
+      if (!mv) break;
+      c = mv.fen;
+      var p = positionOf(db, c);
+      if (p.total >= cfg.minGames) sc = myScore(p);
+    }
+    return sc;
   }
 
   /*
@@ -1092,15 +1138,18 @@ export function createBuilder(db, o) {
   // always ChessDB's best. Numbered SAN ("9... Nc6 10. Be3"), or null.
   async function planLine(fen, first) {
     var sans = [], cur = fen;
+    // The group is a line of its own for theirMove()'s defending rule.
+    var p0 = positionOf(db, fen);
+    var mode = { lastScore: p0.total >= cfg.minGames ? myScore(p0) : null, plan: true };
     if (first) {
       var mv0 = playSan(cur, first);
       if (!mv0) return null;
       sans.push(mv0.san); cur = mv0.fen;
     }
     while (sans.length < cfg.planPlies) {
-      // Theirs: the most played while the index has minGames games, then theirMove()'s Maia or
-      // sharp-spot rule; mine: ChessDB's best.
-      var san = turn(cur) !== side ? await theirMove(cur) : await engineBest(cur);
+      // Theirs: theirMove() (games, Maia, or ChessDB's best in a defending line); mine:
+      // ChessDB's best.
+      var san = turn(cur) !== side ? await theirMove(cur, mode) : await engineBest(cur);
       var mv = san ? playSan(cur, san) : null;
       if (!mv) break;
       sans.push(mv.san); cur = mv.fen;

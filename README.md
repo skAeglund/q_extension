@@ -901,10 +901,13 @@ clickable lines it never trains. `--plan-lines 0` turns them off.
 Their main reply is the most played with `--maia-until` (100) games; under that the games
 blended with Maia 3 at `--maia-elo` (2100), as the Practical search does: Maia's policy as
 `--maia-weight` (20) pseudo-games, falling to 0 at `--maia-until`; under `--maia-only-below`
-(10) games, Maia alone. In a sharp spot, where you are at most `--sharp-white-cp` (50) after
-their ChessDB best and the blended choice is `--sharp-maia-loss` (5) win% worse for them, they
-play ChessDB's best. Without Maia (`--no-maia`, or no model at `--maia-model`, which is never
-downloaded here) the games decide, else ChessDB. The summary counts each case.
+(10) games, Maia alone. A line (a deepened main line, or a plan line) *defends* from where it
+leaves the database (under `--min-games`) when your ChessDB eval there is at most
+`--defend-cp` (0) or your score at its last position with games is under `--defend-score`
+(45%): from then on they play ChessDB's best, so you're prepared for the strongest play.
+Without Maia (`--no-maia`, or no model at `--maia-model`, which is never downloaded here) the
+games decide, else ChessDB. The summary counts each case and lists the defending main lines
+with the eval and score that made them so.
 
 **Main lines deep:** a line whose reach is still `--main-reach` (0.2%, a percentage) goes on to
 at least ply `--main-ply` (30) from the start, past the data too: their main reply only, your
