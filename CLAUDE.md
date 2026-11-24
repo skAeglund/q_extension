@@ -1327,15 +1327,16 @@ full reach (share 1, so it stays a main line down to mainPly). My moves there ar
 - Their main reply (`theirMove()`, also in plan lines; owner's rule the same day): the most
   played at `maiaUntil` (100) games, under it `blendedReply()`, the games blended with Maia 3
   at `maiaElo` 2100 exactly as `search.js` blends (K = maiaWeight × (1 − games/maiaUntil)
-  pseudo-games, Maia alone under maiaOnlyBelow). The exception is per line, not per position
-  (the owner's clarification, after a first per-position rule): where a main line, or a plan
-  line's group, first meets a position under minGames, it *defends* if my ChessDB eval there
-  is at most `defendCp` (0) or my score at its last position with minGames games is under
-  `defendScore` (45%), and then they play ChessDB's best to its end. The example was 1.Nc3 c5
-  2.d4 cxd4 3.Qxd4 Nc6 4.Qh4 d5 (Black has the initiative, about −0.14, White ~42% in the
-  games). The line's state (`lineMode`) is passed down the line through my moves; the summary
-  lists the defending main lines with their trigger. Maia is repgen's `maia.mjs`, loaded only if
-  the model file is there (`--maia-model`), never downloaded by a build.
+  pseudo-games, Maia alone under maiaOnlyBelow). The exception, per their move (the owner's
+  third rule; per-position evals, then a per-line "defending" eval/score test, came first and
+  were dropped): an only-move spot (`onlyMoves()`). After their ChessDB-best reply, my good
+  moves (within `sharpGood` 5 win% of my ChessDB best) have under `sharpProb` (0.5) together in
+  `blendedProbs()` for my side, so they play that best reply. The example: 1.Nc3 c5 2.d4 cxd4
+  3.Qxd4 Nc6 4.Qh4 d5, where 5.e4 is the only sound move and is played 18%. With no games and
+  no Maia for my side it is never sharp: nothing says the moves are hard. Each case goes to
+  `stats.sharp` (path, plan so far, reply, good moves with win% and probability) and the
+  summary. Maia is repgen's `maia.mjs`, loaded only if the model file is there
+  (`--maia-model`), never downloaded by a build.
 - Where ChessDB doesn't know a main-line position, `pvMove()` takes the next move of ChessDB's
   querypv line from the nearest earlier position on the path whose line passes through it: the
   first 1...c5 rebuild stopped 4...d5 at ply 23 for want of an answer. A line end whose reach

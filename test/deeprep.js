@@ -1154,39 +1154,62 @@ module.exports = async function run(check) {
     assert.strictEqual(B.blendedReply(pos(6, [['e5', 6]]), null, C), 'e5', 'without Maia, the games');
     assert.strictEqual(B.blendedReply(pos(0, []), pol, C), 'c5');
   });
-  await check('isDefending: my eval at most defendCp, or my score in the games under defendScore', () => {
-    const C = { defendCp: 0, defendScore: 45 };
-    assert.strictEqual(B.isDefending(-14, 55, C), true, 'eval -0.14');
-    assert.strictEqual(B.isDefending(0, 55, C), true, 'eval 0.00');
-    assert.strictEqual(B.isDefending(30, 42, C), true, 'score 42%');
-    assert.strictEqual(B.isDefending(30, 50, C), false);
-    assert.strictEqual(B.isDefending(null, 50, C), false, 'unknown eval');
-    assert.strictEqual(B.isDefending(null, null, C), false);
+  await check('onlyMoves: my good moves (within sharpGood of my best) under sharpProb together in the blend', () => {
+    const C = { sharpGood: 5, sharpProb: 0.5 };
+    // 4.Qh4 d5: 5.e4 the one sound move, played 18%.
+    let r = B.onlyMoves([{ san: 'e4', win: 52 }, { san: 'Nf3', win: 40 }, { san: 'Bf4', win: 38 }],
+      [{ san: 'Nf3', prob: 0.5 }, { san: 'e4', prob: 0.18 }, { san: 'Bf4', prob: 0.32 }], C);
+    assert.strictEqual(r.sharp, true);
+    assert.deepStrictEqual(r.good, [{ san: 'e4', win: 52, prob: 0.18 }]);
+    near(r.prob, 0.18);
+    // Two good moves, 60% together: not sharp.
+    r = B.onlyMoves([{ san: 'e4', win: 52 }, { san: 'Nf3', win: 48 }, { san: 'Bf4', win: 38 }],
+      [{ san: 'Nf3', prob: 0.42 }, { san: 'e4', prob: 0.18 }, { san: 'Bf4', prob: 0.4 }], C);
+    assert.strictEqual(r.sharp, false);
+    near(r.prob, 0.6);
+    assert.strictEqual(B.onlyMoves([{ san: 'e4', win: 52 }], [], C).sharp, false, 'no probabilities: nothing says it is hard');
+    assert.strictEqual(B.onlyMoves([], [{ san: 'e4', prob: 1 }], C).sharp, false);
   });
-  await check('build: past the data their move is Maia\'s, or ChessDB\'s best once the line defends; mine ChessDB\'s best', async () => {
+  await check('blendedProbs: the blend as probabilities, most likely first', () => {
+    const C = { maiaUntil: 100, maiaOnlyBelow: 10, maiaWeight: 20 };
+    const p = B.blendedProbs({ total: 60, moves: [{ san: 'e5', games: 40 }, { san: 'c5', games: 20 }] },
+      [{ san: 'c5', prob: 0.9 }, { san: 'e5', prob: 0.1 }], C);
+    assert.deepStrictEqual(p.map(x => x.san), ['e5', 'c5']);
+    near(p[0].prob, 40.8 / 68);
+    near(p[1].prob, 27.2 / 68);
+  });
+  await check('build: past the data their move is the games and Maia\'s, or ChessDB\'s best at an only-move spot for me', async () => {
     // 1.e4 c5 2.Nf3 ends at 25% (plan lines); after 2...d6 3.d4 the index has no games.
     const L = (...s) => PE.fenKey(fenAfter(...s));
-    const maia = fen => Promise.resolve(PE.fenKey(fen) === L('e4', 'c5', 'Nf3', 'd6', 'd4') ? [{ san: 'cxd4', prob: 0.8 }, { san: 'Nf6', prob: 0.2 }] : []);
-    const run = async extra => {
+    const D4 = L('e4', 'c5', 'Nf3', 'd6', 'd4'), NF6 = L('e4', 'c5', 'Nf3', 'd6', 'd4', 'Nf6');
+    const run = async (extra, afterNf6) => {
+      const maia = fen => Promise.resolve(PE.fenKey(fen) === D4 ? [{ san: 'cxd4', prob: 0.8 }, { san: 'Nf6', prob: 0.2 }]
+        : PE.fenKey(fen) === NF6 ? afterNf6 || [] : []);
       const cdb = Object.assign({ [L('e4', 'c5', 'Nf3', 'd6')]: [['d4', 30]], [L('e4', 'c5', 'Nf3', 'Nc6')]: [['Bb5', 20]],
-        [L('e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4')]: [['Nxd4', 30]], [L('e4', 'c5', 'Nf3', 'd6', 'd4', 'Nf6')]: [['dxc5', 30]] }, extra);
+        [L('e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4')]: [['Nxd4', 30]], [NF6]: [['dxc5', 30], ['e5', -200]] }, extra);
       const b = B.createBuilder(rdDb, { root: START, side: 'w', config: Object.assign({}, BASE, RD, { coverReach: 0.25, planLines: 3, planPlies: 4 }),
         chessdb: fakeCdb(cdb), maia });
       await b.run();
       return b;
     };
+    const plan0 = b => b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3')))).plan.split(') (')[0];
     let b = await run({});
-    let n = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3'))));
-    assert.strictEqual(n.plan.split(') (')[0], '(2... d6 3. d4 cxd4 4. Nxd4', 'Maia\'s move: no eval, and White scores 100% here');
-    // Where the line leaves the data White is at 0.00 after their best: it defends.
-    b = await run({ [L('e4', 'c5', 'Nf3', 'd6', 'd4')]: [['Nf6', 0], ['cxd4', -150]] });
-    n = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3'))));
-    assert.strictEqual(n.plan.split(') (')[0], '(2... d6 3. d4 Nf6 4. dxc5');
-    assert.ok(b.stats.defending.some(x => x.plan && x.eval === 0 && x.score === 100), JSON.stringify(b.stats.defending));
-    // At +0.80, with White's 100% in the games, it doesn't.
-    b = await run({ [L('e4', 'c5', 'Nf3', 'd6', 'd4')]: [['Nf6', -80], ['cxd4', -200]] });
-    n = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3'))));
-    assert.strictEqual(n.plan.split(') (')[0], '(2... d6 3. d4 cxd4 4. Nxd4');
+    assert.strictEqual(plan0(b), '(2... d6 3. d4 cxd4 4. Nxd4', 'Maia\'s move: ChessDB knows nothing better');
+    assert.ok(!(b.stats.sharp || []).length);
+    // ChessDB prefers 3...Nf6, but nothing says 4.dxc5 is hard to find (no games, no Maia): Maia's move.
+    const best = { [D4]: [['Nf6', 0], ['cxd4', -150]] };
+    b = await run(best);
+    assert.strictEqual(plan0(b), '(2... d6 3. d4 cxd4 4. Nxd4');
+    // After 3...Nf6, 4.dxc5 (the one good move) has 20% in the blend: sharp, they play Nf6.
+    b = await run(best, [{ san: 'e5', prob: 0.8 }, { san: 'dxc5', prob: 0.2 }]);
+    assert.strictEqual(plan0(b), '(2... d6 3. d4 Nf6 4. dxc5');
+    const s = b.stats.sharp.find(x => x.reply === 'Nf6');
+    assert.ok(s, JSON.stringify(b.stats.sharp));
+    assert.deepStrictEqual([s.path, s.plan, s.good.map(g => [g.san, g.prob])], [['e4', 'c5', 'Nf3'], ['d6', 'd4'], [['dxc5', 0.2]]]);
+    near(s.prob, 0.2);
+    // At 70% it isn't.
+    b = await run(best, [{ san: 'dxc5', prob: 0.7 }, { san: 'e5', prob: 0.3 }]);
+    assert.strictEqual(plan0(b), '(2... d6 3. d4 cxd4 4. Nxd4');
   });
   await check('build --base: a position the file goes on from is extended at the file\'s own move order only', async () => {
     // 2...Nf6 3.Bc4 Nc6 (60 games) and 2...Nc6 3.Bc4 Nf6 (40) reach the same position. The file goes
@@ -1233,13 +1256,21 @@ module.exports = async function run(check) {
     assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5').status, 'leaf');
     b = await build(rdDb, Object.assign({}, cfg, { mainReach: 0 }), cdb);
     assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5').status, 'leaf', 'off with mainReach 0');
-    // Leaving the data at Bb5, White is +0.30 after their best and scores 100%: a normal line.
+    // Leaving the data at Bb5 with no games and no Maia, their move is ChessDB's best, and nothing is sharp.
     b = await build(rdDb, cfg, cdb);
-    assert.ok(!(b.stats.defending || []).length);
-    // At -0.10 it defends, and the report gets the line, its eval and score.
-    b = await build(rdDb, cfg, Object.assign({}, cdb, { [L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5')]: [['a6', 10], ['Nf6', -60]] }));
-    assert.deepStrictEqual(b.stats.defending.filter(x => !x.plan).map(x => [x.path.join(' '), x.eval, x.score]),
-      [['e4 e5 Nf3 Nc6 Bb5', -10, 100]]);
+    assert.ok(!(b.stats.sharp || []).length);
+    // Maia prefers 5...Nf6. After ChessDB's 5...a6, 6.Ba4 is my one good move: at 30% in the blend it is
+    // an only-move spot, so they play a6 and the report gets the line; at 60% they play Maia's Nf6.
+    const BB5 = L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5'), A6 = L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6');
+    const cdbX = Object.assign({}, cdb, { [A6]: [['Ba4', 30], ['Bxc6', -300]] });
+    const withMaia = ba4 => ({ maia: fen => Promise.resolve(PE.fenKey(fen) === BB5 ? [{ san: 'Nf6', prob: 0.9 }, { san: 'a6', prob: 0.1 }]
+      : PE.fenKey(fen) === A6 ? [{ san: 'Bxc6', prob: 1 - ba4 }, { san: 'Ba4', prob: ba4 }] : []) });
+    b = await build(rdDb, cfg, cdbX, withMaia(0.3));
+    assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5').replies[0].san, 'a6');
+    assert.deepStrictEqual(b.stats.sharp.filter(x => !x.plan).map(x => [x.path.join(' '), x.reply, x.good.map(g => g.san).join(), x.prob]),
+      [['e4 e5 Nf3 Nc6 Bb5', 'a6', 'Ba4', 0.3]]);
+    b = await build(rdDb, cfg, cdbX, withMaia(0.6));
+    assert.strictEqual(at('e4', 'e5', 'Nf3', 'Nc6', 'Bb5').replies[0].san, 'Nf6');
     // Where ChessDB doesn't know a position, ChessDB's line from an earlier one goes on.
     const thin = Object.assign({}, cdb);
     delete thin[L('e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4')];

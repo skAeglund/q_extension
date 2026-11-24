@@ -764,14 +764,19 @@ async function cmdBuild(argv) {
       ' at line ends (ChessDB\'s move); ' + fmt(lookups) + ' lookups, ' + (cdb ? (cdb.stats.chessdbRequests || 0) + ' ChessDB requests' + (cdb.stats.pvRequests ? ' and ' + cdb.stats.pvRequests + ' lines' : '') + ', ' : '') +
       mmss(Date.now() - t0) + '.');
     if (b.stats.main || b.stats.pastData) {
-      console.log('Main lines: ' + (b.stats.main || 0) + ' replies past the rules. Their moves under ' + bcfg.maiaUntil +
-        ' games (main and plan lines): ' + (b.stats.pastData || 0) + ', ' + (b.stats.maiaMoves || 0) + ' with Maia, ' +
-        (b.stats.defendMoves || 0) + ' ChessDB\'s best in defending lines, ' + (b.stats.noMaia || 0) + ' without Maia.');
-      var dl = b.stats.defending || [];
-      console.log('Defending lines: ' + dl.filter(function (x) { return !x.plan; }).length + ' main, ' + dl.filter(function (x) { return x.plan; }).length + ' plan.');
-      dl.filter(function (x) { return !x.plan; }).forEach(function (x) {
-        console.log('  ' + line(x.path) + ': ChessDB ' + (x.eval == null ? '–' : (x.eval / 100).toFixed(2)) + ', score ' +
-          (x.score == null ? '–' : x.score.toFixed(1) + '%'));
+      // Their moves in main and plan lines (owner, 2026-11-24): the games blended with Maia, or
+      // ChessDB's best where it leaves me only moves that the same blend finds under sharpProb.
+      var sh = b.stats.sharp || [];
+      console.log('Main lines: ' + (b.stats.main || 0) + ' replies past the rules. Their moves in main and plan lines: ' +
+        (b.stats.pastData || 0) + ', ' + (b.stats.maiaMoves || 0) + ' by games and Maia, ' + (b.stats.sharpBest || 0) +
+        ' ChessDB\x27s best at only-move spots, ' + (b.stats.noMaia || 0) + ' without Maia.');
+      console.log('Sharp (only moves for me under ' + Math.round(100 * bcfg.sharpProb) + '% in the blend at ' + bcfg.maiaElo + '): ' +
+        sh.filter(function (x) { return !x.plan; }).length + ' in main lines, ' + sh.filter(function (x) { return x.plan; }).length + ' in plan lines.');
+      sh.forEach(function (x) {
+        var p = (x.path || []).concat(x.plan || []).concat([x.reply]);
+        console.log('  ' + line(p) + (x.plan ? ' (plan line)' : '') + ': good ' + x.good.map(function (g) {
+          return g.san + ' ' + g.win.toFixed(1) + '% (' + (100 * g.prob).toFixed(0) + '%)'; }).join(', ') +
+          '; together ' + (100 * x.prob).toFixed(0) + '%');
       });
     }
     if (b.stats.stopped) {
