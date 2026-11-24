@@ -17,6 +17,11 @@
  * `node tools/repgen.mjs --out sicilian --check` afterwards picks up the new evals.
  * Without a run, the opponent moves' share comments ({22%}) give that order instead.
  *
+ * ChessDB publishes no rate limit. A rate-limit answer (HTTP 429, or a status such as "rate
+ * limit exceeded") is logged, pauses every request for 30 s and is then asked again; the
+ * run's last line counts them, with the requests per minute and every kind of answer, so
+ * --rate can be raised until one appears and lowered from there.
+ *
  * A bare file name that isn't in the current directory is looked up in repertoires/.
  * Writes <name>.explore.log and <name>.explore.json (what was explored when; a position
  * explored in the last --again-after days, 7 by default, is skipped).
@@ -26,7 +31,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parsePgn } from './repgen/pgntree.mjs';
 import { sideOfHeaders } from './repgen/clean.mjs';
-import { positions, candidates, pickTargets, createExplorer, sanOf, EXPLORE_DEFAULTS } from './repgen/explore.mjs';
+import { positions, candidates, pickTargets, createExplorer, sanOf, rateLimited, EXPLORE_DEFAULTS } from './repgen/explore.mjs';
 import { createLimiter, CHESSDB_URL } from '../src/pe/providers.js';
 import { fenKey, sideToMove } from '../src/pe/search.js';
 import { inPath } from './repgen/paths.mjs';
@@ -119,24 +124,59 @@ function main() {
     fs.renameSync(tmp, outPath);
   }
 
-  // ChessDB, spaced out and a few requests in flight at most.
+  // ChessDB, spaced out and a few requests in flight at most. A rate-limit answer is
+  // logged and counted, and pauses every request for PAUSE_MS (requests wait it out in
+  // their lane slot); the refused request is then asked again, up to RETRIES times.
   var gap = 60000 / (args.rate ? num('rate', args.rate) : 60);
   var nextAt = 0;
   var lane = createLimiter(args.concurrency ? Math.max(1, num('concurrency', args.concurrency)) : 3);
-  var requests = 0;
+  var requests = 0, limited = 0, pausedUntil = 0, answered = {};
+  var PAUSE_MS = 30000, RETRIES = 3;
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, Math.max(0, ms)); }); }
+  function slot() {
+    var t = Date.now();
+    if (t < pausedUntil) return wait(pausedUntil - t).then(slot);
+    var at = Math.max(t, nextAt);
+    nextAt = at + gap;
+    return wait(at - t).then(function () { return Date.now() < pausedUntil ? slot() : null; });
+  }
+  function tally(what) { answered[what] = (answered[what] || 0) + 1; }
   function cdb(action, fen) {
-    return lane(function () {
-      var t = Date.now(), at = Math.max(t, nextAt);
-      nextAt = at + gap;
-      return new Promise(function (r) { setTimeout(r, at - t); }).then(function () {
+    var url = CHESSDB_URL + '?action=' + action + '&json=1&board=' + encodeURIComponent(fen);
+    function refused(what, tries) {
+      limited++;
+      tally('rate limited');
+      pausedUntil = Math.max(pausedUntil, Date.now() + PAUSE_MS);
+      log('ChessDB refused a request for its rate limit (' + what + '), ' + limited + ' this run: ' +
+        'pausing ChessDB requests for ' + PAUSE_MS / 1000 + ' s' + (tries < RETRIES ? ', then asking again' : '') +
+        '. If it repeats, lower --rate.');
+      if (tries >= RETRIES) throw new Error('rate limited');
+      return attempt(tries + 1);
+    }
+    function attempt(tries) {
+      return slot().then(function () {
         requests++;
-        var url = CHESSDB_URL + '?action=' + action + '&json=1&board=' + encodeURIComponent(fen);
         return fetch(url, { signal: AbortSignal.timeout(30000) });
       }).then(function (res) {
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        return res.json();
+        if (rateLimited(res.status, null)) return refused('HTTP ' + res.status, tries);
+        if (!res.ok) { tally('HTTP ' + res.status); throw new Error('HTTP ' + res.status); }
+        return res.json().then(function (j) {
+          if (rateLimited(res.status, j)) return refused('"' + j.status + '"', tries);
+          tally(j && j.status != null ? String(j.status) : 'no status');
+          return j;
+        });
       });
-    });
+    }
+    return lane(function () { return attempt(1); });
+  }
+  // "1957 requests in 33m10s (59.0 a minute); rate-limited 0; answers ok 1890, unknown 67".
+  function pace() {
+    var ms = Date.now() - started;
+    var kinds = Object.keys(answered).sort(function (a, b) { return answered[b] - answered[a]; });
+    return requests + ' ChessDB requests in ' + mmss(ms) + ' (' + (requests / Math.max(ms / 60000, 1 / 60)).toFixed(1) +
+      ' a minute); rate-limited ' + limited + (kinds.length ? '; answers ' + kinds.map(function (k) {
+        return k + ' ' + answered[k];
+      }).join(', ') : '');
   }
 
   // Positions in all the games, once each.
@@ -165,8 +205,7 @@ function main() {
 
   process.on('SIGINT', function () {
     try { save(); } catch (e) { /* best effort */ }
-    log('Stopped after ' + requests + ' ChessDB requests in ' + mmss(Date.now() - started) +
-      '. Run the same command to carry on.');
+    log('Stopped after ' + pace() + '. Run the same command to carry on.');
     process.exit(130);
   });
 
@@ -265,8 +304,7 @@ function main() {
             Math.sign(r.after.mine.score - r.after.rival.score) !== Math.sign(r.before.mine.score - r.before.rival.score)) return true;
         return Math.abs(r.after.best.score - r.before.best.score) >= opts.settle;
       });
-      log('Done: ' + results.length + ' explored, ' + changed.length + ' changed; ' + requests +
-        ' ChessDB requests in ' + mmss(Date.now() - started) + '.');
+      log('Done: ' + results.length + ' explored, ' + changed.length + ' changed; ' + pace() + '.');
       changed.forEach(function (r) {
         log('  ' + r.line + ': ' + describe(r.before, r.fen) + ' -> ' + describe(r.after, r.fen));
       });

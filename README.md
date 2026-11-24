@@ -543,8 +543,12 @@ by more than a pawn, and the eval stayed about the same under another move. The 
 rule above would have ended the first two at depth 6 and 12, and the third at depth 12.
 
 ChessDB is asked at most 60 times a minute (`--rate`), with 3 requests in flight
-(`--concurrency`). `sicilian.explore.log` has a line per depth and a before/after line per
-position, scores from White's side. `sicilian.explore.json` records each position explored,
+(`--concurrency`). ChessDB publishes no limit, and 60 is a polite pace, not a measured one.
+A rate-limit answer (HTTP 429, or a status such as "rate limit exceeded") is logged, pauses
+every request for 30 s, and the refused request is asked again, up to 3 times. The run's last
+line gives the requests per minute, how many were refused, and every kind of answer, so the
+rate can be raised until one is refused and lowered from there. `sicilian.explore.log` has a
+line per depth and a before/after line per position, scores from White's side. `sicilian.explore.json` records each position explored,
 and one explored in the last 7 days (`--again-after`) is skipped unless you pass `--again`.
 Works on any PGN; give `--side white|black` when it isn't repgen's.
 

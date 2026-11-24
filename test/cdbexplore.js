@@ -232,4 +232,15 @@ module.exports = async function run(check) {
     assert.strictEqual(X.sanOf(START, 'g1f3'), 'Nf3');
     assert.strictEqual(X.sanOf(START, 'e2e5'), 'e2e5');
   });
+
+  await check('explore: a rate-limit answer is HTTP 429 or a rate-limit status, nothing else', () => {
+    assert.strictEqual(X.rateLimited(429, null), true);
+    assert.strictEqual(X.rateLimited(200, { status: 'rate limit exceeded' }), true);
+    assert.strictEqual(X.rateLimited(200, { status: 'Rate-limit' }), true);
+    assert.strictEqual(X.rateLimited(200, { status: 'too many requests' }), true);
+    ['ok', 'unknown', 'invalid board', 'checkmate', 'stalemate', undefined].forEach(st =>
+      assert.strictEqual(X.rateLimited(200, { status: st }), false, String(st)));
+    assert.strictEqual(X.rateLimited(503, null), false);
+    assert.strictEqual(X.rateLimited(200, null), false);
+  });
 };

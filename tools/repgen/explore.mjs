@@ -43,6 +43,17 @@ var SIEVED = 5;       // ChessDB scores at least this many moves of an analysed 
 var MAX_EXT = 10;     // plies past the depth a line may be extended
 var WAIT_FIRST = 5000, WAIT_MAX = 60000;
 
+/*
+ * ChessDB refusing a request for load: HTTP 429, or a JSON status such as "rate limit
+ * exceeded". It publishes no quota, and neither has been seen yet (2026-11-24), so the
+ * status is matched loosely. `j` is the parsed answer, or null before parsing.
+ */
+export function rateLimited(httpStatus, j) {
+  if (httpStatus === 429) return true;
+  var st = j && typeof j.status === 'string' ? j.status : '';
+  return /rate.?limit|exceed|too many/i.test(st);
+}
+
 function pieces(fen) { return fen.split(' ')[0].replace(/[^a-z]/gi, '').length; }
 
 function lanOf(m) { return m.from + m.to + (m.promotion || ''); }

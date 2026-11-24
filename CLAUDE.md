@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 646 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 648 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -534,6 +534,18 @@ a pawn. The tool's own search is covered by the harness. Its `--list` survey ran
 rate limiting. 9 of 21 changed: ChessDB's best moved off the PGN's move in two decisions by
 0.21 and 0.27, and most line-end evals rose for White (+2.32 → +3.10 at most). A `--check
 --dry-run` afterwards: 153 positions, 14 to search again, 7 marks changed.
+
+**cdbexplore: rate-limit answers (2026-11-24).** Asked: has ChessDB ever answered "rate limit
+exceeded", and is that where the 60 a minute comes from? No to both: 60 was set as a polite pace
+when repgen's CLI was built, before any real run, and no refusal has been seen. But cdbexplore
+retried any answer without an eval silently, so one would have gone unnoticed. Now every request
+goes through one place in `cdb()`: a refusal (`rateLimited()` in repgen/explore.mjs: HTTP 429, or
+a status matching rate limit / exceed / too many, since ChessDB documents none) is logged,
+pauses every request for 30 s (waited out in the lane slot, as the providers do), and is asked
+again up to 3 times. The last line ("Done:", or "Stopped after" on Ctrl-C) gives the requests
+per minute, the refusals, and a tally of every answer's status. Checked against a fake fetch
+(one 429, one status refusal, and all refused): logged, paused, retried, and the run went on.
+The point: raise `--rate` until a refusal appears, then lower it.
 
 **Copy continuation (v1.12.0).** Requested 2026-09-26: the site's Copy gives the whole line
 from move 1 with comments; this copies only the clicked move's branch (from its first
