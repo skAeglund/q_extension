@@ -1300,6 +1300,16 @@ its positions override `--known` leaves (known files' prefixes include them), an
 owner's game with the build grafted on, comments verbatim. The tests' base config keeps the old
 percentages (`coverReach: 0, planLines: 0`).
 
+**A deep base (2026-11-24, the same night).** The owner wants two PGNs in the end: a base with
+every line at full length, and the drilled repertoire cut from it. For the base, `drillReach`
+marks the drilled region (0.05%, a fifth on sharp lines): `price()` and `linePositions()` count
+learning only inside it, and below it `decide()` is cheap (`cheap(n)`: one queryall, the
+position's own; no Prac, sound value or reply search; no polishing), since ChessDB allows about
+60 requests a minute and a base has thousands of positions. `maxMine`/`maxMinutes` stop growth
+(`stopped` leaves, `stats.stopped`), and `plans()` then runs most reached first within a quarter
+of `maxMinutes` more. A plan line past the data takes ChessDB's querypv (`chessdbPv`, cached as
+`chessdbpv` in the same file) instead of one queryall per ply.
+
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where
 the site already consults `REP_STATE.map`.

@@ -899,6 +899,15 @@ about `--plan-plies` (10) plies. They play their most played move while the inde
 `{(9... Nc6 10. Be3 Bxe3 11. fxe3 O-O) (9... Nd7 10. f4 Nf6)}`, which repworks shows as
 clickable lines it never trains. `--plan-lines 0` turns them off.
 
+For a deep base (every line at full length, cut down for drilling later), `--drill-reach`
+(a percentage) marks the drilled region: only positions reaching it (a fifth of it on sharp
+lines) cost learning, and below it a decision is cheap: no Prac or sound value, the blend
+renormalised over ChessDB and the deep score, ChessDB asked about the position itself only, and
+no polishing. `--max-mine N` and `--max-minutes N` stop a build where it is (what is still queued
+ends as `stopped`, and the summary says so); plan lines then go most reached first for a quarter
+of `--max-minutes` more. Past the data, a plan line takes ChessDB's whole line in one request
+(querypv).
+
 `--base <pgn>` extends a repertoire of your own instead of building beside it: its moves are
 played as they are (no candidates weighed), its replies always followed, and its positions are
 never another `--known` file's line end. Past its line ends, and for new replies at its

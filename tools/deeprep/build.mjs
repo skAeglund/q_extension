@@ -94,6 +94,13 @@ export var BUILD_DEFAULTS = {
   // played move while the index has planGames games, I play ChessDB's best, and past the data
   // ChessDB's best for both. Never trained: repworks shows them as clickable lines.
   planLines: 3, planPlies: 10, planGames: 20, planShare: 0.02,
+  // A deep base (2026-11-24): the drilled region is what reaches drillReach (drillReach /
+  // sharpFactor on sharp lines). Only positions inside it cost learning; below it a decision is
+  // cheap: no Prac d1 or sound value (the blend renormalises over ChessDB and deep), one ChessDB
+  // answer (the position's own), no polishing. 0: everything is drilled, as before.
+  drillReach: 0,
+  maxMine: 0,             // stop growing at this many positions of mine (0: no limit)
+  maxMinutes: 0,          // ...or after this many minutes; plans then go most reached first until then too
   consider: 4,            // my best moves by deep score that are weighed (plus the most played)
   weights: [0.3, 0.2, 0.5],   // ChessDB, Prac d1, deep: the blend my move is ranked by
   maxLoss: 5,             // ChessDB: my move at most this many win% under its best (0: off)
@@ -225,7 +232,8 @@ export function replyCheck(cdb, fen, side, rp, cfg, pull) {
 /*
  * o = { root: FEN, side: 'w' | 'b', config (BUILD_DEFAULTS' keys), chessdb(fen) -> Promise
  * (or none: no ChessDB), decisions: Map(position key -> { play, avoid: [] }),
- * known: mergeKnown()'s (optional), base: baseFromPgn()'s (optional), log(node, 'polish'?)
+ * chessdbPv(fen) -> Promise of { pv: [SAN] } (ChessDB's querypv; optional, for plan lines past
+ * the data), known: mergeKnown()'s (optional), base: baseFromPgn()'s (optional), log(node, 'polish'?)
  * after each decision }. A decisions entry at a position of theirs may carry `cover: [SAN]`:
  * replies followed whatever their share or reach.
  * Returns { run(), nodes, rootKey, config }.
@@ -302,6 +310,17 @@ export function createBuilder(db, o) {
   function leaf(n, why) { n.status = 'leaf'; n.end = why; }
 
   function threshold(sharp) { return sharp && cfg.sharpFactor > 1 ? R / cfg.sharpFactor : R; }
+  // Below the drilled region: learning costs nothing and decisions are cheap.
+  function drillAt(sharp) { return sharp && cfg.sharpFactor > 1 ? cfg.drillReach / cfg.sharpFactor : cfg.drillReach; }
+  function cheap(n) { return cfg.drillReach > 0 && rootReach * n.reach < drillAt(n.sharp) - 1e-12; }
+  var t0 = Date.now();
+  function overTime() { return cfg.maxMinutes > 0 && Date.now() - t0 > cfg.maxMinutes * 60000; }
+  function overLimit() {
+    if (overTime()) return 'time';
+    if (cfg.maxMine > 0 && settled >= cfg.maxMine) return 'positions';
+    return null;
+  }
+  var settled = 0;             // positions of mine decided so far (each once)
 
   // Their replies by the rules alone (no ChessDB): the coverage percentages, and with coverReach
   // on, every reply with coverShare and minGames games; either way only those whose reach is at
@@ -482,7 +501,7 @@ export function createBuilder(db, o) {
    * is built (or learned) whatever this decision does. Inside a known repertoire its own
    * moves are followed. Nearest first, up to cfg.costCap positions.
    */
-  function linePositions(fen, reach, oi, ply, elsewhere) {
+  function linePositions(fen, reach, oi, ply, elsewhere, sharp) {
     var all = 0, fresh = 0, seen = new Set();
     var queue = [{ fen: fen, reach: reach, oi: oi, ply: ply, inside: false }];
     for (var qi = 0; qi < queue.length && all < cfg.costCap; qi++) {
@@ -491,6 +510,8 @@ export function createBuilder(db, o) {
       if (seen.has(k)) continue;
       seen.add(k);
       if (x.ply >= cfg.maxPly) continue;
+      // Positions below the drilled region aren't learned, and nothing past them is either.
+      if (cfg.drillReach > 0 && rootReach * x.reach < drillAt(sharp) - 1e-12) continue;
       var inside = x.inside || elsewhere.has(k) || knownPos.has(k);
       var known = nodes.get(k);
       // A line that ends here ends; one that joins a known repertoire goes on inside it.
@@ -535,10 +556,15 @@ export function createBuilder(db, o) {
    *   penalty = learnCost / 100 x (own + size x fresh / all) / reach
    */
   function price(n, elsewhere) {
+    // Below the drilled region nothing is learned: the choice is pure chess.
+    if (cheap(n)) {
+      n.cands.forEach(function (c) { c.positions = 0; c.fresh = 0; c.newShare = 0; c.penalty = 0; c.score = c.blend; });
+      return;
+    }
     addTheme(n, -1);
     var live = n.cands.filter(function (c) { return !c.out; });
     live.forEach(function (c) {
-      var lp = cfg.learnCost > 0 ? linePositions(c.fen, n.reach, n.oi, n.ply + 1, elsewhere) : { all: 0, fresh: 0 };
+      var lp = cfg.learnCost > 0 ? linePositions(c.fen, n.reach, n.oi, n.ply + 1, elsewhere, n.sharp) : { all: 0, fresh: 0 };
       c.positions = lp.all;
       c.fresh = lp.fresh;
       c.own = cardCost(n.fen, c.san);
@@ -579,6 +605,7 @@ export function createBuilder(db, o) {
   }
 
   function settle(n, pick) {
+    if (!n.move) settled++;
     addTheme(n, -1);
     n.move = pick.c.san;
     n.why = pick.why;
@@ -709,9 +736,10 @@ export function createBuilder(db, o) {
       else n.pinMissing = d.play;
     }
     n.cands = picked.map(function (x) { return candOf(n, x, d); });
-    // ChessDB here and after each candidate, asked together.
+    // ChessDB here and after each candidate, asked together. Below the drilled region, here only.
+    var lite = cheap(n);
     var answers = await Promise.all([chessdb(n.fen)].concat(n.cands.map(function (c) {
-      return c.out ? null : chessdb(c.fen);
+      return c.out || lite ? null : chessdb(c.fen);
     })));
     var e = engineOf(answers[0], n.fen);
     var wins = e.wins, best = e.best, bestSan = e.bestSan;
@@ -723,7 +751,7 @@ export function createBuilder(db, o) {
       if (bx) {
         var bc = candOf(n, bx, d);
         n.cands.push(bc);
-        answers.push(bc.out ? null : await chessdb(bc.fen));
+        answers.push(bc.out || lite ? null : await chessdb(bc.fen));
       }
     }
     // ChessDB's view of the average move here, by games: what the position's score stands for.
@@ -740,7 +768,8 @@ export function createBuilder(db, o) {
     n.cands.forEach(function (c, i) {
       if (wins.has(moveKey(c.san))) c.engine = wins.get(moveKey(c.san));
       if (c.out) return;
-      var rp = createSearch(db, c.fen, Object.assign({}, sopts, { plies: Math.max(1, cfg.plies - 1) })).candidates();
+      // Cheap: no ChessDB after the move, so no Prac or sound value, and no search of their replies.
+      var rp = lite ? { list: [], total: 0 } : createSearch(db, c.fen, Object.assign({}, sopts, { plies: Math.max(1, cfg.plies - 1) })).candidates();
       var chk = replyCheck(answers[i + 1], c.fen, side, rp, cfg, { mu: 100 * op.raw, w: c.w });
       c.prac = chk.prac;
       c.sound = chk.sound;
@@ -814,8 +843,15 @@ export function createBuilder(db, o) {
     log(n);
   }
 
+  // At maxMine or maxMinutes the build stops where it is: what is still queued ends its line
+  // (`stopped`). Work goes most reached first, so what it has is the most likely part.
   async function grow() {
     for (;;) {
+      if (!stats.stopped) stats.stopped = overLimit();
+      if (stats.stopped) {
+        nodes.forEach(function (q) { if (q.status === 'queued') leaf(q, 'stopped'); });
+        return;
+      }
       var n = next();
       if (!n) return;
       if (n.kind === 'opp') await expandOpp(n);
@@ -829,6 +865,7 @@ export function createBuilder(db, o) {
     for (;;) {
       await grow();
       recomputeReach();
+      if (stats.stopped) return;
       var wider = 0, all = Array.from(nodes.values());
       for (var i = 0; i < all.length; i++) {
         var n = all[i];
@@ -898,7 +935,7 @@ export function createBuilder(db, o) {
       var n = order[i];
       if (nodes.get(n.key) !== n || !(n.reach > 0)) continue;
       var d = decisions.get(n.key);
-      if ((d && d.play) || n.final) continue;
+      if ((d && d.play) || n.final || cheap(n)) continue;
       price(n, reachable(n.key));
       var cur = n.cands.find(function (c) { return c.san === n.move; });
       var pick = choose(n);
@@ -942,6 +979,16 @@ export function createBuilder(db, o) {
       if (turn(cur) !== side) {
         var p = positionOf(db, cur);
         if (p.total >= cfg.planGames && p.moves.length) san = p.moves.reduce(function (a, b) { return b.games > a.games ? b : a; }).san;
+        else if (o.chessdbPv) {
+          // Past the data: ChessDB's line for both sides, in one request (querypv).
+          var pv = await o.chessdbPv(cur);
+          for (var j = 0; pv && pv.pv && j < pv.pv.length && sans.length < cfg.planPlies; j++) {
+            var mp = playSan(cur, pv.pv[j]);
+            if (!mp) break;
+            sans.push(mp.san); cur = mp.fen;
+          }
+          break;
+        }
       }
       if (!san) san = await engineBest(cur);
       var mv = san ? playSan(cur, san) : null;
@@ -971,14 +1018,18 @@ export function createBuilder(db, o) {
   }
 
   // Plan lines at every line end of the finished repertoire that doesn't join a known one.
+  // Most reached first; with maxMinutes, they get a quarter of it past the build's own end, so
+  // a stopped build still ends (where a build stopped, its `stopped` ends get none).
   async function plans() {
     if (!(cfg.planLines > 0) || !o.chessdb) return;
-    var live = Array.from(reachable(null));
-    for (var i = 0; i < live.length; i++) {
-      var n = nodes.get(live[i]);
-      if (n.status !== 'leaf' || n.end === 'known' || !(n.reach > 0)) continue;
-      n.plan = await planOf(n.fen);
-      if (n.plan) stats.plans++;
+    var until = cfg.maxMinutes > 0 ? Math.max(Date.now(), t0 + cfg.maxMinutes * 60000) + cfg.maxMinutes * 15000 : Infinity;
+    var ends = Array.from(reachable(null)).map(function (k) { return nodes.get(k); }).filter(function (n) {
+      return n.status === 'leaf' && n.end !== 'known' && n.end !== 'stopped' && n.reach > 0;
+    }).sort(function (a, b) { return b.reach - a.reach; });
+    for (var i = 0; i < ends.length; i++) {
+      if (Date.now() > until) { stats.plansSkipped = ends.length - i; break; }
+      ends[i].plan = await planOf(ends[i].fen);
+      if (ends[i].plan) stats.plans++;
     }
   }
 
@@ -990,7 +1041,7 @@ export function createBuilder(db, o) {
     }
     ensure(o.root, 1, 0, 0, []);
     await growAll();
-    for (var p = 0; p < cfg.passes; p++) {
+    for (var p = 0; p < cfg.passes && !stats.stopped; p++) {
       if (!(await polish())) break;
     }
     prune();

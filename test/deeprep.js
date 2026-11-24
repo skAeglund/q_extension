@@ -1119,6 +1119,38 @@ module.exports = async function run(check) {
     assert.ok(/^59% of 120 games/.test(e5.comment || ''), 'a new move has its note: ' + e5.comment);
     assert.strictEqual(e4.children.find(c => c.san === 'c5').comment, 'owner c5', 'verbatim');
   });
+  await check('build: below drillReach a decision is cheap (no Prac, one ChessDB answer, no learning); maxMine stops the build', async () => {
+    const asked = [];
+    const cdbAll = { [PE.fenKey(fenAfter('e4', 'e5'))]: [['Nf3', 20]], [PE.fenKey(fenAfter('e4', 'c5'))]: [['Nf3', 20]],
+      [PE.fenKey(fenAfter('e4', 'e5', 'Nf3'))]: [['Nc6', 0], ['d6', -20]], [PE.fenKey(fenAfter('e4', 'c5', 'Nf3'))]: [['d6', 0], ['Nc6', -20]] };
+    const spy = fen => { asked.push(PE.fenKey(fen)); return fakeCdb(cdbAll)(fen); };
+    const mk = async cfg => { asked.length = 0; const b = B.createBuilder(rdDb, { root: fenAfter('e4'), side: 'w',
+      config: Object.assign({}, BASE, RD, { coverReach: 0.06, learnCost: 1 }, cfg), chessdb: spy }); await b.run(); return b; };
+    // drillReach 40%: 1.e4 e5 (58.5%) is drilled, 1.e4 c5 (29.3%) isn't.
+    let b = await mk({ drillReach: 0.4 });
+    const e5 = b.nodes.get(String(G.keyOf(fenAfter('e4', 'e5')))), c5 = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5'))));
+    assert.ok(e5.cands[0].prac != null, 'drilled: Prac');
+    assert.strictEqual(c5.cands[0].prac, null, 'cheap: no Prac');
+    assert.strictEqual(c5.cands.find(c => c.san === c5.move).penalty, 0, 'cheap: no learning');
+    assert.ok(e5.cands.find(c => c.san === e5.move).penalty > 0, 'drilled: learning');
+    assert.ok(!asked.includes(PE.fenKey(fenAfter('e4', 'c5', 'Nf3'))) || asked.includes(PE.fenKey(fenAfter('e4', 'e5', 'Nf3'))),
+      'no ChessDB after a cheap decision\'s candidates (only the sharp test may ask)');
+    // maxMine 1: one decision, the rest stopped.
+    b = await mk({ maxMine: 1 });
+    assert.strictEqual(b.stats.stopped, 'positions');
+    assert.ok([...b.nodes.values()].some(n => n.end === 'stopped'));
+    assert.strictEqual([...b.nodes.values()].filter(n => n.kind === 'me' && n.status === 'done').length, 1);
+  });
+  await check('build: past the data a plan line takes ChessDB\'s whole line (querypv) in one request', async () => {
+    const pvAsked = [];
+    const cdb = { [PE.fenKey(fenAfter('e4', 'c5', 'Nf3', 'd6'))]: [['d4', 30]], [PE.fenKey(fenAfter('e4', 'c5', 'Nf3', 'Nc6'))]: [['Bb5', 20]] };
+    const b = B.createBuilder(rdDb, { root: START, side: 'w', config: Object.assign({}, BASE, RD, { coverReach: 0.25, planLines: 3, planPlies: 6 }),
+      chessdb: fakeCdb(cdb), chessdbPv: fen => { pvAsked.push(fen); return Promise.resolve({ pv: ['cxd4', 'Nxd4', 'Nf6', 'Nc3'] }); } });
+    await b.run();
+    const n = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3'))));
+    assert.strictEqual(n.plan.split(') (')[0], '(2... d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3', n.plan);
+    assert.ok(pvAsked.length >= 1);
+  });
   rdDb.close();
 
   [hdb, hdb2, pdb, tdb, trapDb, trDb1, trDb2, cdb, db].forEach(d => d.close());

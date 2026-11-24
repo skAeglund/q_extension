@@ -87,12 +87,12 @@ var USAGE = [
   'build: its own --plies (' + BUILD_DEFAULTS.plies + '), and --' + Object.keys(BUILD_DEFAULTS).filter(function (k) {
     return k !== 'plies' && k !== 'minGames' && k !== 'prior' && k !== 'risk' && k !== 'themeKey';
   }).map(function (k) {
-    var v = k === 'coverReach' || k === 'rootReach' ? Math.round(1e6 * BUILD_DEFAULTS[k]) / 1e4 : BUILD_DEFAULTS[k];
+    var v = k === 'coverReach' || k === 'rootReach' || k === 'drillReach' ? Math.round(1e6 * BUILD_DEFAULTS[k]) / 1e4 : BUILD_DEFAULTS[k];
     return k.replace(/[A-Z]/g, function (ch) { return '-' + ch.toLowerCase(); }) + ' ' + v;
   })
     .join(', --'),
   '  --chessdb-rate 60 (per minute), --cache <file> (default repertoires/repgen-cache.jsonl)',
-  '  --cover-reach and --root-reach are percentages (0.05 is 0.05%); --root-reach defaults to',
+  '  --cover-reach, --root-reach and --drill-reach are percentages (0.05 is 0.05%); --root-reach defaults to',
   '                       the --moves line\'s own reach in the index',
   '  --base <pgn>         extend this file (yours): its moves are played as they are, its replies',
   '                       followed, its comments kept; the output is its game with the build added',
@@ -522,7 +522,7 @@ function cmdSlice(argv) {
 var BUILD_SHARES = ['coverage', 'coverageStep', 'singleBelow', 'minReach', 'minShare', 'lineMinReach',
   'coverShare', 'sharpShare', 'planShare'];
 // Always percentages: a reach of 0.05% is the usual size, so "0.05" can't mean 5%.
-var BUILD_PERCENT = ['coverReach', 'rootReach'];
+var BUILD_PERCENT = ['coverReach', 'rootReach', 'drillReach'];
 
 function camel(s) { return s.replace(/-([a-z])/g, function (_, ch) { return ch.toUpperCase(); }); }
 function kebab(s) { return s.replace(/[A-Z]/g, function (ch) { return '-' + ch.toLowerCase(); }); }
@@ -598,10 +598,26 @@ function makeChessdb(o) {
     return new Promise(function (r) { setTimeout(r, at - t); }).then(function () { return fetch(url, init); });
   }
   var stats = {};
-  var p = createProviders({ fetch: politeFetch, cache: createFileCache(cachePath), stats: stats,
+  var cache = createFileCache(cachePath);
+  var p = createProviders({ fetch: politeFetch, cache: cache, stats: stats,
     getToken: function () { return Promise.resolve(''); } });
   var fn = function (fen) { return p.chessdb(fen); };
   fn.stats = stats;
+  // ChessDB's line from a position (querypv), for plan lines past the data: one request instead
+  // of one per ply. Cached for 30 days in the same file; a failure is no line.
+  fn.pv = function (fen) {
+    var key = fen.split(' ').slice(0, 4).join(' ');
+    return cache.get('chessdbpv', key, 30 * 86400000).then(function (hit) {
+      if (hit !== undefined) return hit;
+      stats.pvRequests = (stats.pvRequests || 0) + 1;
+      return politeFetch('https://www.chessdb.cn/cdb.php?action=querypv&board=' + encodeURIComponent(fen) + '&json=1')
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          var v = { pv: j && j.status === 'ok' && Array.isArray(j.pvSAN) ? j.pvSAN : [] };
+          return cache.put('chessdbpv', key, v).then(function () { return v; });
+        });
+    }).catch(function () { return null; });
+  };
   return fn;
 }
 
@@ -659,7 +675,7 @@ async function cmdBuild(argv) {
     // Lookups counted, for the summary: a build's cost is mostly index reads.
     var lookups = 0;
     var counted = { meta: db.meta, records: function (k) { lookups++; return db.records(k); } };
-    var b = createBuilder(counted, { root: o.fen, side: o.side, config: o.config, chessdb: cdb, decisions: decisions, known: known, base: base,
+    var b = createBuilder(counted, { root: o.fen, side: o.side, config: o.config, chessdb: cdb, chessdbPv: cdb ? cdb.pv : null, decisions: decisions, known: known, base: base,
       log: function (n, what) {
         var c = n.cands.find(function (x) { return x.san === n.move; });
         var alt = n.cands.filter(function (x) { return x !== c && !x.out; }).sort(function (x, y) { return y.score - x.score; })[0];
@@ -722,8 +738,12 @@ async function cmdBuild(argv) {
       date: new Date().toISOString().slice(0, 10) }));
     console.log(mineCount + ' positions of mine; ' + b.stats.decisions + ' decisions, ' + b.stats.polished +
       ' changed by polishing, ' + nodes.filter(function (n) { return n.final && n.status === 'done'; }).length +
-      ' at line ends (ChessDB\'s move); ' + fmt(lookups) + ' lookups, ' + (cdb ? (cdb.stats.chessdbRequests || 0) + ' ChessDB requests, ' : '') +
+      ' at line ends (ChessDB\'s move); ' + fmt(lookups) + ' lookups, ' + (cdb ? (cdb.stats.chessdbRequests || 0) + ' ChessDB requests' + (cdb.stats.pvRequests ? ' and ' + cdb.stats.pvRequests + ' lines' : '') + ', ' : '') +
       mmss(Date.now() - t0) + '.');
+    if (b.stats.stopped) {
+      console.log('Stopped at the ' + (b.stats.stopped === 'time' ? '--max-minutes limit' : '--max-mine limit') +
+        ': lines still queued end there (`stopped`).' + (b.stats.plansSkipped ? ' ' + b.stats.plansSkipped + ' line ends got no plan line.' : ''));
+    }
     if (ends) {
       console.log(ends.lines + ' line' + (ends.lines === 1 ? '' : 's') + ' end in the known repertoire, at ' + ends.positions +
         ' position' + (ends.positions === 1 ? '' : 's') + ' reached ' + (100 * ends.reach).toFixed(1) + '% of the time' +
