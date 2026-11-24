@@ -274,6 +274,12 @@ module.exports = async function run(check) {
     assert.deepStrictEqual(P.dumpsOf({ source: 'merge of 3 sources: a.zst, b.zst + c.zst', report: {},
       merged: [{ source: 'a.zst' }, { source: 'b.zst + c.zst' }] }), ['a.zst', 'b.zst', 'c.zst']);
     assert.deepStrictEqual(P.dumpsOf({ source: 'a.zst + b.zst', report: {} }), ['a.zst', 'b.zst']);
+    // A folder import lists its months; a merge of one carries the list.
+    assert.deepStrictEqual(P.dumpsOf({ source: '2 filtered months, 2024-08..2024-09',
+      report: { dumps: ['x_2024-08.zst', 'x_2024-09.zst'] } }), ['x_2024-08.zst', 'x_2024-09.zst']);
+    assert.deepStrictEqual(P.dumpsOf({ source: 'merge of 2 sources', report: {},
+      merged: [{ source: '2 filtered months, 2024-08..2024-09', dumps: ['p.zst', 'q.zst'] }, { source: 'r.zst' }] }),
+      ['p.zst', 'q.zst', 'r.zst']);
     assert.deepStrictEqual(P.dumpsOf(null), []);
   });
   await check('a root where they move gets one comment, which chess.js reads back', () => {
@@ -408,7 +414,8 @@ module.exports = async function run(check) {
     [PE.fenKey(fenAfter('e4'))]: [['e5', 0], ['f6', -300]],
     [PE.fenKey(fenAfter('d4'))]: [['d5', -50]]
   };
-  const BASE = { plies: 2, minGames: 10, prior: 0, risk: 0, weights: [0, 0, 1], learnCost: 0, passes: 0 };
+  // The coverage percentages, as the tests before reach-driven coverage were written for.
+  const BASE = { plies: 2, minGames: 10, prior: 0, risk: 0, weights: [0, 0, 1], learnCost: 0, passes: 0, coverReach: 0, planLines: 0 };
   const build = async (db, cfg, cdb, extra) => {
     const b = B.createBuilder(db, Object.assign({ root: START, side: 'w', config: Object.assign({}, BASE, cfg),
       chessdb: cdb ? fakeCdb(cdb) : null }, extra || {}));
@@ -1023,6 +1030,96 @@ module.exports = async function run(check) {
     assert.throws(() => D.createSearch(db, START, { plies: 12, minGames: 1, maxLookups: 5 }).value(),
       /passed 5 lookups/);
   });
+
+  // Reach-driven coverage, sharp lines, named covers, plan lines and a base file (2026-11-24).
+  // After 1.e4 (205 games): e5 58.5%, c5 29.3%, d5 7.3%, a6 4.9%.
+  const rdDb = await mkIdx('reach', [['e4 e5 Nf3 Nc6', 80, 0, 0], ['e4 e5 Nf3 d6', 40, 0, 0],
+    ['e4 c5 Nf3 d6', 40, 0, 0], ['e4 c5 Nf3 Nc6', 20, 0, 0], ['e4 d5 exd5 Qxd5', 15, 0, 0], ['e4 a6 d4 b5', 10, 0, 0]]);
+  const RD = { coverReach: 0.06, sharpFactor: 1, maxPly: 60 };
+  const repliesAt = (b, ...sans) => { const n = b.nodes.get(String(G.keyOf(fenAfter(...sans)))); return n && n.replies ? n.replies.map(r => r.san).sort() : null; };
+  await check('build: reach-driven coverage follows replies with coverShare and reach >= coverReach, scaled by rootReach', async () => {
+    let b = await build(rdDb, RD);
+    assert.deepStrictEqual(repliesAt(b, 'e4'), ['c5', 'd5', 'e5'], 'a6 (4.9%) is under 6%');
+    b = await build(rdDb, Object.assign({}, RD, { rootReach: 0.5 }));
+    assert.deepStrictEqual(repliesAt(b, 'e4'), ['c5', 'e5'], 'at half the reach only replies of 12%+');
+    // A line goes on while its reach stays over coverReach: 1.e4 c5 2.Nf3 Nc6 is 9.8%.
+    b = await build(rdDb, Object.assign({}, RD, { coverReach: 0.15 }));
+    assert.deepStrictEqual(repliesAt(b, 'e4', 'e5', 'Nf3'), ['Nc6', 'd6'], '39% and 19.5%');
+    assert.deepStrictEqual(repliesAt(b, 'e4', 'c5', 'Nf3'), ['d6'], 'Nc6 at 9.8% ends');
+    // coverShare: a 2%+ rule, so at 6% share a6's 4.9% needs the share lowered and reach met.
+    b = await build(rdDb, Object.assign({}, RD, { coverReach: 0.04, coverShare: 0.05 }));
+    assert.deepStrictEqual(repliesAt(b, 'e4'), ['c5', 'd5', 'e5'], 'a6 has the reach but not the share');
+    assert.strictEqual(B.BUILD_DEFAULTS.maxPly, 60);
+    assert.strictEqual(B.BUILD_DEFAULTS.coverReach, 0.0005);
+  });
+  await check('build: a sharp reply (a common mistake, or one my best move punishes) is followed down to coverReach / sharpFactor', async () => {
+    const S2 = Object.assign({}, RD, { coverReach: 0.15, sharpFactor: 2 });
+    // (i) 1.e4 c5 2.Nf3 Nc6 (33%, reach 9.8%) is 13.5 win% under d6 for Black.
+    let b = await build(rdDb, S2, { [PE.fenKey(fenAfter('e4', 'c5', 'Nf3'))]: [['d6', 0], ['Nc6', -150]] });
+    let n = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3'))));
+    const nc6 = n.replies.find(r => r.san === 'Nc6');
+    assert.strictEqual(nc6 && nc6.sharp, 'mistake');
+    assert.ok(b.nodes.get(nc6.child).sharp, 'the line below is sharp');
+    b = await build(rdDb, S2, { [PE.fenKey(fenAfter('e4', 'c5', 'Nf3'))]: [['d6', 0], ['Nc6', -50]] });
+    assert.deepStrictEqual(repliesAt(b, 'e4', 'c5', 'Nf3'), ['d6'], '4.5 under is no mistake');
+    // (ii) 1.e4 d5 (7.3%, reach 7.3%): after it Nc3 is 13.5 over the most played exd5.
+    const S3 = Object.assign({}, RD, { coverReach: 0.1, sharpFactor: 2 });
+    b = await build(rdDb, S3, { [PE.fenKey(fenAfter('e4', 'd5'))]: [['Nc3', 150], ['exd5', 0]] });
+    n = b.nodes.get(String(G.keyOf(fenAfter('e4'))));
+    const d5 = n.replies.find(r => r.san === 'd5');
+    assert.strictEqual(d5 && d5.sharp, 'gain');
+    b = await build(rdDb, S3, { [PE.fenKey(fenAfter('e4', 'd5'))]: [['Nc3', 50], ['exd5', 0]] });
+    assert.deepStrictEqual(repliesAt(b, 'e4'), ['c5', 'e5']);
+    // Off with sharpFactor 1.
+    b = await build(rdDb, Object.assign({}, S2, { sharpFactor: 1 }), { [PE.fenKey(fenAfter('e4', 'c5', 'Nf3'))]: [['d6', 0], ['Nc6', -150]] });
+    assert.deepStrictEqual(repliesAt(b, 'e4', 'c5', 'Nf3'), ['d6']);
+  });
+  await check('build: a decisions entry\'s cover follows a named reply whatever its share or reach', async () => {
+    const decisions = R.parseDecisions({ '1. e4': { cover: ['a6'] } }, START);
+    const b = await build(rdDb, Object.assign({}, RD, { coverReach: 0.15 }), null, { decisions });
+    assert.deepStrictEqual(repliesAt(b, 'e4'), ['a6', 'c5', 'e5']);
+    assert.ok(rootOf(b) && b.nodes.get(String(G.keyOf(fenAfter('e4')))).replies.find(r => r.san === 'a6').named);
+  });
+  await check('build: plan lines at a line end, one group per reply played 2%+, in repworks\' clickable grammar', async () => {
+    // At 25%, 1.e4 c5 2.Nf3 ends (d6 19.5%, Nc6 9.8%): they play the reply, I play ChessDB's best.
+    const cdb = { [PE.fenKey(fenAfter('e4', 'c5', 'Nf3', 'd6'))]: [['d4', 30], ['c3', 0]],
+      [PE.fenKey(fenAfter('e4', 'c5', 'Nf3', 'Nc6'))]: [['Bb5', 20]] };
+    const b = await build(rdDb, Object.assign({}, RD, { coverReach: 0.25, planLines: 3 }), cdb);
+    const n = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3'))));
+    assert.strictEqual(n.status, 'leaf');
+    assert.strictEqual(n.plan, '(2... d6 3. d4) (2... Nc6 3. Bb5)');
+    const pgn = P.toPgn(B.toTree(b.nodes, b.rootKey, R.moveNote, p => p.join(' ')), { prefix: [] });
+    assert.ok(pgn.replace(/\s+/g, ' ').includes('(2... d6 3. d4) (2... Nc6 3. Bb5)}'), pgn);
+    // pgnclean keeps them: they're for the user.
+    assert.strictEqual(C.cleanComment('score 50.0: deep 50.0 · (2... d6 3. d4) (2... Nc6 3. Bb5)'), '(2... d6 3. d4) (2... Nc6 3. Bb5)');
+    const off = await build(rdDb, Object.assign({}, RD, { coverReach: 0.25, planLines: 0 }), cdb);
+    assert.strictEqual(off.nodes.get(String(G.keyOf(fenAfter('e4', 'c5', 'Nf3')))).plan, undefined);
+  });
+  await check('build --base: the file\'s moves are played and its replies followed, its comments kept, the build grafted on', async () => {
+    const text = '[Event "mine"]\n[ChapterName "Mine"]\n\n1. e4 c5 {owner c5} (1... a6 2. d4 {owner a6}) 2. Nc3 *\n';
+    const baseR = K.baseFromPgn(text, 'w');
+    assert.deepStrictEqual(baseR.prefix, ['e4']);
+    // A known file holding 1.e4 c5 would end the line there; the base's position wins.
+    const known = knownOf('1. e4 c5 2. Nf3 *');
+    const b = await build(rdDb, Object.assign({}, RD, { coverReach: 0.15 }), null,
+      { root: fenAfter('e4'), base: baseR, known });
+    assert.deepStrictEqual(repliesAt(b, 'e4'), ['a6', 'c5', 'e5'], 'a6 (4.9%) is the file\'s, e5 the rule\'s');
+    const c5 = b.nodes.get(String(G.keyOf(fenAfter('e4', 'c5'))));
+    assert.strictEqual(c5.move, 'Nc3', 'the file\'s move, with no games');
+    assert.strictEqual(c5.why, 'base');
+    assert.strictEqual(b.nodes.get(String(G.keyOf(fenAfter('e4', 'a6')))).move, 'd4');
+    const tree = B.toTree(b.nodes, b.rootKey, R.moveNote, p => p.join(' '));
+    const out = T.writePgn(K.mergeBase(baseR, tree, ['e4']));
+    assert.ok(/\{owner c5\}/.test(out) && /\{owner a6\}/.test(out), out);
+    assert.ok(/\[ChapterName "Mine"\]/.test(out));
+    const back = T.parsePgn(out)[0];
+    const e4 = back.root.children[0];
+    assert.deepStrictEqual(e4.children.map(c => c.san).sort(), ['a6', 'c5', 'e5'], 'e5 added beside the file\'s');
+    const e5 = e4.children.find(c => c.san === 'e5');
+    assert.ok(/^59% of 120 games/.test(e5.comment || ''), 'a new move has its note: ' + e5.comment);
+    assert.strictEqual(e4.children.find(c => c.san === 'c5').comment, 'owner c5', 'verbatim');
+  });
+  rdDb.close();
 
   [hdb, hdb2, pdb, tdb, trapDb, trDb1, trDb2, cdb, db].forEach(d => d.close());
   plain.close();

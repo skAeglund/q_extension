@@ -876,8 +876,38 @@ games with few.
    with a new move, and recurring moves help.
 
 The plan is repgen's. It works most likely line first, decides your move, and follows their
-replies by coverage (`--coverage 90 --coverage-step 10 --single-below 50`, `--min-reach`,
-`--line-min-reach`), and a transposition is one node. At each of your moves:
+replies, and a transposition is one node. Which replies:
+
+- **By reach** (the default since 2026-11-24): a reply played in `--cover-share` (2%) of its
+  position's games, with `--min-games` games, whose reach is at least `--cover-reach` (0.05%;
+  a percentage, always). Reach is the share of games from the start that follow the line, so
+  your own moves don't divide it, and the root brings its own from the index (`--root-reach`
+  overrides it). A line goes on while its reach stays over that and its positions have
+  `--min-games` games, up to `--max-ply` (60). A **sharp** line goes on down to a fifth of it
+  (`--sharp-factor` 5): a reply played `--sharp-share` (10%) that ChessDB puts `--sharp-loss`
+  (10) win% under their best, or one after which your best move is `--sharp-gain` (10) win%
+  over your most played.
+- **By the old percentages** with `--cover-reach 0`: `--coverage 90 --coverage-step 10
+  --single-below 50`, `--min-reach`, `--line-min-reach`. With reach on, a reply these pick
+  that also has the reach is followed too (one under 2%, say).
+- **By name**: a decisions entry at a position of theirs, `{ "cover": ["Be7"] }`.
+
+At every line end that doesn't join a known repertoire, the move gets **plan lines**: up to
+`--plan-lines` (3) groups, one per reply played `--plan-share` (2%), most played first, each
+about `--plan-plies` (10) plies. They play their most played move while the index has
+`--plan-games` (20) games, you play ChessDB's best, and past the data ChessDB's best for both:
+`{(9... Nc6 10. Be3 Bxe3 11. fxe3 O-O) (9... Nd7 10. f4 Nf6)}`, which repworks shows as
+clickable lines it never trains. `--plan-lines 0` turns them off.
+
+`--base <pgn>` extends a repertoire of your own instead of building beside it: its moves are
+played as they are (no candidates weighed), its replies always followed, and its positions are
+never another `--known` file's line end. Past its line ends, and for new replies at its
+positions, the build works as usual. The output is its game, headers, moves and comments as
+they were, with the build's moves added; at a line end it doesn't carry on, the plan and
+"transposes to" notes are appended to your comment. Without `--moves`, the build starts where
+the file starts branching.
+
+At each of your moves:
 
 - **Candidates**: your `--consider` (4) best moves by deep score (`--plies` 12 ahead, from
   that move), plus the most played, plus ChessDB's best and a pinned move whatever their
@@ -1008,7 +1038,19 @@ On the index a repertoire was chosen with, that score shares the choices' luck. 
 answer is a **holdout**: an index of other months (`explorerdb import` of dumps the main
 index doesn't have). There, nothing was chosen, so the score is unbiased. `build --holdout
 <index>` reports it, and adds each candidate's holdout games to the review. Both commands
-warn when the two indexes share dumps.
+warn when the two indexes share dumps. Filter the months straight from their URLs and import
+them from one folder, which counts them together exactly:
+
+```bash
+node tools/explorerdb.mjs filter https://database.lichess.org/standard/lichess_db_standard_rated_2026-10.pgn.zst \
+  --out explorer/holdout/2026-10
+node tools/explorerdb.mjs import explorer/holdout --out held_2610 --workers 3
+```
+
+An import records the dumps it read (`report.dumps`, listed by `explorerdb info`), and that
+list is what the overlap check compares. Indexes imported from a folder before 2026-11-24
+carry only a summary ("3 filtered months, 2024-08..2026-10"), which matches no dump name. On
+those, check the months yourself.
 
 On a synthetic pair (two indexes of 60,000 games from the same random process), the
 repertoire made by the old search scored 56.7% in sample and 52.8% on the holdout. With the

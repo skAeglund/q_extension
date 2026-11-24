@@ -21,6 +21,7 @@
 
 import path from 'node:path';
 import { parsePgn, pathOf } from '../repgen/pgntree.mjs';
+import { Chess } from '../../src/vendor/chess.js';
 import { keyOf } from '../explorerdb/games.mjs';
 import { moveKey } from '../../src/pe/search.js';
 import { lineText } from './pgn.mjs';
@@ -112,4 +113,68 @@ export function withKnown(moves, known) {
     });
   }
   return m;
+}
+
+/*
+ * A base repertoire (build --base, 2026-11-24): the owner's own file, extended rather than
+ * known. Returns { games, moves: Map(key -> SAN, my first move in each position of mine),
+ * replies: Map(key -> [SAN], their replies in each of theirs), positions: Set(key), prefix:
+ * [SAN] (the moves from the start while the file has only one) }.
+ */
+export function baseFromPgn(text, side) {
+  var games = parsePgn(text);
+  if (games.length !== 1) throw new Error('A base PGN holds one game (it has ' + games.length + ').');
+  var moves = new Map(), replies = new Map(), positions = new Set();
+  (function walk(n) {
+    var k = String(keyOf(n.fen));
+    positions.add(k);
+    if (n.children.length) {
+      if (turn(n.fen) === side) { if (!moves.has(k)) moves.set(k, n.children[0].san); }
+      else {
+        var r = replies.get(k) || [];
+        n.children.forEach(function (c) { if (!r.some(function (s) { return moveKey(s) === moveKey(c.san); })) r.push(c.san); });
+        replies.set(k, r);
+      }
+    }
+    n.children.forEach(walk);
+  })(games[0].root);
+  var prefix = [];
+  for (var n = games[0].root; n.children.length === 1; n = n.children[0]) prefix.push(n.children[0].san);
+  return { games: games, moves: moves, replies: replies, positions: positions, prefix: prefix };
+}
+
+/*
+ * The base's game with the build's tree (build.mjs toTree(), rooted after `prefix`) grafted
+ * on: the owner's moves and comments stay as they are; a move the build adds comes with its
+ * note; at a line end of the base the build doesn't carry on, its plan and "transposes to"
+ * notes are appended to the owner's comment. Returns the games for pgntree's writePgn().
+ */
+export function mergeBase(base, tree, prefix) {
+  var g = base.games[0];
+  var b = g.root;
+  (prefix || []).forEach(function (san) {
+    var c = b.children.find(function (x) { return moveKey(x.san) === moveKey(san); });
+    if (!c) throw new Error('The base has no ' + san + ' where the build starts.');
+    b = c;
+  });
+  function convert(parent, k) {
+    var c = new Chess(parent.fen);
+    var mv = c.move(k.san);
+    var node = { san: mv.san, suffix: '', nags: [], comment: k.note || null, pre: null, children: [], parent: parent, fen: c.fen() };
+    (k.children || []).forEach(function (x) { node.children.push(convert(node, x)); });
+    return node;
+  }
+  function graft(bn, tn) {
+    (tn.children || []).forEach(function (k) {
+      var bc = bn.children.find(function (x) { return moveKey(x.san) === moveKey(k.san); });
+      if (!bc) { bn.children.push(convert(bn, k)); return; }
+      if (!bc.children.length && !(k.children || []).length) {
+        var add = String(k.note || '').split(' · ').filter(function (p) { return /^transposes to /.test(p) || /^\(\d+\./.test(p); });
+        if (add.length) bc.comment = (bc.comment ? bc.comment + ' ' : '') + add.join(' ');
+      }
+      graft(bc, k);
+    });
+  }
+  graft(b, tree);
+  return base.games;
 }

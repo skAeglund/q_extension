@@ -61,20 +61,39 @@
  */
 
 import { Chess } from '../../src/vendor/chess.js';
-import { riskMean, scoreToRootWin, moveKey } from '../../src/pe/search.js';
+import { riskMean, scoreToRootWin, winFromCp, moveKey } from '../../src/pe/search.js';
 import { pickReplies } from '../repgen/generator.mjs';
 import { CUT, ENDED, keyOf, codeParts, fullFen } from '../explorerdb/games.mjs';
 import { createSearch, leafStat, shrinkWeight } from './search.mjs';
+import { lineText } from './pgn.mjs';
 
 export var BUILD_DEFAULTS = {
   plies: 12,              // each decision's deep scores look this many plies ahead
   minGames: 50,           // a move needs this many games to compete; a position with fewer ends its line
   prior: 200,             // search.mjs's shrinkage
   risk: 0.05,             // risk aversion, in the search and in Prac d1
-  maxPly: 30,             // no line goes on past this many plies from the root
-  // Their replies, as repgen follows them (generator.mjs pickReplies).
+  maxPly: 60,             // no line goes on past this many plies from the root (30 until 2026-11-24:
+                          // with reach-driven coverage, reach and games end lines, not ply)
+  // Their replies, as repgen follows them (generator.mjs pickReplies). With coverReach on, these
+  // only add replies that also reach coverReach (a reply under coverShare, say).
   coverage: 0.9, coverageStep: 0.1, singleBelow: 0.5,
   minReach: 0.005, minShare: 0, lineMinReach: 0.001,
+  // Reach-driven coverage (2026-11-24), in place of the percentages above: a reply is followed
+  // when it has coverShare of its position's games, minGames games, and a reach of at least
+  // coverReach, reach being of the games from the repertoire's reference point (rootReach is
+  // the root's own, from the index: deeprep.mjs works it out from --moves). A sharp line goes
+  // on down to coverReach / sharpFactor: a reply played sharpShare+ that ChessDB puts sharpLoss
+  // win% under their best, or one after which my best move is sharpGain over my most played.
+  coverReach: 0.0005,     // 0: the percentages above alone, as before 2026-11-24
+  coverShare: 0.02,
+  rootReach: 1,
+  sharpFactor: 5,         // 1 or 0: no sharp lines
+  sharpShare: 0.1, sharpLoss: 10, sharpGain: 10,
+  // Plan lines at line ends (2026-11-24): a comment of up to planLines groups, one per reply
+  // played planShare+ (most played first), each about planPlies plies: they play their most
+  // played move while the index has planGames games, I play ChessDB's best, and past the data
+  // ChessDB's best for both. Never trained: repworks shows them as clickable lines.
+  planLines: 3, planPlies: 10, planGames: 20, planShare: 0.02,
   consider: 4,            // my best moves by deep score that are weighed (plus the most played)
   weights: [0.3, 0.2, 0.5],   // ChessDB, Prac d1, deep: the blend my move is ranked by
   maxLoss: 5,             // ChessDB: my move at most this many win% under its best (0: off)
@@ -206,7 +225,9 @@ export function replyCheck(cdb, fen, side, rp, cfg, pull) {
 /*
  * o = { root: FEN, side: 'w' | 'b', config (BUILD_DEFAULTS' keys), chessdb(fen) -> Promise
  * (or none: no ChessDB), decisions: Map(position key -> { play, avoid: [] }),
- * known: mergeKnown()'s (optional), log(node, 'polish'?) after each decision }.
+ * known: mergeKnown()'s (optional), base: baseFromPgn()'s (optional), log(node, 'polish'?)
+ * after each decision }. A decisions entry at a position of theirs may carry `cover: [SAN]`:
+ * replies followed whatever their share or reach.
  * Returns { run(), nodes, rootKey, config }.
  */
 export function createBuilder(db, o) {
@@ -227,10 +248,15 @@ export function createBuilder(db, o) {
   var seeded = new Map();
   var proxies = new Map();     // key -> my best move by deep score, for counting positions
   var cdbMemo = new Map();
+  // A base repertoire (the owner's own file, 2026-11-24): its moves of mine are played as they
+  // are, its replies always followed, and its positions are never a known file's leaf.
+  var base = o.base || { moves: new Map(), replies: new Map(), positions: new Set() };
+  var R = cfg.coverReach > 0 ? cfg.coverReach : 0;
+  var rootReach = cfg.rootReach > 0 ? cfg.rootReach : 1;
   var decisions = o.decisions || new Map();
   var log = o.log || function () {};
   var seq = 0;
-  var stats = { decisions: 0, chessdb: 0, polished: 0, finals: 0 };
+  var stats = { decisions: 0, chessdb: 0, polished: 0, finals: 0, base: 0, sharp: 0, plans: 0 };
 
   function keyStr(fen) { return String(keyOf(fen)); }
 
@@ -244,18 +270,22 @@ export function createBuilder(db, o) {
     return cdbMemo.get(k);
   }
 
-  function ensure(fen, reach, oi, ply, path) {
+  // sharp: the line came through a sharp reply, so it goes on down to coverReach / sharpFactor.
+  function ensure(fen, reach, oi, ply, path, sharp) {
     var k = keyStr(fen);
     var n = nodes.get(k);
     if (n) {
       n.reach += reach;
       n.arrivals++;
+      if (sharp) n.sharp = true;
       return n;
     }
     n = { key: k, fen: fen, kind: turn(fen) === side ? 'me' : 'opp', reach: reach, oi: oi, ply: ply,
       path: path, status: 'queued', seq: seq++, arrivals: 1 };
-    // A known position is learned already: the line joins the known repertoire here.
-    if (knownPos.has(k)) { n.status = 'leaf'; n.end = 'known'; n.known = knownPos.get(k); }
+    if (sharp) n.sharp = true;
+    // A known position is learned already: the line joins the known repertoire here. A base
+    // position is the build's own, whatever a known file holds (their prefixes share some).
+    if (knownPos.has(k) && !base.positions.has(k)) { n.status = 'leaf'; n.end = 'known'; n.known = knownPos.get(k); }
     nodes.set(k, n);
     return n;
   }
@@ -271,29 +301,112 @@ export function createBuilder(db, o) {
 
   function leaf(n, why) { n.status = 'leaf'; n.end = why; }
 
-  function replyPicks(fen, reach, oi) {
+  function threshold(sharp) { return sharp && cfg.sharpFactor > 1 ? R / cfg.sharpFactor : R; }
+
+  // Their replies by the rules alone (no ChessDB): the coverage percentages, and with coverReach
+  // on, every reply with coverShare and minGames games; either way only those whose reach is at
+  // least the line's threshold. Most played first.
+  function replyPicks(fen, reach, oi, sharp) {
     var pos = positionOf(db, fen);
     if (pos.total < cfg.minGames) return { pos: pos, picks: [] };
     var ex = { total: pos.total, moves: pos.moves.map(function (m) { return { san: m.san, games: m.games }; }) };
-    return { pos: pos, picks: pickReplies(ex, reach, oi, {
+    var old = pickReplies(ex, reach, oi, {
       coverage: cfg.coverage, coverageStep: cfg.coverageStep, singleBelow: cfg.singleBelow,
       minReach: cfg.minReach, minShare: cfg.minShare, lineMinReach: cfg.lineMinReach, stopGames: cfg.minGames
-    }) };
+    });
+    if (!R) return { pos: pos, picks: old };
+    var at = rootReach * reach, thr = threshold(sharp), picks = [];
+    pos.moves.slice().sort(function (a, b) { return b.games - a.games; }).forEach(function (m) {
+      var share = m.games / pos.total;
+      var rule = share >= cfg.coverShare && m.games >= cfg.minGames;
+      var inOld = old.some(function (x) { return moveKey(x.san) === moveKey(m.san); });
+      if ((rule || inOld) && at * share >= thr - 1e-12) picks.push({ san: m.san, share: share, games: m.games });
+    });
+    return { pos: pos, picks: picks };
   }
 
-  function expandOpp(n) {
-    if (n.ply >= cfg.maxPly) return leaf(n, 'max-ply');
-    var r = replyPicks(n.fen, n.reach, n.oi);
-    n.games = r.pos.total;
-    if (r.pos.total < cfg.minGames) return leaf(n, 'few-games');
-    if (!r.picks.length) return leaf(n, 'rare');
-    var covered = 0;
-    n.replies = r.picks.map(function (p) {
-      var mv = playSan(n.fen, p.san);
-      covered += p.share;
-      return { san: mv.san, share: p.share, games: p.games,
-        child: ensure(mv.fen, n.reach * p.share, n.oi + 1, n.ply + 1, n.path.concat(mv.san)).key };
+  // Replies followed by name, whatever their share: the base's, and a decisions entry's `cover`.
+  function namedPicks(n, pos, have) {
+    var d = decisions.get(n.key);
+    var names = (base.replies.get(n.key) || []).concat(d && d.cover ? d.cover : []);
+    var out = [];
+    names.forEach(function (san) {
+      var mv = playSan(n.fen, san);
+      if (!mv) return;
+      if (have.concat(out).some(function (x) { return moveKey(x.san) === moveKey(mv.san); })) return;
+      var m = pos.moves.find(function (x) { return moveKey(x.san) === moveKey(mv.san); });
+      out.push({ san: mv.san, share: m && pos.total ? m.games / pos.total : 0, games: m ? m.games : 0, named: true });
     });
+    return out;
+  }
+
+  // Win% for the side to move of each move ChessDB lists: Map(move key -> win%), best.
+  function wins(answer) {
+    var w = new Map(), best = null;
+    if (answer && answer.status === 'ok' && answer.moves) answer.moves.forEach(function (m) {
+      var v = winFromCp(m.score);
+      w.set(moveKey(m.san), v);
+      if (best == null || v > best) best = v;
+    });
+    return { w: w, best: best };
+  }
+
+  /*
+   * Replies under the line's threshold but over coverReach / sharpFactor that make the line
+   * sharp: (i) played sharpShare+ and sharpLoss win% under their best by ChessDB (a common
+   * mistake), or (ii) after it my best move is sharpGain over my most played one.
+   */
+  async function sharpPicks(n, pos, have) {
+    if (!R || !(cfg.sharpFactor > 1) || n.sharp || !o.chessdb) return [];
+    var at = rootReach * n.reach, lo = R / cfg.sharpFactor, out = [];
+    var maybe = pos.moves.filter(function (m) {
+      var share = m.games / pos.total;
+      return share >= cfg.coverShare && m.games >= cfg.minGames && at * share >= lo - 1e-12 && at * share < R &&
+        !have.some(function (x) { return moveKey(x.san) === moveKey(m.san); });
+    }).sort(function (a, b) { return b.games - a.games; });
+    if (!maybe.length) return out;
+    var theirs = wins(await chessdb(n.fen));
+    for (var i = 0; i < maybe.length; i++) {
+      var m = maybe[i], share = m.games / pos.total, why = null;
+      var v = theirs.w.get(moveKey(m.san));
+      if (share >= cfg.sharpShare && v != null && theirs.best - v >= cfg.sharpLoss) why = 'mistake';
+      else {
+        var mv = playSan(n.fen, m.san);
+        var mine = wins(await chessdb(mv.fen));
+        var p2 = positionOf(db, mv.fen);
+        var top = p2.moves.length ? p2.moves.reduce(function (a, b) { return b.games > a.games ? b : a; }) : null;
+        var tv = top ? mine.w.get(moveKey(top.san)) : null;
+        if (tv != null && mine.best - tv >= cfg.sharpGain) why = 'gain';
+      }
+      if (why) { out.push({ san: m.san, share: share, games: m.games, sharp: why }); stats.sharp++; }
+    }
+    return out;
+  }
+
+  async function allPicks(n) {
+    var r = replyPicks(n.fen, n.reach, n.oi, n.sharp);
+    var named = namedPicks(n, r.pos, r.picks);
+    var sharp = r.pos.total >= cfg.minGames ? await sharpPicks(n, r.pos, r.picks.concat(named)) : [];
+    return { pos: r.pos, picks: r.picks.concat(sharp, named) };
+  }
+
+  function replyOf(n, p) {
+    var mv = playSan(n.fen, p.san);
+    var r = { san: mv.san, share: p.share, games: p.games,
+      child: ensure(mv.fen, n.reach * p.share, n.oi + 1, n.ply + 1, n.path.concat(mv.san), n.sharp || !!p.sharp).key };
+    if (p.sharp) r.sharp = p.sharp;
+    if (p.named) r.named = true;
+    return r;
+  }
+
+  async function expandOpp(n) {
+    var named = base.replies.has(n.key) || (decisions.get(n.key) || {}).cover;
+    if (n.ply >= cfg.maxPly && !named) return leaf(n, 'max-ply');
+    var r = await allPicks(n);
+    n.games = r.pos.total;
+    if (!r.picks.length) return leaf(n, r.pos.total < cfg.minGames ? 'few-games' : 'rare');
+    var covered = 0;
+    n.replies = r.picks.map(function (p) { covered += p.share; return replyOf(n, p); });
     n.other = Math.max(0, 1 - covered);
     n.status = 'done';
   }
@@ -305,8 +418,20 @@ export function createBuilder(db, o) {
    * recomputed, a position of theirs follows the replies its whole reach earns. Reach only
    * grows here and the picks are a prefix of the replies by games, so this only adds.
    */
-  function widen(n) {
+  async function widen(n) {
     if (n.ply >= cfg.maxPly) return false;
+    if (R) {
+      // Reach-driven: what a reply needs doesn't depend on the others, so any new pick is added.
+      var ra = await allPicks(n);
+      var had = n.replies || [];
+      var add = ra.picks.filter(function (p) { return !had.some(function (h) { return moveKey(h.san) === moveKey(p.san); }); });
+      if (!add.length) return false;
+      n.replies = had.concat(add.map(function (p) { return replyOf(n, p); }));
+      n.other = Math.max(0, 1 - n.replies.reduce(function (a, x) { return a + x.share; }, 0));
+      n.status = 'done';
+      delete n.end;
+      return true;
+    }
     var r = replyPicks(n.fen, n.reach, n.oi);
     var have = n.replies || [];
     if (r.picks.length <= have.length) return false;
@@ -370,8 +495,11 @@ export function createBuilder(db, o) {
       var known = nodes.get(k);
       // A line that ends here ends; one that joins a known repertoire goes on inside it.
       if (known && known.status === 'leaf' && known.end !== 'known') continue;
+      // The base is the owner's own repertoire: learned, like a known file.
+      if (base.positions.has(k)) inside = true;
       if (turn(x.fen) === side) {
-        var san = known && known.move ? known.move : knownMove.has(k) ? knownMove.get(k).san : proxy(x.fen);
+        var san = known && known.move ? known.move : base.moves.has(k) ? base.moves.get(k)
+          : knownMove.has(k) ? knownMove.get(k).san : proxy(x.fen);
         if (!san) continue;
         all++;
         if (!inside) {
@@ -384,7 +512,7 @@ export function createBuilder(db, o) {
         var mv = playSan(x.fen, san);
         if (mv) queue.push({ fen: mv.fen, reach: x.reach, oi: x.oi, ply: x.ply + 1, inside: inside });
       } else {
-        var reps = known && known.replies ? known.replies : replyPicks(x.fen, x.reach, x.oi).picks;
+        var reps = known && known.replies ? known.replies : replyPicks(x.fen, x.reach, x.oi, false).picks;
         reps.forEach(function (r) {
           var mv2 = playSan(x.fen, r.san);
           if (mv2) queue.push({ fen: mv2.fen, reach: x.reach * r.share, oi: x.oi + 1, ply: x.ply + 1, inside: inside });
@@ -456,7 +584,7 @@ export function createBuilder(db, o) {
     n.why = pick.why;
     addTheme(n, 1);
     var mv = playSan(n.fen, n.move);
-    n.child = ensure(mv.fen, n.reach, n.oi, n.ply + 1, n.path.concat(mv.san)).key;
+    n.child = ensure(mv.fen, n.reach, n.oi, n.ply + 1, n.path.concat(mv.san), n.sharp).key;
     n.status = 'done';
   }
 
@@ -537,8 +665,29 @@ export function createBuilder(db, o) {
     log(n);
   }
 
+  /*
+   * A position of the base repertoire: its move, as it is. No candidates are weighed (the
+   * owner chose it) and no ChessDB asked; polishing leaves it (`final` 'base').
+   */
+  function baseMove(n, san) {
+    var pos = positionOf(db, n.fen);
+    n.games = pos.total;
+    var x = thinOption(n.fen, san, pos);
+    if (!x) { n.pinMissing = san; return leaf(n, 'base-illegal'); }
+    var c = candOf(n, x, null);
+    c.blend = blend(cfg.weights, [null, null, c.deep]);
+    c.penalty = 0;
+    c.score = c.blend;
+    n.cands = [c];
+    n.final = 'base';
+    stats.base++;
+    settle(n, { c: c, why: 'base' });
+    log(n);
+  }
+
   async function decide(n) {
     var d = decisions.get(n.key);
+    if (base.moves.has(n.key)) return baseMove(n, base.moves.get(n.key));
     if (n.ply >= cfg.maxPly) return finalMove(n, 'max-ply', d);
     var op = createSearch(db, n.fen, sopts).candidates();
     n.games = op.total;
@@ -669,7 +818,7 @@ export function createBuilder(db, o) {
     for (;;) {
       var n = next();
       if (!n) return;
-      if (n.kind === 'opp') expandOpp(n);
+      if (n.kind === 'opp') await expandOpp(n);
       else await decide(n);
     }
   }
@@ -680,11 +829,12 @@ export function createBuilder(db, o) {
     for (;;) {
       await grow();
       recomputeReach();
-      var wider = 0;
-      Array.from(nodes.values()).forEach(function (n) {
+      var wider = 0, all = Array.from(nodes.values());
+      for (var i = 0; i < all.length; i++) {
+        var n = all[i];
         if (n.kind === 'opp' && n.reach > 0 && (n.status === 'done' || (n.status === 'leaf' && n.end === 'rare')) &&
-          widen(n)) wider++;
-      });
+          await widen(n)) wider++;
+      }
       if (!wider) return;
     }
   }
@@ -770,9 +920,71 @@ export function createBuilder(db, o) {
     return changed;
   }
 
+  // ChessDB's best move for the side to move, or null.
+  async function engineBest(fen) {
+    var a = await chessdb(fen), best = null;
+    if (a && a.status === 'ok' && a.moves) a.moves.forEach(function (m) { if (!best || m.score > best.score) best = m; });
+    return best ? best.san : null;
+  }
+
+  // One plan line from `fen`: `first` (a reply of theirs, or none), then about planPlies plies:
+  // their most played move while the index has planGames games, else ChessDB's best; mine
+  // always ChessDB's best. Numbered SAN ("9... Nc6 10. Be3"), or null.
+  async function planLine(fen, first) {
+    var sans = [], cur = fen;
+    if (first) {
+      var mv0 = playSan(cur, first);
+      if (!mv0) return null;
+      sans.push(mv0.san); cur = mv0.fen;
+    }
+    while (sans.length < cfg.planPlies) {
+      var san = null;
+      if (turn(cur) !== side) {
+        var p = positionOf(db, cur);
+        if (p.total >= cfg.planGames && p.moves.length) san = p.moves.reduce(function (a, b) { return b.games > a.games ? b : a; }).san;
+      }
+      if (!san) san = await engineBest(cur);
+      var mv = san ? playSan(cur, san) : null;
+      if (!mv) break;
+      sans.push(mv.san); cur = mv.fen;
+    }
+    return sans.length ? lineText(fen, sans) : null;
+  }
+
+  // The plan comment for a line end: one group per reply played planShare+ (most played first,
+  // planLines at most), or one group from my move when the line ends with me to move.
+  async function planOf(fen) {
+    var groups = [];
+    if (turn(fen) === side) {
+      var g0 = await planLine(fen, null);
+      if (g0) groups.push(g0);
+    } else {
+      var pos = positionOf(db, fen);
+      var reps = pos.total ? pos.moves.filter(function (m) { return m.games / pos.total >= cfg.planShare; })
+        .sort(function (a, b) { return b.games - a.games; }).slice(0, cfg.planLines) : [];
+      for (var i = 0; i < reps.length; i++) {
+        var g = await planLine(fen, reps[i].san);
+        if (g) groups.push(g);
+      }
+    }
+    return groups.length ? groups.map(function (x) { return '(' + x + ')'; }).join(' ') : null;
+  }
+
+  // Plan lines at every line end of the finished repertoire that doesn't join a known one.
+  async function plans() {
+    if (!(cfg.planLines > 0) || !o.chessdb) return;
+    var live = Array.from(reachable(null));
+    for (var i = 0; i < live.length; i++) {
+      var n = nodes.get(live[i]);
+      if (n.status !== 'leaf' || n.end === 'known' || !(n.reach > 0)) continue;
+      n.plan = await planOf(n.fen);
+      if (n.plan) stats.plans++;
+    }
+  }
+
   async function run() {
     var rk = keyStr(o.root);
-    if (knownPos.has(rk)) {
+    if (knownPos.has(rk) && !base.positions.has(rk)) {
       var kp = knownPos.get(rk);
       throw new Error('The root is a position of the known repertoire already: ' + (kp.line || 'its start') + ' in ' + kp.name + '.');
     }
@@ -787,6 +999,7 @@ export function createBuilder(db, o) {
     nodes.forEach(function (n) {
       if (n.kind === 'me' && n.status === 'done' && n.cands && !n.final) price(n, reachable(n.key));
     });
+    await plans();
     return { nodes: nodes, stats: stats };
   }
 
@@ -853,6 +1066,7 @@ export function toTree(nodes, rootKey, note, line) {
     if (n.kind === 'me' && n.move) {
       var kidNode = nodes.get(n.child);
       var kid = { san: n.move, mine: true, note: note(n, kidNode) };
+      if (kidNode && kidNode.plan) { kid.plan = kidNode.plan; kid.note = joinNote(kid.note, kidNode.plan); }
       if (kidNode && kidNode.end === 'known') kid.note = joinNote(kid.note, knownNote(kidNode));
       else if (kidNode && shown.has(kidNode.key)) kid.note = joinNote(kid.note, 'transposes to ' + line(shown.get(kidNode.key)));
       else if (kidNode) build(kidNode, kid);
@@ -861,6 +1075,7 @@ export function toTree(nodes, rootKey, note, line) {
       n.replies.slice().sort(function (a, b) { return b.share - a.share; }).forEach(function (r) {
         var m = nodes.get(r.child);
         var kid = { san: r.san, mine: false, note: Math.round(100 * r.share) + '% of ' + r.games.toLocaleString('en-US') + ' games' };
+        if (m && m.plan) { kid.plan = m.plan; kid.note = joinNote(kid.note, m.plan); }
         if (m && m.end === 'known') kid.note = joinNote(kid.note, knownNote(m));
         else if (m && shown.has(m.key)) kid.note = joinNote(kid.note, 'transposes to ' + line(shown.get(m.key)));
         else if (m) build(m, kid);

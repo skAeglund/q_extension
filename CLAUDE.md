@@ -20,7 +20,7 @@ work on it.
 ## Working on it
 
 ```bash
-node test/harness.js          # 640 checks: main-world.js on a stubbed DOM, plus test/pe.js
+node test/harness.js          # 646 checks: main-world.js on a stubbed DOM, plus test/pe.js
                               # (search, rounds, metric, rate limiter, budget; no network)
                               # and test/repgen.js (the repertoire generator, Maia's
                               # encoding with a fake model; needs no npm install)
@@ -1088,7 +1088,11 @@ also floated scripts that gather data and a Claude session that decides. Built:
   Which months an index holds comes from `dumpsOf()` (`deeprep/pgn.mjs`): an accumulator's
   `report.dumps`, or an `explorerdb merge`'s `merged` list, whose `source` is only a summary.
   The merged list was added when deeprep was merged with the relay line (2026-10-05); before
-  that, a merged holdout always looked unbiased.
+  that, a merged holdout always looked unbiased. An import of a folder of filtered months had
+  the same hole until 2026-11-24 (found on the first real holdout, `held_2610`): its `source`
+  is a summary, so the overlap check always passed. Every import now writes `report.dumps`
+  (the manifests' sources). `merge` carries each input's list in `merged[].dumps` and refuses
+  a dump twice by those lists, so a year and a month in it are caught too.
 - `build`: the four criteria (see the conventions above), a review in Markdown, a decisions
   file, and `.claude/skills/repertoire-review` for the Claude session.
 - `slice`: the part of the 11.8 GB index under one line, a few MB, for cloud sessions.
@@ -1274,6 +1278,27 @@ move just over `minGames` put a well-played one out: after 1.Nc3 d5 2.d4 Nf6 3.B
 an earlier build had 4.Be5 (113 games) do the same to 4.e3 after 3.Bf4 Bd7. Now only a candidate
 with `soundTopShare` (0.05) of the position's games sets the bar. A rarer one is still tested
 against it and can still be chosen. In the accepted 1.Nc3 set it changed 4 decisions' out list.
+
+**Reach-driven coverage, plan lines, named covers and base files (2026-11-24).** The owner
+wants coverage to follow importance: main theory deep, rare side lines short. A size curve over
+the accepted set (report only) showed per-level percentages leave 3,302 replies of 2%+
+uncovered, and end most line ends' reach at ply 12–19. Now `coverReach` (0.05% of the games from the
+start; `rootReach` is the root's own, which deeprep.mjs works out from `--moves`) decides:
+a reply with `coverShare` (2%) and `minGames` games is followed while its reach is at least
+that, and the old percentages only add replies that also have the reach. A sharp line
+(`sharpPicks`: a common mistake by ChessDB, or one my best move punishes over my most played)
+goes on to a fifth of it, and its children inherit `sharp`. `maxPly` went from 30 to 60 so
+reach and games end lines. Reach-driven picks don't form a prefix by games, so `widen()` adds
+any new pick; it, `expandOpp()` and the sharp test are async (ChessDB). `linePositions()` (the
+learning cost) estimates future replies without the sharp test. A decisions entry's `cover`
+follows replies by name. Plan lines (`plans()`, after the final pricing) go on every line end
+that isn't a known join: per reply 2%+, they play most played while the index has 20 games, I
+play ChessDB's best; the format is repworks' clickable grammar, numbered SAN in parentheses,
+and pgnclean keeps them. `--base` (known.mjs `baseFromPgn`/`mergeBase`) extends the owner's own
+file: its moves are played without weighing candidates (`final` 'base'), its replies followed,
+its positions override `--known` leaves (known files' prefixes include them), and the PGN is the
+owner's game with the build grafted on, comments verbatim. The tests' base config keeps the old
+percentages (`coverReach: 0, planLines: 0`).
 
 Obvious next feature: flag *legal moves from the current position that would transpose into a
 known line but aren't in the tree yet* — same index, hooked into the database move list where

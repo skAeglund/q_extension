@@ -144,7 +144,9 @@ export function parseDecisions(obj, root) {
     }
     if (!fen) throw new Error('Decisions: "' + k + '" is not a line of legal moves from the start or the root.');
     var avoid = v.avoid == null ? [] : Array.isArray(v.avoid) ? v.avoid : [v.avoid];
-    m.set(String(keyOf(fen)), { play: v.play || null, avoid: avoid.map(String), why: v.why || null, line: k });
+    // cover: replies of theirs to follow by name, at a position of theirs (2026-11-24).
+    var cover = v.cover == null ? [] : Array.isArray(v.cover) ? v.cover : [v.cover];
+    m.set(String(keyOf(fen)), { play: v.play || null, avoid: avoid.map(String), cover: cover.map(String), why: v.why || null, line: k });
   });
   return m;
 }
@@ -233,7 +235,7 @@ export function reviewMarkdown(ctx) {
     L.push('- No holdout: give `--holdout <index of other months>` for a score the choices\' luck can\'t flatter.');
   }
   L.push('- Moves: ' + Object.keys(whys).map(function (k) {
-    return whys[k] + ' ' + ({ best: 'best by score', learn: 'chosen for learning', pinned: 'pinned', 'all-out': 'all over a limit',
+    return whys[k] + ' ' + ({ best: 'best by score', learn: 'chosen for learning', pinned: 'pinned', base: 'from the base file','all-out': 'all over a limit',
       engine: 'ChessDB\'s at a line\'s end' }[k] || k);
   }).join(', ') + '. ' + flagged.length + ' to review below.');
   L.push('');

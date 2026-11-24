@@ -52,7 +52,8 @@ import { createSearch, fitPrior, DEFAULTS } from './deeprep/search.mjs';
 import { toPgn, candidateLines, lineText, dumpsOf } from './deeprep/pgn.mjs';
 import { repertoireFromPgn, evaluateRepertoire } from './deeprep/evaluate.mjs';
 import { createBuilder, repertoireMoves, toTree, positionOf, knownEnds, BUILD_DEFAULTS } from './deeprep/build.mjs';
-import { knownFromPgn, mergeKnown, withKnown, knownName } from './deeprep/known.mjs';
+import { knownFromPgn, mergeKnown, withKnown, knownName, baseFromPgn, mergeBase } from './deeprep/known.mjs';
+import { writePgn } from './repgen/pgntree.mjs';
 import { moveNote, rootNote, parseDecisions, reviewMarkdown, lineOf } from './deeprep/report.mjs';
 import { createProviders } from '../src/pe/providers.js';
 import { createFileCache } from './repgen/filecache.mjs';
@@ -66,7 +67,7 @@ var USAGE = [
   '  node tools/deeprep.mjs browse <index> (--moves ... | --fen ...) [options]',
   '  node tools/deeprep.mjs build  <index> (--moves ... | --fen ...) --out <name> [--side ...] [--holdout <index>]',
   '                                [--decisions <file>] [--known <pgn>[,<pgn>...]] [--theme-key both|mine]',
-  '                                [--no-chessdb] [build options, see the README]',
+  '                                [--base <pgn>] [--no-chessdb] [build options, see the README]',
   '  node tools/deeprep.mjs eval   <index> <pgn> [--known <pgn>[,<pgn>...]] [--side white|black] [--moves ... | --fen ...]',
   '                                [--json <file>]',
   '  node tools/deeprep.mjs slice  <index> (--moves ... | --fen ...) --out <name> [--plies 42] [--min-games 50]',
@@ -85,9 +86,16 @@ var USAGE = [
   '  --max-lookups N      give up past this many lookups (default 20,000,000)',
   'build: its own --plies (' + BUILD_DEFAULTS.plies + '), and --' + Object.keys(BUILD_DEFAULTS).filter(function (k) {
     return k !== 'plies' && k !== 'minGames' && k !== 'prior' && k !== 'risk' && k !== 'themeKey';
-  }).map(function (k) { return k.replace(/[A-Z]/g, function (ch) { return '-' + ch.toLowerCase(); }) + ' ' + BUILD_DEFAULTS[k]; })
+  }).map(function (k) {
+    var v = k === 'coverReach' || k === 'rootReach' ? Math.round(1e6 * BUILD_DEFAULTS[k]) / 1e4 : BUILD_DEFAULTS[k];
+    return k.replace(/[A-Z]/g, function (ch) { return '-' + ch.toLowerCase(); }) + ' ' + v;
+  })
     .join(', --'),
   '  --chessdb-rate 60 (per minute), --cache <file> (default repertoires/repgen-cache.jsonl)',
+  '  --cover-reach and --root-reach are percentages (0.05 is 0.05%); --root-reach defaults to',
+  '                       the --moves line\'s own reach in the index',
+  '  --base <pgn>         extend this file (yours): its moves are played as they are, its replies',
+  '                       followed, its comments kept; the output is its game with the build added',
   'build and eval:',
   '  --known <pgn>,...    repertoires you already know (deeprep\'s, pgnclean\'s, Lichess study exports).',
   '                       build: their positions count as learned, their moves seed --theme, and a line',
@@ -511,14 +519,17 @@ function cmdSlice(argv) {
 /* ------------------------------------------------------------------ build */
 
 // Build options given as shares may be fractions (0.9) or percentages (90), as in repgen.
-var BUILD_SHARES = ['coverage', 'coverageStep', 'singleBelow', 'minReach', 'minShare', 'lineMinReach'];
+var BUILD_SHARES = ['coverage', 'coverageStep', 'singleBelow', 'minReach', 'minShare', 'lineMinReach',
+  'coverShare', 'sharpShare', 'planShare'];
+// Always percentages: a reach of 0.05% is the usual size, so "0.05" can't mean 5%.
+var BUILD_PERCENT = ['coverReach', 'rootReach'];
 
 function camel(s) { return s.replace(/-([a-z])/g, function (_, ch) { return ch.toUpperCase(); }); }
 function kebab(s) { return s.replace(/[A-Z]/g, function (ch) { return '-' + ch.toLowerCase(); }); }
 
 function parseBuild(argv) {
   var o = { name: null, fen: null, moves: null, side: null, out: null, config: {}, decisions: null, holdout: null,
-    chessdb: true, chessdbRate: 60, cache: null, known: [] };
+    chessdb: true, chessdbRate: 60, cache: null, known: [], base: null };
   for (var i = 0; i < argv.length; i++) {
     var a = argv[i];
     if (a === '--fen') o.fen = argv[++i];
@@ -535,6 +546,7 @@ function parseBuild(argv) {
     else if (a === '--chessdb-rate') o.chessdbRate = num(argv[++i], '--chessdb-rate');
     else if (a === '--cache') o.cache = argv[++i];
     else if (a === '--known') o.known = o.known.concat(knownList(argv[++i]));
+    else if (a === '--base') o.base = argv[++i];
     else if (a === '--theme-key') {
       var tk = argv[++i];
       if (tk !== 'both' && tk !== 'mine') throw new Error('--theme-key is both or mine');
@@ -551,6 +563,7 @@ function parseBuild(argv) {
       var k = camel(a.slice(2));
       var v = num(argv[++i], a);
       if (BUILD_SHARES.indexOf(k) >= 0 && v > 1) v /= 100;
+      if (BUILD_PERCENT.indexOf(k) >= 0) v /= 100;
       o.config[k] = v;
     }
     else if (!o.name && !/^--/.test(a)) o.name = a;
@@ -558,6 +571,8 @@ function parseBuild(argv) {
   }
   if (!o.name) throw new Error('Which index?\n' + USAGE);
   if (!o.out) throw new Error('--out <name> is missing');
+  // A base file starts the build where it starts branching, unless --moves says otherwise.
+  if (o.base && o.moves == null && !o.fen) o.moves = baseFromPgn(fs.readFileSync(pgnPath(o.base), 'utf8'), 'w').prefix.join(' ');
   o.prefix = null;
   if (o.moves != null) {
     var c = new Chess(o.fen || undefined);
@@ -608,17 +623,43 @@ async function cmdBuild(argv) {
         (both.length > 3 ? ', ...' : '') + '), so its score shares the choices\' luck too.');
     }
     var decisions = o.decisions ? parseDecisions(JSON.parse(fs.readFileSync(inPath(o.decisions), 'utf8')), o.fen) : new Map();
-    var known = loadKnown(o.known, o.side || new Chess(o.fen).turn());
+    var bside = o.side || new Chess(o.fen).turn();
+    var known = loadKnown(o.known, bside);
     if (known) {
       console.log('Known: ' + known.names.join('; ') + ': ' + fmt(known.positions.size) +
         ' positions, ' + fmt(known.mine.length) + ' moves of mine.');
+    }
+    var base = o.base ? baseFromPgn(fs.readFileSync(pgnPath(o.base), 'utf8'), bside) : null;
+    if (base) {
+      console.log('Base: ' + knownName(pgnPath(o.base)) + ': ' + fmt(base.positions.size) + ' positions, ' +
+        fmt(base.moves.size) + ' moves of mine, kept as they are.');
+    }
+    // Reach-driven coverage measures reach from the start (from 1.Nc3 for a 1.Nc3 repertoire:
+    // my own moves don't divide it): the root's own is the product of their shares on the way.
+    var bcfg = Object.assign({}, BUILD_DEFAULTS, o.config);
+    if (bcfg.coverReach > 0 && o.config.rootReach == null && o.prefix && o.prefix.length) {
+      var rc = new Chess(), rr = 1;
+      o.prefix.forEach(function (san) {
+        if (rc.turn() !== bside) {
+          var rp = positionOf(db, rc.fen());
+          var rm = rp.moves.find(function (x) { return x.san === san; });
+          rr *= rm && rp.total ? rm.games / rp.total : 0;
+        }
+        rc.move(san);
+      });
+      o.config.rootReach = rr;
+    }
+    if (bcfg.coverReach > 0) {
+      console.log('Coverage: replies with ' + (100 * bcfg.coverShare) + '%+ and a reach of ' + (100 * bcfg.coverReach) +
+        '%+ (sharp lines ' + (100 * bcfg.coverReach / Math.max(1, bcfg.sharpFactor)) + '%); the root\'s reach is ' +
+        (100 * (o.config.rootReach || 1)).toFixed(3) + '%.');
     }
     var cdb = o.chessdb ? makeChessdb(o) : null;
     var t0 = Date.now();
     // Lookups counted, for the summary: a build's cost is mostly index reads.
     var lookups = 0;
     var counted = { meta: db.meta, records: function (k) { lookups++; return db.records(k); } };
-    var b = createBuilder(counted, { root: o.fen, side: o.side, config: o.config, chessdb: cdb, decisions: decisions, known: known,
+    var b = createBuilder(counted, { root: o.fen, side: o.side, config: o.config, chessdb: cdb, decisions: decisions, known: known, base: base,
       log: function (n, what) {
         var c = n.cands.find(function (x) { return x.san === n.move; });
         var alt = n.cands.filter(function (x) { return x !== c && !x.out; }).sort(function (x, y) { return y.score - x.score; })[0];
@@ -653,13 +694,13 @@ async function cmdBuild(argv) {
     var ends = known ? knownEnds(b.nodes) : null;
     var inSample = evaluateRepertoire(db, rep, { minGames: cfg.minGames });
     var held = hdb ? evaluateRepertoire(hdb, rep, { minGames: cfg.minGames }) : null;
-    var base = outPath(o.out.replace(/\.(pgn|json|md)$/i, ''));
-    fs.mkdirSync(path.dirname(base), { recursive: true });
+    var out = outPath(o.out.replace(/\.(pgn|json|md)$/i, ''));
+    fs.mkdirSync(path.dirname(out), { recursive: true });
     var nodes = [];
     b.nodes.forEach(function (n) { nodes.push(n); });
     var meta = { tool: 'deeprep build', index: db.meta.source + '@' + db.meta.created, dumps: dumpsOf(db.meta),
       filter: db.meta.filter, fen: o.fen, moves: o.prefix, side: b.side, config: cfg, chessdb: !!cdb,
-      decisions: o.decisions,
+      decisions: o.decisions, base: o.base ? knownName(pgnPath(o.base)) : null,
       known: known ? { files: known.files, names: known.names, positions: known.positions.size, moves: known.mine.length,
         ends: { lines: ends.lines, positions: ends.positions, reach: ends.reach, byName: ends.byName,
           list: ends.list.map(function (x) { return { path: x.path, line: x.line, name: x.name, reach: x.reach, lines: x.lines }; }) } } : null,
@@ -667,14 +708,15 @@ async function cmdBuild(argv) {
       inSample: inSample, stats: Object.assign({ ms: Date.now() - t0, lookups: lookups, chessdbRequests: cdb ? cdb.stats.chessdbRequests || 0 : 0 }, b.stats),
       created: new Date().toISOString() };
     var replacer = function (k, v) { return typeof v === 'bigint' ? String(v) : v; };
-    fs.writeFileSync(base + '.json', JSON.stringify({ meta: meta, nodes: nodes }, replacer, 1));
+    fs.writeFileSync(out + '.json', JSON.stringify({ meta: meta, nodes: nodes }, replacer, 1));
     var mineCount = nodes.filter(function (n) { return n.kind === 'me' && n.status === 'done'; }).length;
     var tree = toTree(b.nodes, b.rootKey, moveNote, line);
     var headers = { Event: 'deeprep build for ' + side, Annotator: 'deeprep (' + db.meta.source + ')',
       White: b.side === 'w' ? 'Repertoire' : 'Lichess', Black: b.side === 'b' ? 'Repertoire' : 'Lichess' };
-    fs.writeFileSync(base + '.pgn', toPgn(tree, { prefix: o.prefix, fen: o.prefix ? null : o.fen, headers: headers,
-      rootComment: rootNote(mineCount, inSample, held) }));
-    fs.writeFileSync(base + '.review.md', reviewMarkdown({ out: path.basename(base), side: b.side, root: o.fen, prefix: o.prefix,
+    // With a base, the owner's game (headers, moves and comments) with the build grafted on.
+    fs.writeFileSync(out + '.pgn', base ? writePgn(mergeBase(base, tree, o.prefix || []))
+      : toPgn(tree, { prefix: o.prefix, fen: o.prefix ? null : o.fen, headers: headers, rootComment: rootNote(mineCount, inSample, held) }));
+    fs.writeFileSync(out + '.review.md', reviewMarkdown({ out: path.basename(out), side: b.side, root: o.fen, prefix: o.prefix,
       index: db.meta.source, filter: db.meta.filter, cfg: cfg, nodes: b.nodes, inSample: inSample, chessdb: !!cdb,
       holdout: hdb ? { name: hdb.meta.source, eval: held } : null, known: known ? { names: known.names, ends: ends } : null,
       date: new Date().toISOString().slice(0, 10) }));
@@ -691,7 +733,7 @@ async function cmdBuild(argv) {
     }
     console.log('In sample: ' + (100 * inSample.s).toFixed(1) + '% (everyone ' + (100 * inSample.raw).toFixed(1) + '%)' +
       (held ? '. Holdout: ' + (100 * held.s).toFixed(1) + '% ±' + (100 * held.se).toFixed(1) + ' (everyone ' + (100 * held.raw).toFixed(1) + '%).' : '.'));
-    console.log('Wrote ' + base + '.pgn, .json and .review.md');
+    console.log('Wrote ' + out + '.pgn, .json and .review.md');
   } finally {
     db.close();
     if (hdb) hdb.close();
